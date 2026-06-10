@@ -59,6 +59,11 @@
   gap: 10px;
 }
 
+.headerActions {
+  display: flex;
+  gap: 4px;
+}
+
 .avatar {
   border: 1px solid rgba(255, 255, 255, 0.15);
 }

@@ -11,6 +11,7 @@ export const FloatingChatWidget: React.FC = () => {
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const widgetRef = useRef<HTMLDivElement>(null);
 
   const isStreaming = status === 'streaming';
   const isBusy = status === 'sending' || isStreaming;
@@ -27,6 +28,31 @@ export const FloatingChatWidget: React.FC = () => {
     if (isOpen) {
       setTimeout(() => textareaRef.current?.focus(), 100);
     }
+  }, [isOpen]);
+
+  // Escape key and Click Outside listeners to close the widget
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (widgetRef.current && !widgetRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, [isOpen]);
 
   const handleSend = async () => {
@@ -48,7 +74,7 @@ export const FloatingChatWidget: React.FC = () => {
   };
 
   return (
-    <div className={styles.widgetContainer}>
+    <div ref={widgetRef} className={styles.widgetContainer}>
       {/* Floating Action Button (FAB) */}
       <Button
         shape="circular"
@@ -77,14 +103,24 @@ export const FloatingChatWidget: React.FC = () => {
                 <span className={styles.subtitleText}>Tire suas dúvidas do cadastro</span>
               </div>
             </div>
-            <Button
-              appearance="subtle"
-              size="small"
-              icon={<Delete24Regular />}
-              onClick={clearChat}
-              title="Limpar histórico"
-              aria-label="Limpar histórico do chat"
-            />
+            <div className={styles.headerActions}>
+              <Button
+                appearance="subtle"
+                size="small"
+                icon={<Delete24Regular />}
+                onClick={clearChat}
+                title="Limpar histórico"
+                aria-label="Limpar histórico do chat"
+              />
+              <Button
+                appearance="subtle"
+                size="small"
+                icon={<Dismiss24Regular />}
+                onClick={() => setIsOpen(false)}
+                title="Fechar"
+                aria-label="Fechar assistente de chat"
+              />
+            </div>
           </div>
 
           {/* Messages Area */}
