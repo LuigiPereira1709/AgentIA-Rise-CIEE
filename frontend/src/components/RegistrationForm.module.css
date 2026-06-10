@@ -54,7 +54,7 @@
 
 .mainContent {
   flex: 1;
-  padding: 32px 16px;
+  padding: 64px 16px 32px 16px;
   overflow-y: auto;
   display: flex;
   align-items: center;
@@ -173,5 +173,27 @@
   to {
     opacity: 1;
     transform: scale(1);
+  }
+}
+
+.shake {
+  animation: cardShake 0.35s cubic-bezier(.36,.07,.19,.97) both;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+@keyframes cardShake {
+  10%, 90% {
+    transform: translate3d(-2px, 0, 0);
+  }
+  20%, 80% {
+    transform: translate3d(3px, 0, 0);
+  }
+  30%, 50%, 70% {
+    transform: translate3d(-5px, 0, 0);
+  }
+  40%, 60% {
+    transform: translate3d(5px, 0, 0);
   }
 }

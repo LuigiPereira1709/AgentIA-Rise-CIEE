@@ -1,0 +1,380 @@
+/* Goose container holds the absolute positioned mascot */
+.gooseContainer {
+  position: absolute;
+  width: 90px;
+  height: 110px;
+  z-index: 1; /* Render behind the form card (z-index: 2) */
+  pointer-events: none;
+  transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Hidden state: retracted completely and invisible */
+.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Peeking from the Left */
+.left {
+  left: -78px;
+  top: 180px;
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+/* Peeking from the Right */
+.right {
+  right: -78px;
+  top: 240px;
+  opacity: 1;
+  transform: scaleX(-1); /* Flip horizontally so beak points left */
+}
+
+/* Peeking from the Top */
+.top {
+  top: -65px; /* Pull down so head is visible above card */
+  left: 200px;
+  opacity: 1;
+  transform: rotate(0deg); /* Upright peeking over the top edge */
+}
+
+/* Interactive Goose Character */
+.gooseCharacter {
+  width: 90px;
+  height: 110px;
+  cursor: pointer;
+  pointer-events: auto;
+  user-select: none;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.gooseCharacter:hover {
+  transform: scale(1.06) translateY(-2px);
+}
+
+/* Honk animation stretching the neck */
+.honking {
+  animation: honkStretch 0.4s ease-out;
+}
+
+@keyframes honkStretch {
+  0% {
+    transform: scale(1) translateY(0);
+  }
+  30% {
+    transform: scale(1.22, 0.85) translateY(4px);
+  }
+  50% {
+    transform: scale(0.9, 1.25) translateY(-12px);
+  }
+  70% {
+    transform: scale(1.1, 0.95) translateY(-3px);
+  }
+  100% {
+    transform: scale(1) translateY(0);
+  }
+}
+
+.gooseSvg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Speech Bubble - styled like a classic retro Windows tooltip */
+.speechBubble {
+  position: absolute;
+  z-index: 10;
+  background-color: #ffffe1;
+  border: 1px solid #000000;
+  color: #000000;
+  font-family: Tahoma, Geneva, sans-serif;
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 8px 12px;
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.8);
+  pointer-events: auto;
+  min-width: 140px;
+  max-width: 200px;
+  animation: tooltipPop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* Adjust speech bubble location depending on the side the goose is on */
+.left .speechBubble {
+  left: 80px;
+  bottom: 80px;
+  transform-origin: bottom left;
+}
+
+.right .speechBubble {
+  right: 80px;
+  bottom: 80px;
+  transform: scaleX(-1); /* Unflip the text if inside a scaleX(-1) parent */
+  transform-origin: bottom right;
+}
+
+/* Fix inner text when speech bubble is flipped inside right container */
+.right .speechBubble p {
+  transform: scaleX(-1);
+}
+
+.top .speechBubble {
+  left: 80px;
+  bottom: 80px;
+  transform-origin: bottom left;
+}
+
+.phraseText {
+  margin: 0;
+  line-height: 1.35;
+}
+
+.bubbleArrow {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-style: solid;
+}
+
+/* Arrow styling based on direction */
+.left .bubbleArrow {
+  left: -8px;
+  bottom: 12px;
+  border-width: 6px 8px 6px 0;
+  border-color: transparent #000000 transparent transparent;
+}
+
+.left .bubbleArrow::after {
+  content: '';
+  position: absolute;
+  left: 1px;
+  bottom: -5px;
+  border-style: solid;
+  border-width: 5px 7px 5px 0;
+  border-color: transparent #ffffe1 transparent transparent;
+}
+
+.right .bubbleArrow {
+  right: -8px;
+  bottom: 12px;
+  border-width: 6px 0 6px 8px;
+  border-color: transparent transparent transparent #000000;
+}
+
+.right .bubbleArrow::after {
+  content: '';
+  position: absolute;
+  right: 1px;
+  bottom: -5px;
+  border-style: solid;
+  border-width: 5px 0 5px 7px;
+  border-color: transparent transparent transparent #ffffe1;
+}
+
+.top .bubbleArrow {
+  left: -8px;
+  bottom: 12px;
+  border-width: 6px 8px 6px 0;
+  border-color: transparent #000000 transparent transparent;
+}
+
+.top .bubbleArrow::after {
+  content: '';
+  position: absolute;
+  left: 1px;
+  bottom: -5px;
+  border-style: solid;
+  border-width: 5px 7px 5px 0;
+  border-color: transparent #ffffe1 transparent transparent;
+}
+
+@keyframes tooltipPop {
+  from {
+    opacity: 0;
+    transform: scale(0.7) translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Retro Notepad Window Styling */
+.notepadWindow {
+  position: absolute;
+  z-index: 100;
+  width: 250px;
+  background-color: #c0c0c0;
+  /* Retro 3D borders */
+  border-top: 2px solid #ffffff;
+  border-left: 2px solid #ffffff;
+  border-right: 2px solid #7f7f7f;
+  border-bottom: 2px solid #7f7f7f;
+  box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.6);
+  padding: 2px;
+  font-family: 'Tahoma', 'Geneva', sans-serif;
+  animation: noteFadeIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15) forwards;
+}
+
+/* Place notepad based on where the goose dragged it from */
+.noteFrom_left {
+  left: 35px;
+  top: 130px;
+}
+
+.noteFrom_right {
+  right: 35px;
+  top: 170px;
+}
+
+.noteFrom_top {
+  left: calc(50% - 125px);
+  top: 80px;
+}
+
+.notepadTitleBar {
+  background: linear-gradient(90deg, #000080 0%, #1084d0 100%);
+  color: #ffffff;
+  padding: 3px 5px 4px 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  user-select: none;
+}
+
+.notepadTitle {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notepadCloseBtn {
+  background-color: #c0c0c0;
+  color: #000000;
+  font-weight: bold;
+  font-size: 11px;
+  border-top: 1.5px solid #ffffff;
+  border-left: 1.5px solid #ffffff;
+  border-right: 1.5px solid #404040;
+  border-bottom: 1.5px solid #404040;
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.notepadCloseBtn:active {
+  border-top: 1.5px solid #404040;
+  border-left: 1.5px solid #404040;
+  border-right: 1.5px solid #ffffff;
+  border-bottom: 1.5px solid #ffffff;
+  padding-top: 1px;
+  padding-left: 1px;
+}
+
+.notepadBody {
+  margin: 3px;
+  padding: 8px;
+  background-color: #ffffff;
+  /* Retro 3D inset borders */
+  border-top: 1.5px solid #7f7f7f;
+  border-left: 1.5px solid #7f7f7f;
+  border-right: 1.5px solid #ffffff;
+  border-bottom: 1.5px solid #ffffff;
+}
+
+.notepadText {
+  margin: 0;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  color: #000000;
+  white-space: pre-wrap;
+  min-height: 50px;
+}
+
+.notepadOkWrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.notepadOkBtn {
+  background-color: #c0c0c0;
+  color: #000000;
+  border-top: 1.5px solid #ffffff;
+  border-left: 1.5px solid #ffffff;
+  border-right: 1.5px solid #7f7f7f;
+  border-bottom: 1.5px solid #7f7f7f;
+  padding: 4px 18px;
+  font-size: 11px;
+  cursor: pointer;
+  outline: 1px dotted #000000;
+  outline-offset: -3px;
+}
+
+.notepadOkBtn:active {
+  border-top: 1.5px solid #7f7f7f;
+  border-left: 1.5px solid #7f7f7f;
+  border-right: 1.5px solid #ffffff;
+  border-bottom: 1.5px solid #ffffff;
+}
+
+@keyframes noteFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.85) translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Mobile responsive fixes */
+@media (max-width: 900px) {
+  .left {
+    left: -40px;
+    top: 50px;
+    transform: scale(0.8);
+  }
+
+  .right {
+    right: -40px;
+    top: 100px;
+    transform: scaleX(-1) scale(0.8);
+  }
+
+  .top {
+    top: -45px;
+    left: calc(50% - 45px);
+    transform: rotate(0deg) scale(0.8);
+  }
+
+  .noteFrom_left {
+    left: 20px;
+    top: 110px;
+    width: 200px;
+  }
+
+  .noteFrom_right {
+    right: 20px;
+    top: 150px;
+    width: 200px;
+  }
+
+  .noteFrom_top {
+    left: calc(50% - 100px);
+    top: 40px;
+    width: 200px;
+  }
+}

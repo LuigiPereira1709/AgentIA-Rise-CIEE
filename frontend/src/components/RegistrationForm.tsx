@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button, Input, Field, Text, Card, Avatar } from '@fluentui/react-components';
 import { ArrowLeft24Regular, Person24Regular, Mail24Regular, Board24Regular, Briefcase24Regular, CheckmarkCircle24Filled } from '@fluentui/react-icons';
 import { FloatingChatWidget } from './chat/FloatingChatWidget';
-import { AlienMascot } from './AlienMascot';
+import { GooseMascot } from './GooseMascot';
 import styles from './RegistrationForm.module.css';
 
 interface RegistrationFormProps {
@@ -26,6 +26,14 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
 
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isShaking, setIsShaking] = useState(false);
+
+  const handleGooseHonk = () => {
+    setIsShaking(true);
+    setTimeout(() => {
+      setIsShaking(false);
+    }, 350);
+  };
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -107,11 +115,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
       {/* Main Content */}
       <main className={styles.mainContent}>
         <div className={styles.formWrapper}>
-          {/* Alien Mascot (Zoggy) */}
-          <AlienMascot />
+          {/* Goose Mascot (Desktop Goose style) */}
+          <GooseMascot onHonk={handleGooseHonk} />
 
           {!isSubmitted ? (
-            <Card className={styles.formCard} appearance="filled">
+            <Card className={`${styles.formCard} ${isShaking ? styles.shake : ''}`} appearance="filled">
               <div className={styles.cardHeader}>
                 <h2 className={styles.formTitle}>Formulário de Cadastro</h2>
                 <p className={styles.formSubtitle}>
