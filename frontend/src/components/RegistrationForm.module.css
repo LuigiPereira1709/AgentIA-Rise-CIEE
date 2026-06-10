@@ -1,0 +1,176 @@
+.pageContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100vh;
+  background-color: #0c0f1d;
+  color: #e0e0e0;
+  overflow: hidden;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 24px;
+  height: 56px;
+  background-color: #111424;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+}
+
+.navLeft {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.backButton {
+  color: #a0a0b0 !important;
+  font-weight: 500;
+}
+
+.backButton:hover {
+  color: #ffffff !important;
+}
+
+.separator {
+  width: 1px;
+  height: 24px;
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.navTitle {
+  font-size: 16px;
+  color: #ffffff;
+}
+
+.navRight {
+  display: flex;
+  align-items: center;
+}
+
+.mainContent {
+  flex: 1;
+  padding: 32px 16px;
+  overflow-y: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at top, #16213e 0%, #0c0f1d 70%);
+}
+
+.formWrapper {
+  width: 100%;
+  max-width: 500px;
+}
+
+.formCard {
+  background: rgba(22, 33, 62, 0.7) !important;
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 16px !important;
+  padding: 32px !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4) !important;
+  animation: fadeIn 0.4s ease;
+}
+
+.cardHeader {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.formTitle {
+  margin: 0 0 8px 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.formSubtitle {
+  margin: 0;
+  font-size: 13px;
+  color: #a0a0b0;
+  line-height: 1.5;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.submitButton {
+  margin-top: 10px;
+  background: #53a8b6 !important;
+  color: #0c0f1d !important;
+  font-weight: 600 !important;
+}
+
+.submitButton:hover {
+  background: #74c7d5 !important;
+}
+
+.successCard {
+  background: rgba(22, 33, 62, 0.8) !important;
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(83, 168, 182, 0.3) !important;
+  border-radius: 16px !important;
+  padding: 40px 32px !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4) !important;
+  text-align: center;
+  animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.successIconWrapper {
+  margin-bottom: 20px;
+}
+
+.successIcon {
+  font-size: 64px;
+  color: #53a8b6;
+}
+
+.successTitle {
+  margin: 0 0 12px 0;
+  font-size: 26px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.successSubtitle {
+  margin: 0 0 28px 0;
+  font-size: 14px;
+  color: #d0d0e0;
+  line-height: 1.6;
+}
+
+.successActions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

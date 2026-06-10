@@ -17,9 +17,10 @@ interface AgentChatProps {
   agentDescription?: string;
   agentLogo?: string;
   starterPrompts?: string[];
+  onNavigateToRegister?: () => void;
 }
 
-export const AgentChat: React.FC<AgentChatProps> = ({ agentName, agentDescription, agentLogo, starterPrompts }) => {
+export const AgentChat: React.FC<AgentChatProps> = ({ agentName, agentDescription, agentLogo, starterPrompts, onNavigateToRegister }) => {
   const { chat, state } = useAppState();
   const { dispatch } = useAppContext();
   const { getAccessToken } = useAuth();
@@ -254,6 +255,7 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName, agentDescriptio
         onNewChat={handleNewChat}
         onDeleteConversation={handleDeleteConversation}
         onLoadMore={handleLoadMoreConversations}
+        onNavigateToRegister={onNavigateToRegister}
       />
       
       <SettingsPanel

@@ -4,6 +4,7 @@ import { useAppState } from './hooks/useAppState';
 import { InteractionType } from "@azure/msal-browser";
 import { ErrorBoundary } from "./components/core/ErrorBoundary";
 import { AgentChat } from "./components/AgentChat";
+import { RegistrationForm } from "./components/RegistrationForm";
 import { loginRequest } from "./config/authConfig";
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "./hooks/useAuth";
@@ -15,6 +16,7 @@ function App() {
   useMsalAuthentication(InteractionType.Redirect, loginRequest);
   const { auth } = useAppState();
   const { getAccessToken } = useAuth();
+  const [currentPage, setCurrentPage] = useState<'chat' | 'register'>('chat');
   const [agentMetadata, setAgentMetadata] = useState<IAgentMetadata | null>(null);
   const [isLoadingAgent, setIsLoadingAgent] = useState(true);
 
@@ -85,13 +87,18 @@ function App() {
           <AuthenticatedTemplate>
             {agentMetadata && (
               <div className="app-container">
-                <AgentChat 
-                  agentId={agentMetadata.id}
-                  agentName={agentMetadata.name}
-                  agentDescription={agentMetadata.description || undefined}
-                  agentLogo={agentMetadata.metadata?.logo}
-                  starterPrompts={agentMetadata.starterPrompts || undefined}
-                />
+                {currentPage === 'chat' ? (
+                  <AgentChat 
+                    agentId={agentMetadata.id}
+                    agentName={agentMetadata.name}
+                    agentDescription={agentMetadata.description || undefined}
+                    agentLogo={agentMetadata.metadata?.logo}
+                    starterPrompts={agentMetadata.starterPrompts || undefined}
+                    onNavigateToRegister={() => setCurrentPage('register')}
+                  />
+                ) : (
+                  <RegistrationForm onBackToChat={() => setCurrentPage('chat')} />
+                )}
               </div>
             )}
           </AuthenticatedTemplate>

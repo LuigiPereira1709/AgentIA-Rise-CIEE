@@ -1,0 +1,239 @@
+.widgetContainer {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.fabButton {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fabButton:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+}
+
+.chatPopover {
+  position: absolute;
+  bottom: 72px;
+  right: 0;
+  width: 380px;
+  height: 520px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(22, 33, 62, 0.95);
+  backdrop-filter: blur(12px);
+  animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.chatHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(15, 52, 96, 0.4);
+}
+
+.headerTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.titleText {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.subtitleText {
+  font-size: 11px;
+  color: #a0a0b0;
+  display: block;
+}
+
+.messagesList {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: rgba(10, 10, 20, 0.2);
+}
+
+/* Custom Scrollbar for messages */
+.messagesList::-webkit-scrollbar {
+  width: 6px;
+}
+
+.messagesList::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.messagesList::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+
+.welcomeContainer {
+  padding: 12px;
+  text-align: left;
+}
+
+.welcomeText {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #d0d0e0;
+  margin: 0 0 16px 0;
+}
+
+.starterContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.starterLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: #53a8b6;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 4px 0;
+}
+
+.starterButton {
+  text-align: left;
+  background: rgba(83, 168, 182, 0.1);
+  border: 1px solid rgba(83, 168, 182, 0.2);
+  color: #53a8b6;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.starterButton:hover {
+  background: rgba(83, 168, 182, 0.2);
+  border-color: rgba(83, 168, 182, 0.4);
+  color: #74c7d5;
+}
+
+.messageWrapper {
+  display: flex;
+  gap: 8px;
+  max-width: 85%;
+}
+
+.userWrapper {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.assistantWrapper {
+  align-self: flex-start;
+}
+
+.messageAvatar {
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.messageBubble {
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.userBubble {
+  background: #0f3460;
+  color: #ffffff;
+  border-bottom-right-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.userText {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.assistantBubble {
+  background: #16213e;
+  color: #e0e0e0;
+  border-bottom-left-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.loaderContainer {
+  padding: 4px 8px;
+  align-self: flex-start;
+}
+
+.errorBubble {
+  padding: 8px 12px;
+  background: rgba(233, 69, 96, 0.15);
+  border: 1px solid rgba(233, 69, 96, 0.3);
+  color: #e94560;
+  font-size: 12px;
+  border-radius: 8px;
+  align-self: center;
+  max-width: 90%;
+  text-align: center;
+}
+
+.inputArea {
+  padding: 12px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(22, 33, 62, 0.5);
+}
+
+.textarea {
+  flex: 1;
+  min-height: 48px !important;
+  max-height: 48px !important;
+}
+
+.sendButton {
+  height: 40px;
+  width: 40px;
+  min-width: 40px;
+}
+
+/* Mobile responsive styling */
+@media (max-width: 480px) {
+  .chatPopover {
+    width: calc(100vw - 32px);
+    right: -12px;
+    height: 460px;
+  }
+}

@@ -31,6 +31,7 @@ interface ConversationSidebarProps {
   onNewChat: () => void;
   onDeleteConversation: (conversationId: string) => void;
   onLoadMore: () => void;
+  onNavigateToRegister?: () => void;
 }
 
 const useStyles = makeStyles({
@@ -145,6 +146,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
   onNewChat,
   onDeleteConversation,
   onLoadMore,
+  onNavigateToRegister,
 }) => {
   const styles = useStyles();
   const [searchQuery, setSearchQuery] = useState('');
@@ -218,6 +220,17 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
           }}
         >
           New Chat
+        </Button>
+
+        <Button
+          appearance="outline"
+          style={{ width: '100%', marginBottom: '16px' }}
+          onClick={() => {
+            onNavigateToRegister?.();
+            onOpenChange(false);
+          }}
+        >
+          Solicitar Cadastro
         </Button>
 
         {conversations.length > 0 && (
