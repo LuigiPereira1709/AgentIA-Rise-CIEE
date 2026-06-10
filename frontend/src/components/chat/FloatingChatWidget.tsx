@@ -5,7 +5,41 @@ import { useLocalChat } from '../../hooks/useLocalChat';
 import { Markdown } from '../core/Markdown';
 import styles from './FloatingChatWidget.module.css';
 
-export const FloatingChatWidget: React.FC = () => {
+const GooseHeadIcon: React.FC<{ isChaos?: boolean }> = ({ isChaos = false }) => {
+  return (
+    <svg 
+      viewBox="22 20 66 48" 
+      width="28" 
+      height="22" 
+      style={{ overflow: 'visible' }}
+    >
+      {/* Head */}
+      <circle 
+        cx="46" 
+        cy="44" 
+        r="18" 
+        fill="#ffffff" 
+        stroke="#0c0f1d" 
+        strokeWidth="2.5" 
+      />
+      {/* Cheek / Blush */}
+      <circle cx="38" cy="50" r="3.5" fill="rgba(255, 90, 95, 0.4)" />
+      
+      {/* Eye */}
+      {isChaos ? (
+        <path d="M 42 38 L 50 44" stroke="#000000" strokeWidth="2.5" strokeLinecap="round" />
+      ) : (
+        <circle cx="48" cy="40" r="2.5" fill="#000000" />
+      )}
+
+      {/* Beak */}
+      <path d="M 60 46 Q 74 48 81 48 Q 68 48 60 46 Z" fill="#ff9f1c" stroke="#0c0f1d" strokeWidth="2" />
+      <path d="M 60 38 Q 78 40 85 44 Q 70 48 60 46 Z" fill="#ff9f1c" stroke="#0c0f1d" strokeWidth="2" />
+    </svg>
+  );
+};
+
+export const FloatingChatWidget: React.FC<{ isChaosMode?: boolean }> = ({ isChaosMode = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const { messages, status, error, sendMessage, clearChat } = useLocalChat();
   const [inputText, setInputText] = useState('');
@@ -90,19 +124,29 @@ export const FloatingChatWidget: React.FC = () => {
 
       {/* Chat Popover Panel */}
       {isOpen && (
-        <Card className={styles.chatPopover} appearance="filled">
+        <Card className={`${styles.chatPopover} ${isChaosMode ? styles.chaosWidget : ''}`} appearance="filled">
           {/* Header */}
           <div className={styles.chatHeader}>
             <div className={styles.headerTitle}>
-              <Avatar
-                size={28}
-                name="Assistente de Cadastro"
-                className={styles.avatar}
-                image={{ src: '/Avatar_Default.svg' }}
-              />
+              {isChaosMode ? (
+                <div className={styles.chaosAvatarWrapper}>
+                  <GooseHeadIcon isChaos={true} />
+                </div>
+              ) : (
+                <Avatar
+                  size={28}
+                  name="Assistente de Cadastro"
+                  className={styles.avatar}
+                  image={{ src: '/Avatar_Default.svg' }}
+                />
+              )}
               <div>
-                <h4 className={styles.titleText}>Assistente Virtual</h4>
-                <span className={styles.subtitleText}>Tire suas dúvidas do cadastro</span>
+                <h4 className={styles.titleText}>
+                  {isChaosMode ? "Assistente em Pânico! 😱" : "Assistente Virtual"}
+                </h4>
+                <span className={styles.subtitleText}>
+                  {isChaosMode ? "O ganso dominou o sistema!" : "Tire suas dúvidas do cadastro"}
+                </span>
               </div>
             </div>
             <div className={styles.headerActions}>

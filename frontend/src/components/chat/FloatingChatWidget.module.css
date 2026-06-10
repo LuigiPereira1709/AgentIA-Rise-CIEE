@@ -242,3 +242,40 @@
     height: 460px;
   }
 }
+
+/* Chaos Mode dynamic styles */
+.chaosWidget {
+  border: 1.5px solid #ff3e3e !important;
+  box-shadow: 0 0 20px rgba(255, 62, 62, 0.45) !important;
+  animation: widgetChaosVibe 0.5s infinite alternate;
+}
+
+@keyframes widgetChaosVibe {
+  from { box-shadow: 0 0 10px rgba(255, 62, 62, 0.3); }
+  to { box-shadow: 0 0 22px rgba(255, 62, 62, 0.65); }
+}
+
+.chaosWidget .chatHeader {
+  background-color: #2b0b0b !important;
+  border-bottom: 1px solid rgba(255, 62, 62, 0.3) !important;
+}
+
+.chaosWidget .titleText {
+  color: #ff3e3e !important;
+}
+
+.chaosWidget .subtitleText {
+  color: #ff9f9f !important;
+}
+
+.chaosAvatarWrapper {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 62, 62, 0.2);
+  border: 1px solid rgba(255, 62, 62, 0.4);
+  flex-shrink: 0;
+}

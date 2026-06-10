@@ -41,6 +41,50 @@ const GooseHeadIcon: React.FC<{ isChaos?: boolean }> = ({ isChaos = false }) => 
   );
 };
 
+const triggerFeatherExplosion = (x: number, y: number) => {
+  let container = document.getElementById('particle-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'particle-container';
+    container.className = styles.particleContainer;
+    document.body.appendChild(container);
+  }
+
+  const particleCount = 30;
+  for (let i = 0; i < particleCount; i++) {
+    const el = document.createElement('div');
+    const type = Math.random() > 0.4 ? 'feather' : 'star';
+    el.className = `${type === 'feather' ? styles.featherParticle : styles.starParticle} ${styles.animateParticle}`;
+    
+    // Position
+    el.style.left = `${x}px`;
+    el.style.top = `${y}px`;
+
+    // Randomize movement via CSS custom properties
+    const angle = Math.random() * Math.PI * 2;
+    const distance = 80 + Math.random() * 150;
+    const tx = Math.cos(angle) * distance;
+    const ty = Math.sin(angle) * distance - 30;
+    const rot = (Math.random() - 0.5) * 720;
+
+    el.style.setProperty('--tx', `${tx}px`);
+    el.style.setProperty('--ty', `${ty}px`);
+    el.style.setProperty('--rot', `${rot}deg`);
+
+    // Randomize scale
+    const scale = 0.5 + Math.random() * 0.8;
+    el.style.width = `${Math.round(14 * scale)}px`;
+    el.style.height = `${Math.round(14 * scale)}px`;
+
+    container.appendChild(el);
+
+    // Remove element after animation
+    setTimeout(() => {
+      el.remove();
+    }, 1500);
+  }
+};
+
 interface RegistrationFormProps {
   onBackToChat: () => void;
 }
@@ -161,6 +205,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
       if (!isMuted) {
         playAchievementSound();
       }
+      triggerFeatherExplosion(window.innerWidth / 2, window.innerHeight / 2);
 
       const toastId = `${id}-${Date.now()}`;
       setActiveToasts((currentToasts) => [
@@ -474,7 +519,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
       </main>
 
       {/* Floating Chatbot Widget */}
-      <FloatingChatWidget />
+      <FloatingChatWidget isChaosMode={isChaosMode} />
 
       {/* Toast Notifications */}
       <div className={styles.toastContainer}>

@@ -75,6 +75,32 @@ const playPettingSound = () => {
   } catch (e) {}
 };
 
+const playHonkSound = () => {
+  try {
+    const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    const now = ctx.currentTime;
+    
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(320, now);
+    osc.frequency.exponentialRampToValueAtTime(140, now + 0.16);
+    
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.12, now + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+    
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    osc.start(now);
+    osc.stop(now + 0.18);
+  } catch (e) {}
+};
+
 const playChaosSound = () => {
   try {
     const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
@@ -108,7 +134,8 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
   focusedField, 
   onUnlockHeistAchievement,
   onUnlockChaosAchievement,
-  onChangeMischief
+  onChangeMischief,
+  isMuted = false
 }) => {
   const [side, setSide] = useState<'left' | 'right' | 'top'>('left');
   const [isHonking, setIsHonking] = useState(false);
@@ -183,6 +210,9 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
         const phrase = GANSO_PHRASES[Math.floor(Math.random() * GANSO_PHRASES.length)];
         setSpeechBubble(phrase);
         setIsHonking(true);
+        if (!isMuted) {
+          playHonkSound();
+        }
         if (onHonk) onHonk();
 
         // Close beak after 600ms
@@ -194,7 +224,7 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
         }, 5000);
       }, 1000);
     }
-  }, [onHonk]);
+  }, [onHonk, isMuted]);
 
   // Periodically trigger a random speech bubble or heist
   useEffect(() => {
@@ -215,6 +245,9 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
           setSpeechBubble(phrase);
           setIsHonking(true);
           setEyeState('normal');
+          if (!isMuted) {
+            playHonkSound();
+          }
           if (onHonk) onHonk();
 
           setTimeout(() => setIsHonking(false), 600);
@@ -229,13 +262,15 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
       clearInterval(interval);
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [heistState, focusedField, triggerGoosePeek, onHonk]);
+  }, [heistState, focusedField, triggerGoosePeek, onHonk, isMuted]);
 
   // Handle Chaos Mode trigger
   useEffect(() => {
     if (mischiefLevel >= 100 && !isChaosMode) {
       setIsChaosMode(true);
-      playChaosSound();
+      if (!isMuted) {
+        playChaosSound();
+      }
       setSpeechBubble("MODO CAOS ATIVADO! Ninguém está seguro! 😈🔪");
       setEyeState('angry');
       setIsHonking(true);
@@ -252,7 +287,7 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
         onUnlockHeistAchievement();
       }
     }
-  }, [mischiefLevel, isChaosMode, onUnlockChaosAchievement, onUnlockHeistAchievement]);
+  }, [mischiefLevel, isChaosMode, onUnlockChaosAchievement, onUnlockHeistAchievement, isMuted]);
 
   // Notify parent of mischief status changes
   useEffect(() => {
@@ -260,6 +295,76 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
       onChangeMischief(mischiefLevel, isChaosMode);
     }
   }, [mischiefLevel, isChaosMode, onChangeMischief]);
+
+  // Loop a synthesized retro 8-bit theme music during Chaos Mode
+  useEffect(() => {
+    if (!isChaosMode || isMuted) {
+      return;
+    }
+
+    const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+
+    let ctx: AudioContext | null = null;
+    let timer: any = null;
+
+    try {
+      ctx = new AudioContextClass();
+    } catch (e) {
+      return;
+    }
+
+    const bassNotes = [110.00, 110.00, 130.81, 146.83, 110.00, 110.00, 98.00, 82.41]; // A2, A2, C3, D3, A2, A2, G2, E2
+    const leadNotes = [220.00, 261.63, 293.66, 329.63, 220.00, 261.63, 196.00, 164.81]; // A3, C4, D4, E4, A3, C4, G3, E3
+    let noteIndex = 0;
+    const tempo = 180; // BPM
+    const noteLength = 60 / tempo; // Seconds per beat
+
+    const playNextNote = () => {
+      if (!ctx || ctx.state === 'closed') return;
+      const now = ctx.currentTime;
+
+      // Play bass note
+      const bassOsc = ctx.createOscillator();
+      const bassGain = ctx.createGain();
+      bassOsc.type = 'sawtooth';
+      bassOsc.frequency.value = bassNotes[noteIndex % bassNotes.length];
+      bassGain.gain.setValueAtTime(0, now);
+      bassGain.gain.linearRampToValueAtTime(0.04, now + 0.02);
+      bassGain.gain.exponentialRampToValueAtTime(0.001, now + noteLength - 0.02);
+      bassOsc.connect(bassGain);
+      bassGain.connect(ctx.destination);
+      bassOsc.start(now);
+      bassOsc.stop(now + noteLength);
+
+      // Play lead melody note (on alternate steps)
+      if (noteIndex % 2 === 0) {
+        const leadOsc = ctx.createOscillator();
+        const leadGain = ctx.createGain();
+        leadOsc.type = 'triangle';
+        leadOsc.frequency.value = leadNotes[(noteIndex / 2) % leadNotes.length];
+        leadGain.gain.setValueAtTime(0, now);
+        leadGain.gain.linearRampToValueAtTime(0.03, now + 0.02);
+        leadGain.gain.exponentialRampToValueAtTime(0.001, now + noteLength * 2 - 0.05);
+        leadOsc.connect(leadGain);
+        leadGain.connect(ctx.destination);
+        leadOsc.start(now);
+        leadOsc.stop(now + noteLength * 2);
+      }
+
+      noteIndex++;
+      timer = setTimeout(playNextNote, noteLength * 1000);
+    };
+
+    playNextNote();
+
+    return () => {
+      clearTimeout(timer);
+      if (ctx) {
+        ctx.close().catch(() => {});
+      }
+    };
+  }, [isChaosMode, isMuted]);
 
   const handlePettingMove = () => {
     if (isDragging || heistState !== 'idle') return;
@@ -271,7 +376,9 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
       setMischiefLevel((prev) => Math.max(0, prev - 4));
       setEyeState('closed');
       setSpeechBubble("❤️");
-      playPettingSound();
+      if (!isMuted) {
+        playPettingSound();
+      }
 
       if (petTimerRef.current) clearTimeout(petTimerRef.current);
       petTimerRef.current = setTimeout(() => {
@@ -302,6 +409,9 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
     setIsHonking(true);
     setEyeState('angry');
     setSpeechBubble("HONK!!! 💢");
+    if (!isMuted) {
+      playHonkSound();
+    }
     if (onHonk) onHonk();
 
     // Reset eye state and honking state after a delay
@@ -316,7 +426,7 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
       setSpeechBubble(null);
       setEyeState('normal');
     }, 3000);
-  }, [onHonk]);
+  }, [onHonk, isMuted]);
 
   // Handle field focus and slide to it
   useEffect(() => {
@@ -354,10 +464,13 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
 
     // Keep beak open briefly to mimic speaking
     setIsHonking(true);
+    if (!isMuted) {
+      playHonkSound();
+    }
     const timer = setTimeout(() => setIsHonking(false), 500);
 
     return () => clearTimeout(timer);
-  }, [focusedField, heistState, side]);
+  }, [focusedField, heistState, side, isMuted]);
 
   // Handle mouse and touch events for dragging
   useEffect(() => {
