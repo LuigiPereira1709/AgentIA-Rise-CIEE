@@ -84,7 +84,7 @@ module app 'main-app.bicep' = {
     entraSpaClientId: entraApp.outputs.clientAppId
     entraTenantId: entraTenantId
     entraBackendClientId: enableObo ? entraApp.outputs.backendClientAppId : ''
-    webImageName: webImageName
+    webImageName: !empty(webImageName) ? webImageName : 'mcr.microsoft.com/k8se/quickstart:latest'
     userAssignedIdentityId: infrastructure.outputs.managedIdentityId
     oboManagedIdentityClientId: infrastructure.outputs.managedIdentityClientId
     appInsightsConnectionString: infrastructure.outputs.appInsightsConnectionString

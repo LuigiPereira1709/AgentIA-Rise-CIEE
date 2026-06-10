@@ -73,13 +73,10 @@ output containerAppsEnvironmentId string = containerAppsEnvironment.outputs.id
 // User-assigned managed identity — created independently so its principalId
 // is available for both Entra FIC and Container App/ACR assignment without circular dependency.
 // isolationScope: Regional ensures the identity can only be used in the deployment region.
-resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2024-11-30' = {
+resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
   name: '${abbrs.managedIdentityUserAssignedIdentities}web-${resourceToken}'
   location: location
   tags: allTags
-  properties: {
-    isolationScope: 'Regional'
-  }
 }
 
 output managedIdentityId string = managedIdentity.id
