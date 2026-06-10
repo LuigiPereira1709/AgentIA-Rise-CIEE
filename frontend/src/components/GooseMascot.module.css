@@ -260,3 +260,19 @@
   }
 }
 
+
+
+/* Chaos Mode Tremble */
+.chaos .gooseCharacter {
+  animation: chaosTremble 0.15s infinite alternate;
+}
+
+@keyframes chaosTremble {
+  0% {
+    transform: translate(-1px, -1.5px) rotate(0.5deg);
+  }
+  100% {
+    transform: translate(1.5px, 1px) rotate(-0.5deg);
+  }
+}
+

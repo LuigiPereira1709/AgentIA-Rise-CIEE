@@ -31,15 +31,21 @@ const ACHIEVEMENTS: Record<string, Achievement> = {
   },
   heist_victim: {
     id: 'heist_victim',
-    title: '🛡️ Paciente Otimista',
-    description: 'Sobreviveu a um roubo de cursor sem reclamar.',
-    icon: '🛡️'
+    title: '💖 Domador de Gansos',
+    description: 'Acalmou o ganso fazendo carinho até a travessura zerar.',
+    icon: '💖'
   },
   curious: {
     id: 'curious',
     title: '💡 Investigador',
     description: 'Pesquisou/perguntou algo no assistente de chat.',
     icon: '💡'
+  },
+  chaos_agent: {
+    id: 'chaos_agent',
+    title: '😈 Agente do Caos',
+    description: 'Deixou o ganso atingir 100% de travessura e ativar o Modo Caos.',
+    icon: '😈'
   }
 };
 
@@ -99,6 +105,8 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
   const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
   const [activeToasts, setActiveToasts] = useState<{ id: string; title: string; description: string; icon: string }[]>([]);
   const [focusedField, setFocusedField] = useState<'name' | 'email' | 'organization' | 'role' | null>(null);
+  const [mischiefLevel, setMischiefLevel] = useState(20);
+  const [isChaosMode, setIsChaosMode] = useState(false);
   const [clickCount, setClickCount] = useState(0);
 
   const nameFocusTimeRef = useRef<number | null>(null);
@@ -265,10 +273,31 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
             onHonk={handleGooseHonk} 
             focusedField={focusedField}
             onUnlockHeistAchievement={() => unlockAchievement('heist_victim')}
+            onUnlockChaosAchievement={() => unlockAchievement('chaos_agent')}
+            onChangeMischief={(level, isChaos) => {
+              setMischiefLevel(level);
+              setIsChaosMode(isChaos);
+            }}
           />
 
           {!isSubmitted ? (
             <Card className={`${styles.formCard} ${isShaking ? styles.shake : ''}`} appearance="filled">
+              {/* Goose Mischief Meter */}
+              <div className={styles.formMischiefMeter}>
+                <div className={styles.mischiefHeader}>
+                  <span className={styles.mischiefTitle}>
+                    {isChaosMode ? "👿 Ganso no MODO CAOS!" : "🦆 Travessura do Ganso"}
+                  </span>
+                  <span className={styles.mischiefPercent}>{mischiefLevel}%</span>
+                </div>
+                <div className={styles.mischiefTrack}>
+                  <div 
+                    className={`${styles.mischiefFill} ${isChaosMode ? styles.chaosFill : ''}`} 
+                    style={{ width: `${mischiefLevel}%` }} 
+                  />
+                </div>
+              </div>
+
               <div className={styles.cardHeader}>
                 <h2 className={styles.formTitle}>Formulário de Cadastro</h2>
                 <p className={styles.formSubtitle}>

@@ -5,6 +5,8 @@ interface GooseMascotProps {
   onHonk?: () => void;
   focusedField?: 'name' | 'email' | 'organization' | 'role' | null;
   onUnlockHeistAchievement?: () => void;
+  onUnlockChaosAchievement?: () => void;
+  onChangeMischief?: (level: number, isChaos: boolean) => void;
 }
 
 const GANSO_PHRASES = [
@@ -47,10 +49,66 @@ const FIELD_HINTS = {
   ]
 };
 
+const playPettingSound = () => {
+  try {
+    const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    const now = ctx.currentTime;
+    
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, now); // A5
+    osc.frequency.exponentialRampToValueAtTime(1320, now + 0.12); // E6
+    
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.06, now + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+    
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    osc.start(now);
+    osc.stop(now + 0.15);
+  } catch (e) {}
+};
+
+const playChaosSound = () => {
+  try {
+    const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    const now = ctx.currentTime;
+    
+    for (let i = 0; i < 4; i++) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = 'sawtooth';
+      const freq = i % 2 === 0 ? 587.33 : 698.46; // D5 and F5
+      osc.frequency.setValueAtTime(freq, now + i * 0.15);
+      
+      gain.gain.setValueAtTime(0, now + i * 0.15);
+      gain.gain.linearRampToValueAtTime(0.1, now + i * 0.15 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.15 + 0.13);
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.start(now + i * 0.15);
+      osc.stop(now + i * 0.15 + 0.15);
+    }
+  } catch (e) {}
+};
+
 export const GooseMascot: React.FC<GooseMascotProps> = ({ 
   onHonk, 
   focusedField, 
-  onUnlockHeistAchievement 
+  onUnlockHeistAchievement,
+  onUnlockChaosAchievement,
+  onChangeMischief
 }) => {
   const [side, setSide] = useState<'left' | 'right' | 'top'>('left');
   const [isHonking, setIsHonking] = useState(false);
@@ -59,7 +117,13 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
   const [baseCoord, setBaseCoord] = useState<number>(180);
   const [heistState, setHeistState] = useState<'idle' | 'charging' | 'holding' | 'retreating'>('idle');
 
+  // Mischief / Chaos states
+  const [mischiefLevel, setMischiefLevel] = useState<number>(20); // starts at 20%
+  const [isChaosMode, setIsChaosMode] = useState<boolean>(false);
+
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const petTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastPetTimeRef = useRef<number>(0);
   const mousePosRef = useRef({ x: 0, y: 0 });
 
   // Track mouse coordinates globally
@@ -93,8 +157,8 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
     setIsHonking(false);
     setSpeechBubble(null);
 
-    // 25% chance of initiating cursor heist (only if not on mobile, since mobile has no cursor)
-    const isHeist = !isMobile && Math.random() < 0.25;
+    // Cursor heist disabled
+    const isHeist = false;
 
     if (isHeist) {
       // Show anticipation phrase
@@ -167,6 +231,62 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
     };
   }, [heistState, focusedField, triggerGoosePeek, onHonk]);
 
+  // Handle Chaos Mode trigger
+  useEffect(() => {
+    if (mischiefLevel >= 100 && !isChaosMode) {
+      setIsChaosMode(true);
+      playChaosSound();
+      setSpeechBubble("MODO CAOS ATIVADO! Ninguém está seguro! 😈🔪");
+      setEyeState('angry');
+      setIsHonking(true);
+      setTimeout(() => setIsHonking(false), 800);
+      
+      if (onUnlockChaosAchievement) {
+        onUnlockChaosAchievement();
+      }
+    } else if (mischiefLevel === 0 && isChaosMode) {
+      setIsChaosMode(false);
+      setSpeechBubble("Ufa, ganhei carinho... 🍞❤️");
+      setEyeState('normal');
+      if (onUnlockHeistAchievement) {
+        onUnlockHeistAchievement();
+      }
+    }
+  }, [mischiefLevel, isChaosMode, onUnlockChaosAchievement, onUnlockHeistAchievement]);
+
+  // Notify parent of mischief status changes
+  useEffect(() => {
+    if (onChangeMischief) {
+      onChangeMischief(mischiefLevel, isChaosMode);
+    }
+  }, [mischiefLevel, isChaosMode, onChangeMischief]);
+
+  const handlePettingMove = () => {
+    if (isDragging || heistState !== 'idle') return;
+
+    const now = Date.now();
+    if (now - lastPetTimeRef.current > 120) { // Throttle to 120ms
+      lastPetTimeRef.current = now;
+
+      setMischiefLevel((prev) => Math.max(0, prev - 4));
+      setEyeState('closed');
+      setSpeechBubble("❤️");
+      playPettingSound();
+
+      if (petTimerRef.current) clearTimeout(petTimerRef.current);
+      petTimerRef.current = setTimeout(() => {
+        setEyeState('normal');
+        setSpeechBubble(null);
+      }, 800);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (petTimerRef.current) clearTimeout(petTimerRef.current);
+    };
+  }, []);
+
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef({ x: 0, y: 0 });
@@ -176,7 +296,7 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const handleGooseClick = useCallback(() => {
-    if (side === 'hidden') return;
+    setMischiefLevel((prev) => Math.min(100, prev + 15));
     
     // Trigger honk animation
     setIsHonking(true);
@@ -196,7 +316,7 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
       setSpeechBubble(null);
       setEyeState('normal');
     }, 3000);
-  }, [side, onHonk]);
+  }, [onHonk]);
 
   // Handle field focus and slide to it
   useEffect(() => {
@@ -386,7 +506,7 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
     window.addEventListener('touchend', handleTouchEnd);
 
     return () => {
-      document.body.style.cursor = originalBodyCursor;
+      document.body.style.cursor = originalBodyCursor === 'none' ? '' : originalBodyCursor;
       document.body.style.userSelect = originalBodyUserSelect;
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
@@ -404,7 +524,7 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
     };
   }, []);
 
-  // Failsafe: click or keydown cancels cursor theft immediately
+  // Failsafe: click, mousedown or keydown cancels cursor theft immediately
   useEffect(() => {
     if (heistState === 'idle') return;
 
@@ -418,14 +538,16 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
     };
 
     const timer = setTimeout(() => {
-      window.addEventListener('click', restore);
-      window.addEventListener('keydown', restore);
+      window.addEventListener('click', restore, { capture: true });
+      window.addEventListener('mousedown', restore, { capture: true });
+      window.addEventListener('keydown', restore, { capture: true });
     }, 100);
 
     return () => {
       clearTimeout(timer);
-      window.removeEventListener('click', restore);
-      window.removeEventListener('keydown', restore);
+      window.removeEventListener('click', restore, { capture: true });
+      window.removeEventListener('mousedown', restore, { capture: true });
+      window.removeEventListener('keydown', restore, { capture: true });
     };
   }, [heistState]);
 
@@ -467,6 +589,7 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
         const dist = Math.hypot(dx, dy);
         if (dist < 20) {
           setHeistState('holding');
+          setMischiefLevel((prev) => Math.min(100, prev + 40));
           setSpeechBubble("PEGUEI! 😈");
           setIsHonking(true);
           setEyeState('angry');
@@ -536,6 +659,7 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
     hasMovedRef.current = false;
     dragStartRef.current = { x: e.clientX, y: e.clientY };
     baseOffsetRef.current = { ...dragOffset };
+    setMischiefLevel((prev) => Math.min(100, prev + 25));
 
     if (containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
@@ -590,7 +714,7 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
   // Determine classes based on side and honk states
   const containerClass = `${styles.gooseContainer} ${styles[side]} ${
     isDragging || heistState === 'charging' || heistState === 'retreating' ? styles.dragging : ''
-  }`;
+  } ${isChaosMode ? styles.chaos : ''}`;
   const characterClass = `${styles.gooseCharacter} ${isHonking ? styles.honking : ''}`;
 
   const isMobile = typeof window !== 'undefined' && window.innerWidth <= 900;
@@ -661,12 +785,15 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
         </div>
       )}
 
+
+
       {/* CSS/SVG Goose */}
       <div 
         className={characterClass} 
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
-        title="Clique e arraste o ganso!"
+        onMouseMove={handlePettingMove}
+        title={isChaosMode ? "FAÇA CARINHO PARA ACALMAR O GANSO!" : "Clique e arraste o ganso!"}
       >
         <svg 
           viewBox="0 0 100 120" 
@@ -711,6 +838,31 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
             <path d={bottomBeakD} fill="#ff9f1c" stroke="#0c0f1d" strokeWidth="2" />
             {/* Top Beak */}
             <path d={topBeakD} fill="#ff9f1c" stroke="#0c0f1d" strokeWidth="2" />
+
+            {/* Chaos Accessories */}
+            {isChaosMode && (
+              <g>
+                {/* Temple/Arm */}
+                <path d="M 42 38 Q 32 36 28 42" stroke="#0c0f1d" strokeWidth="2.5" fill="none" />
+                {/* Lens */}
+                <polygon points="40,35 56,35 53,46 43,46" fill="#000000" stroke="#0c0f1d" strokeWidth="2.2" />
+                {/* Lens reflection */}
+                <line x1="44" y1="37" x2="48" y2="43" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" />
+              </g>
+            )}
+
+            {isChaosMode && (
+              <g transform="translate(62, 45) rotate(20)">
+                {/* Knife Handle (hilt) */}
+                <rect x="-14" y="-3" width="14" height="6" rx="1.5" fill="#704214" stroke="#0c0f1d" strokeWidth="1.5" />
+                {/* Guard */}
+                <rect x="0" y="-6" width="3" height="12" rx="0.5" fill="#b0b0b0" stroke="#0c0f1d" strokeWidth="1.5" />
+                {/* Blade */}
+                <path d="M 3 -4 L 30 -4 C 30 -4, 34 2, 28 3 L 3 3 Z" fill="#d0d0d0" stroke="#0c0f1d" strokeWidth="1.8" />
+                {/* Blade cutting edge reflection */}
+                <path d="M 4 2 L 27 2" stroke="#ffffff" strokeWidth="1" />
+              </g>
+            )}
 
             {/* Fake Cursor in the Beak */}
             {(heistState === 'holding' || heistState === 'retreating') && (
