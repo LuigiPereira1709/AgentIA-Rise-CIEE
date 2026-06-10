@@ -5,6 +5,42 @@ import { FloatingChatWidget } from './chat/FloatingChatWidget';
 import { GooseMascot } from './GooseMascot';
 import styles from './RegistrationForm.module.css';
 
+const GooseHeadIcon: React.FC<{ isChaos?: boolean }> = ({ isChaos = false }) => {
+  return (
+    <svg 
+      viewBox="22 20 66 48" 
+      width="24" 
+      height="18" 
+      style={{ overflow: 'visible' }}
+    >
+      {/* Head */}
+      <circle 
+        cx="46" 
+        cy="44" 
+        r="18" 
+        fill="#ffffff" 
+        stroke="#0c0f1d" 
+        strokeWidth="2.5" 
+      />
+      {/* Cheek / Blush */}
+      <circle cx="38" cy="50" r="3.5" fill="rgba(255, 90, 95, 0.4)" />
+      
+      {/* Eye */}
+      {isChaos ? (
+        <path d="M 42 38 L 50 44" stroke="#000000" strokeWidth="2.5" strokeLinecap="round" />
+      ) : (
+        <circle cx="48" cy="40" r="2.5" fill="#000000" />
+      )}
+
+      {/* Beak */}
+      {/* Bottom Beak */}
+      <path d="M 60 46 Q 74 48 81 48 Q 68 48 60 46 Z" fill="#ff9f1c" stroke="#0c0f1d" strokeWidth="2" />
+      {/* Top Beak */}
+      <path d="M 60 38 Q 78 40 85 44 Q 70 48 60 46 Z" fill="#ff9f1c" stroke="#0c0f1d" strokeWidth="2" />
+    </svg>
+  );
+};
+
 interface RegistrationFormProps {
   onBackToChat: () => void;
 }
@@ -268,7 +304,8 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
         <div className={styles.navMischiefMeter}>
           <div className={styles.navMischiefHeader}>
             <span className={styles.navMischiefTitle}>
-              {isChaosMode ? "👿 Ganso no MODO CAOS!" : "🦆 Travessura do Ganso"}
+              <GooseHeadIcon isChaos={isChaosMode} />
+              {isChaosMode ? "Ganso no MODO CAOS!" : "Travessura do Ganso"}
             </span>
             <div className={styles.mischiefControls}>
               <button 
