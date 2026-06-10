@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button, Input, Field, Text, Card, Avatar } from '@fluentui/react-components';
 import { ArrowLeft24Regular, Person24Regular, Mail24Regular, Board24Regular, Briefcase24Regular, CheckmarkCircle24Filled } from '@fluentui/react-icons';
 import { FloatingChatWidget } from './chat/FloatingChatWidget';
+import { AlienMascot } from './AlienMascot';
 import styles from './RegistrationForm.module.css';
 
 interface RegistrationFormProps {
@@ -216,6 +217,9 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
 
       {/* Floating Chatbot Widget */}
       <FloatingChatWidget />
+
+      {/* Alien Mascot (Zoggy) */}
+      <AlienMascot />
     </div>
   );
 };
