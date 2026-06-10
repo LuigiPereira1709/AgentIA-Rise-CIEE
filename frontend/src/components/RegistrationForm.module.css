@@ -19,6 +19,7 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   flex-shrink: 0;
+  position: relative;
 }
 
 .navLeft {
@@ -273,34 +274,37 @@
   }
 }
 
-/* Goose Mischief Meter */
-.formMischiefMeter {
-  padding: 16px 20px 8px 20px;
+/* Goose Mischief Meter in Navbar */
+.navMischiefMeter {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  gap: 4px;
+  width: 320px;
+  justify-content: center;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
-.mischiefHeader {
+.navMischiefHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
-.mischiefTitle {
+.navMischiefTitle {
   color: #ff9f1c;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   transition: color 0.3s ease;
 }
 
-.formMischiefMeter:has(.chaosFill) .mischiefTitle {
+.navMischiefMeter:has(.chaosFill) .navMischiefTitle {
   color: #ff3e3e;
   animation: pulseChaosText 0.6s infinite alternate;
 }
@@ -310,22 +314,22 @@
   to { text-shadow: 0 0 12px rgba(255, 62, 62, 0.9); }
 }
 
-.mischiefPercent {
+.navMischiefPercent {
   color: #8f9bba;
 }
 
-.mischiefTrack {
-  height: 8px;
+.navMischiefTrack {
+  height: 6px;
   background: rgba(255, 255, 255, 0.05);
-  border-radius: 4px;
+  border-radius: 3px;
   overflow: hidden;
   position: relative;
 }
 
-.mischiefFill {
+.navMischiefFill {
   height: 100%;
   background: linear-gradient(to right, #ff9f1c, #ff3e3e);
-  border-radius: 4px;
+  border-radius: 3px;
   transition: width 0.3s ease-out;
   box-shadow: 0 0 8px rgba(255, 159, 28, 0.5);
 }
@@ -339,4 +343,35 @@
 @keyframes pulseChaosBar {
   from { filter: brightness(1); }
   to { filter: brightness(1.3); }
+}
+
+.mischiefControls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.soundToggleButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  border-radius: 4px;
+  outline: none;
+  color: #a0a0b0;
+}
+
+.soundToggleButton:hover {
+  transform: scale(1.15);
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.soundToggleButton:active {
+  transform: scale(0.9);
 }

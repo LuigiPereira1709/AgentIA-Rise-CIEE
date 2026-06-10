@@ -263,6 +263,33 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
             Solicitação de Credenciais
           </Text>
         </div>
+
+        {/* Centralized Goose Mischief Meter & Controls */}
+        <div className={styles.navMischiefMeter}>
+          <div className={styles.navMischiefHeader}>
+            <span className={styles.navMischiefTitle}>
+              {isChaosMode ? "👿 Ganso no MODO CAOS!" : "🦆 Travessura do Ganso"}
+            </span>
+            <div className={styles.mischiefControls}>
+              <button 
+                type="button"
+                className={styles.soundToggleButton}
+                onClick={() => setIsMuted(!isMuted)}
+                title={isMuted ? "Ativar som do ganso" : "Silenciar ganso"}
+              >
+                {isMuted ? "🔇" : "🔊"}
+              </button>
+              <span className={styles.mischiefPercent}>{mischiefLevel}%</span>
+            </div>
+          </div>
+          <div className={styles.navMischiefTrack}>
+            <div 
+              className={`${styles.navMischiefFill} ${isChaosMode ? styles.chaosFill : ''}`} 
+              style={{ width: `${mischiefLevel}%` }} 
+            />
+          </div>
+        </div>
+
         <div className={styles.navRight}>
           <Avatar size={32} name="User" image={{ src: '/Avatar_Default.svg' }} />
         </div>
@@ -286,32 +313,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
 
           {!isSubmitted ? (
             <Card className={`${styles.formCard} ${isShaking ? styles.shake : ''}`} appearance="filled">
-              {/* Goose Mischief Meter */}
-              <div className={styles.formMischiefMeter}>
-                <div className={styles.mischiefHeader}>
-                  <span className={styles.mischiefTitle}>
-                    {isChaosMode ? "👿 Ganso no MODO CAOS!" : "🦆 Travessura do Ganso"}
-                  </span>
-                  <div className={styles.mischiefControls}>
-                    <button 
-                      type="button"
-                      className={styles.soundToggleButton}
-                      onClick={() => setIsMuted(!isMuted)}
-                      title={isMuted ? "Ativar som do ganso" : "Silenciar ganso"}
-                    >
-                      {isMuted ? "🔇" : "🔊"}
-                    </button>
-                    <span className={styles.mischiefPercent}>{mischiefLevel}%</span>
-                  </div>
-                </div>
-                <div className={styles.mischiefTrack}>
-                  <div 
-                    className={`${styles.mischiefFill} ${isChaosMode ? styles.chaosFill : ''}`} 
-                    style={{ width: `${mischiefLevel}%` }} 
-                  />
-                </div>
-              </div>
-
               <div className={styles.cardHeader}>
                 <h2 className={styles.formTitle}>Formulário de Cadastro</h2>
                 <p className={styles.formSubtitle}>
