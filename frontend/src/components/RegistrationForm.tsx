@@ -107,6 +107,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
   const [focusedField, setFocusedField] = useState<'name' | 'email' | 'organization' | 'role' | null>(null);
   const [mischiefLevel, setMischiefLevel] = useState(20);
   const [isChaosMode, setIsChaosMode] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const [clickCount, setClickCount] = useState(0);
 
   const nameFocusTimeRef = useRef<number | null>(null);
@@ -121,7 +122,9 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
 
     const achievement = ACHIEVEMENTS[id];
     if (achievement) {
-      playAchievementSound();
+      if (!isMuted) {
+        playAchievementSound();
+      }
 
       const toastId = `${id}-${Date.now()}`;
       setActiveToasts((currentToasts) => [
@@ -139,7 +142,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
         setActiveToasts((currentToasts) => currentToasts.filter((t) => t.id !== toastId));
       }, 5000);
     }
-  }, []);
+  }, [isMuted]);
 
   // Listen to chatbot messages
   useEffect(() => {
@@ -278,6 +281,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
               setMischiefLevel(level);
               setIsChaosMode(isChaos);
             }}
+            isMuted={isMuted}
           />
 
           {!isSubmitted ? (
@@ -288,7 +292,17 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
                   <span className={styles.mischiefTitle}>
                     {isChaosMode ? "👿 Ganso no MODO CAOS!" : "🦆 Travessura do Ganso"}
                   </span>
-                  <span className={styles.mischiefPercent}>{mischiefLevel}%</span>
+                  <div className={styles.mischiefControls}>
+                    <button 
+                      type="button"
+                      className={styles.soundToggleButton}
+                      onClick={() => setIsMuted(!isMuted)}
+                      title={isMuted ? "Ativar som do ganso" : "Silenciar ganso"}
+                    >
+                      {isMuted ? "🔇" : "🔊"}
+                    </button>
+                    <span className={styles.mischiefPercent}>{mischiefLevel}%</span>
+                  </div>
                 </div>
                 <div className={styles.mischiefTrack}>
                   <div 
