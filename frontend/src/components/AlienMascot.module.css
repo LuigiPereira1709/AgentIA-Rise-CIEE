@@ -1,43 +1,240 @@
-.mascotContainer {
-  position: fixed;
-  bottom: 24px;
-  left: 24px;
-  z-index: 9998;
+.alienContainer {
+  position: absolute;
+  left: -135px;
+  bottom: 80px;
+  width: 110px;
+  height: 110px;
+  z-index: 10;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  pointer-events: none; /* Let clicks pass through empty spaces of container */
-  animation: slideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  align-items: center;
+  pointer-events: none;
+  animation: slideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.alienImage {
-  width: 105px;
-  height: 105px;
+/* On mobile: place the alien above the form card, centered */
+@media (max-width: 900px) {
+  .alienContainer {
+    position: relative;
+    left: auto;
+    bottom: auto;
+    margin: 0 auto 20px auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: auto;
+    animation: fadeIn 0.6s ease forwards;
+  }
+}
+
+.alienCharacter {
+  position: relative;
+  width: 110px;
+  height: 110px;
   cursor: pointer;
   pointer-events: auto;
   user-select: none;
-  filter: drop-shadow(0 4px 12px rgba(83, 168, 182, 0.4));
-  animation: float 3s ease-in-out infinite;
+  animation: float 4s ease-in-out infinite;
   transition: transform 0.2s ease;
 }
 
-.alienImage:hover {
-  transform: scale(1.05) rotate(5deg);
+.alienCharacter:hover {
+  transform: scale(1.08);
 }
 
+/* Head */
+.alienHead {
+  position: absolute;
+  width: 86px;
+  height: 72px;
+  left: 12px;
+  top: 24px;
+  background: linear-gradient(135deg, #00ff87 0%, #60efff 100%);
+  border-radius: 50% 50% 45% 45%;
+  box-shadow: 0 0 20px rgba(96, 239, 255, 0.5), inset 0 -4px 8px rgba(0, 0, 0, 0.2);
+  z-index: 2;
+  border: 2px solid #0c0f1d;
+}
+
+/* Eyes */
+.eyeLeft, .eyeRight {
+  position: absolute;
+  top: 20px;
+  width: 24px;
+  height: 30px;
+  background-color: #0c0f1d;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.eyeLeft {
+  left: 14px;
+  transform: rotate(-8deg);
+}
+
+.eyeRight {
+  right: 14px;
+  transform: rotate(8deg);
+}
+
+.eyePupil {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.eyeHighlightLarge {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 9px;
+  height: 9px;
+  background-color: #ffffff;
+  border-radius: 50%;
+}
+
+.eyeHighlightSmall {
+  position: absolute;
+  top: 14px;
+  left: 12px;
+  width: 4px;
+  height: 4px;
+  background-color: #ffffff;
+  border-radius: 50%;
+}
+
+/* Blush */
+.blushLeft, .blushRight {
+  position: absolute;
+  top: 44px;
+  width: 10px;
+  height: 6px;
+  background-color: rgba(255, 64, 129, 0.4);
+  border-radius: 50%;
+}
+
+.blushLeft {
+  left: 12px;
+}
+
+.blushRight {
+  right: 12px;
+}
+
+/* Smile */
+.alienSmile {
+  position: absolute;
+  bottom: 14px;
+  left: calc(50% - 8px);
+  width: 16px;
+  height: 8px;
+  border-bottom: 3px solid #0c0f1d;
+  border-radius: 0 0 10px 10px;
+}
+
+/* Antennas */
+.antennas {
+  position: absolute;
+  top: 0;
+  width: 100%;
+  z-index: 1;
+}
+
+.antennaLeft, .antennaRight {
+  position: absolute;
+  width: 20px;
+  height: 30px;
+}
+
+.antennaLeft {
+  left: 20px;
+  transform: rotate(-25deg);
+}
+
+.antennaRight {
+  right: 20px;
+  transform: rotate(25deg);
+}
+
+.antennaStalk {
+  position: absolute;
+  bottom: 0;
+  left: 8px;
+  width: 6px;
+  height: 22px;
+  background: linear-gradient(to top, #00ff87, #60efff);
+  border: 1.5px solid #0c0f1d;
+  border-bottom: none;
+  border-radius: 3px 3px 0 0;
+}
+
+.antennaBulb {
+  position: absolute;
+  top: 0;
+  left: 4px;
+  width: 14px;
+  height: 14px;
+  background: #60efff;
+  border: 1.5px solid #0c0f1d;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #60efff;
+  animation: glowPulse 2s ease-in-out infinite alternate;
+}
+
+/* Body */
+.alienBody {
+  position: absolute;
+  width: 50px;
+  height: 32px;
+  left: 30px;
+  top: 85px;
+  background: linear-gradient(180deg, #00ff87 0%, #009955 100%);
+  border: 2px solid #0c0f1d;
+  border-radius: 16px 16px 4px 4px;
+  z-index: 1;
+}
+
+.alienArmLeft {
+  position: absolute;
+  width: 12px;
+  height: 24px;
+  left: -8px;
+  top: 2px;
+  background: #00ee76;
+  border: 2px solid #0c0f1d;
+  border-radius: 6px;
+  transform: rotate(25deg);
+}
+
+.alienArmRightWave {
+  position: absolute;
+  width: 12px;
+  height: 24px;
+  right: -8px;
+  top: 2px;
+  background: #60efff;
+  border: 2px solid #0c0f1d;
+  border-radius: 6px;
+  transform-origin: 50% 10%;
+  animation: waveArm 2.5s ease-in-out infinite;
+}
+
+/* Speech Bubble styling */
 .speechBubble {
   position: absolute;
-  bottom: 115px;
-  left: 10px;
-  width: 250px;
+  bottom: 125px; /* Floats above Zoggy */
+  width: 260px;
   padding: 12px 14px !important;
   background: rgba(17, 20, 36, 0.95) !important;
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(83, 168, 182, 0.3) !important;
-  border-radius: 12px !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 16px rgba(83, 168, 182, 0.15) !important;
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(96, 239, 255, 0.3) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 20px rgba(96, 239, 255, 0.15) !important;
   pointer-events: auto;
   animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  display: flex;
+  flex-direction: column;
 }
 
 .bubbleHeader {
@@ -49,9 +246,9 @@
 
 .alienName {
   font-size: 11px;
-  color: #53a8b6;
+  color: #60efff;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
 }
 
 .closeButton {
@@ -68,44 +265,39 @@
 
 .phraseText {
   margin: 0;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.4;
   color: #e0e0e0;
 }
 
-/* Arrow pointing from bubble to the alien */
 .bubbleArrow {
   position: absolute;
   bottom: -6px;
-  left: 40px;
+  left: calc(50% - 6px); /* Center arrow */
   width: 12px;
   height: 12px;
   background: #111424;
-  border-right: 1px solid rgba(83, 168, 182, 0.3);
-  border-bottom: 1px solid rgba(83, 168, 182, 0.3);
+  border-right: 1px solid rgba(96, 239, 255, 0.3);
+  border-bottom: 1px solid rgba(96, 239, 255, 0.3);
   transform: rotate(45deg);
-  box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.2);
 }
 
-@keyframes slideIn {
+/* Animations */
+@keyframes glowPulse {
   from {
-    opacity: 0;
-    transform: translateX(-150px) rotate(-10deg);
+    box-shadow: 0 0 6px #60efff, inset 0 0 4px rgba(255, 255, 255, 0.5);
   }
   to {
-    opacity: 1;
-    transform: translateX(0) rotate(0);
+    box-shadow: 0 0 16px #00ff87, inset 0 0 8px rgba(255, 255, 255, 0.8);
   }
 }
 
-@keyframes popIn {
-  from {
-    opacity: 0;
-    transform: scale(0.8) translateY(10px);
+@keyframes waveArm {
+  0%, 100% {
+    transform: rotate(-20deg);
   }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
+  50% {
+    transform: rotate(-80deg);
   }
 }
 
@@ -114,21 +306,57 @@
     transform: translateY(0px);
   }
   50% {
-    transform: translateY(-6px);
+    transform: translateY(-8px);
   }
   100% {
     transform: translateY(0px);
   }
 }
 
-/* Responsive adjustments */
-@media (max-width: 480px) {
-  .speechBubble {
-    width: 200px;
-    bottom: 95px;
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50px) translateY(20px);
   }
-  .alienImage {
-    width: 80px;
-    height: 80px;
+  to {
+    opacity: 1;
+    transform: translateX(0) translateY(0);
   }
 }
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8) translateY(10px) translateX(-50%);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0) translateX(-50%);
+  }
+}
+
+/* Override popIn for mobile when centering is active */
+@media (max-width: 900px) {
+  @keyframes popIn {
+    from {
+      opacity: 0;
+      transform: scale(0.8) translateY(10px) translateX(-50%);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0) translateX(-50%);
+    }
+  }
+}
+

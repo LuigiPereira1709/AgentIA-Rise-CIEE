@@ -107,6 +107,9 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
       {/* Main Content */}
       <main className={styles.mainContent}>
         <div className={styles.formWrapper}>
+          {/* Alien Mascot (Zoggy) */}
+          <AlienMascot />
+
           {!isSubmitted ? (
             <Card className={styles.formCard} appearance="filled">
               <div className={styles.cardHeader}>
@@ -217,9 +220,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
 
       {/* Floating Chatbot Widget */}
       <FloatingChatWidget />
-
-      {/* Alien Mascot (Zoggy) */}
-      <AlienMascot />
     </div>
   );
 };
