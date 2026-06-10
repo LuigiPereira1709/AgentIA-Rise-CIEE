@@ -59,6 +59,7 @@ export const FloatingChatWidget: React.FC = () => {
     if (!inputText.trim() || isBusy) return;
     const textToSend = inputText;
     setInputText('');
+    window.dispatchEvent(new Event('chat_message_sent'));
     await sendMessage(textToSend);
   };
 
@@ -70,6 +71,7 @@ export const FloatingChatWidget: React.FC = () => {
   };
 
   const handleStarterPrompt = async (prompt: string) => {
+    window.dispatchEvent(new Event('chat_message_sent'));
     await sendMessage(prompt);
   };
 

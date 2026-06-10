@@ -3,6 +3,8 @@ import styles from './GooseMascot.module.css';
 
 interface GooseMascotProps {
   onHonk?: () => void;
+  focusedField?: 'name' | 'email' | 'organization' | 'role' | null;
+  onUnlockHeistAchievement?: () => void;
 }
 
 const GANSO_PHRASES = [
@@ -22,8 +24,35 @@ const GANSO_PHRASES = [
   "A gravidade na Terra é de 9.8m/s²,\nmas a paciência do ganso é de 0."
 ];
 
-export const GooseMascot: React.FC<GooseMascotProps> = ({ onHonk }) => {
-  const [side, setSide] = useState<'left' | 'right' | 'top' | 'hidden'>('hidden');
+const FIELD_HINTS = {
+  name: [
+    "Como se chama o seu avatar humano? 👤",
+    "Preencha o nome completo sem apelidos de pato! 🦆",
+    "Nome lindo! Quase tão bonito quanto 'Ganso'!"
+  ],
+  email: [
+    "Preciso do seu e-mail corporativo. Sem spam! 📧",
+    "Não tente inventar, eu vou de olho nesse e-mail! 🔍",
+    "Um e-mail para te mandar novidades sobre pão."
+  ],
+  organization: [
+    "Onde você trabalha? Patrocinam seu trigo? 🌾",
+    "Qual empresa te paga para preencher formulários? 🏢",
+    "Escreva o nome da sua organização ou bando."
+  ],
+  role: [
+    "Você faz o quê? Eu sou Especialista em Anarquia. 💼",
+    "Qual o seu cargo oficial na firma? 👔",
+    "Escreva sua profissão. Engenheiro de Honks?"
+  ]
+};
+
+export const GooseMascot: React.FC<GooseMascotProps> = ({ 
+  onHonk, 
+  focusedField, 
+  onUnlockHeistAchievement 
+}) => {
+  const [side, setSide] = useState<'left' | 'right' | 'top'>('left');
   const [isHonking, setIsHonking] = useState(false);
   const [eyeState, setEyeState] = useState<'normal' | 'angry' | 'wink' | 'closed'>('normal');
   const [speechBubble, setSpeechBubble] = useState<string | null>(null);
@@ -95,16 +124,15 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({ onHonk }) => {
         // Close beak after 600ms
         setTimeout(() => setIsHonking(false), 600);
 
-        // Slide back after 5 seconds
+        // Clear speech bubble after 5 seconds
         timerRef.current = setTimeout(() => {
           setSpeechBubble(null);
-          setSide('hidden');
         }, 5000);
       }, 1000);
     }
   }, [onHonk]);
 
-  // Periodically trigger the goose (every 18 seconds, 55% chance)
+  // Periodically trigger a random speech bubble or heist
   useEffect(() => {
     // Initial delay before first check
     const initialTimer = setTimeout(() => {
@@ -112,8 +140,23 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({ onHonk }) => {
     }, 4000);
 
     const interval = setInterval(() => {
-      if (side === 'hidden' && Math.random() < 0.55) {
-        triggerGoosePeek();
+      if (heistState === 'idle' && !focusedField) {
+        const rand = Math.random();
+        if (rand < 0.15) {
+          // 15% chance of initiating cursor heist
+          triggerGoosePeek();
+        } else if (rand < 0.45) {
+          // 30% chance of a random cheeky remark
+          const phrase = GANSO_PHRASES[Math.floor(Math.random() * GANSO_PHRASES.length)];
+          setSpeechBubble(phrase);
+          setIsHonking(true);
+          setEyeState('normal');
+          if (onHonk) onHonk();
+
+          setTimeout(() => setIsHonking(false), 600);
+          if (timerRef.current) clearTimeout(timerRef.current);
+          timerRef.current = setTimeout(() => setSpeechBubble(null), 5000);
+        }
       }
     }, 18000);
 
@@ -122,7 +165,7 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({ onHonk }) => {
       clearInterval(interval);
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [side, triggerGoosePeek]);
+  }, [heistState, focusedField, triggerGoosePeek, onHonk]);
 
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -148,20 +191,53 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({ onHonk }) => {
       setIsHonking(false);
     }, 500);
 
-    // Slide back after 3 seconds
+    // Clear speech bubble and reset eye state after 3 seconds
     timerRef.current = setTimeout(() => {
       setSpeechBubble(null);
       setEyeState('normal');
-      setSide('hidden');
     }, 3000);
   }, [side, onHonk]);
 
-  // Handle drag resetting when hidden
+  // Handle field focus and slide to it
   useEffect(() => {
+    if (!focusedField || heistState !== 'idle') return;
+
+    // Find the input element
+    const inputEl = document.getElementById(`field-${focusedField}`);
+    if (!inputEl || !containerRef.current) return;
+
+    const parent = containerRef.current.parentElement;
+    if (!parent) return;
+
+    const parentRect = parent.getBoundingClientRect();
+    const inputRect = inputEl.getBoundingClientRect();
+
+    // Calculate vertical position relative to parent formWrapper
+    const relativeTop = inputRect.top - parentRect.top;
+    const gansoHeadOffset = 44; // aligns ganso head center with input center
+    const inputCenterY = relativeTop + inputRect.height / 2;
+    const targetTop = inputCenterY - gansoHeadOffset;
+
+    // Set baseCoord
+    setBaseCoord(Math.max(10, Math.min(parentRect.height - 110, targetTop)));
+
+    // Peek from the left if hidden
     if (side === 'hidden') {
-      setDragOffset({ x: 0, y: 0 });
+      setSide('left');
     }
-  }, [side]);
+
+    // Set a field-specific hint
+    const hints = FIELD_HINTS[focusedField];
+    const chosenHint = hints[Math.floor(Math.random() * hints.length)];
+    setSpeechBubble(chosenHint);
+    setEyeState('normal');
+
+    // Keep beak open briefly to mimic speaking
+    setIsHonking(true);
+    const timer = setTimeout(() => setIsHonking(false), 500);
+
+    return () => clearTimeout(timer);
+  }, [focusedField, heistState, side]);
 
   // Handle mouse and touch events for dragging
   useEffect(() => {
@@ -277,11 +353,10 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({ onHonk }) => {
       setSide(closestSide);
       setDragOffset({ x: 0, y: 0 });
 
-      // After 2.5 seconds, slide it back into hiding
+      // After 2.5 seconds, clear speech bubble
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => {
         setSpeechBubble(null);
-        setSide('hidden');
       }, 2500);
     };
 
@@ -335,7 +410,6 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({ onHonk }) => {
 
     const restore = () => {
       setHeistState('idle');
-      setSide('hidden');
       setSpeechBubble(null);
       setEyeState('normal');
       const styleElement = document.getElementById('goose-cursor-hide');
@@ -397,6 +471,10 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({ onHonk }) => {
           setIsHonking(true);
           setEyeState('angry');
 
+          if (onUnlockHeistAchievement) {
+            onUnlockHeistAchievement();
+          }
+
           // Hide real cursor
           document.body.style.cursor = 'none';
           const style = document.createElement('style');
@@ -423,7 +501,6 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({ onHonk }) => {
         const dist = Math.hypot(currentX, currentY);
         if (dist < 5) {
           setHeistState('idle');
-          setSide('hidden');
           setSpeechBubble(null);
           setEyeState('normal');
 

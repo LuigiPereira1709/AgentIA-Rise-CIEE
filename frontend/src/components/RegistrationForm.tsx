@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button, Input, Field, Text, Card, Avatar } from '@fluentui/react-components';
 import { ArrowLeft24Regular, Person24Regular, Mail24Regular, Board24Regular, Briefcase24Regular, CheckmarkCircle24Filled } from '@fluentui/react-icons';
 import { FloatingChatWidget } from './chat/FloatingChatWidget';
@@ -8,6 +8,73 @@ import styles from './RegistrationForm.module.css';
 interface RegistrationFormProps {
   onBackToChat: () => void;
 }
+
+interface Achievement {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+}
+
+const ACHIEVEMENTS: Record<string, Achievement> = {
+  speed: {
+    id: 'speed',
+    title: '⚡ Digitador Veloz',
+    description: 'Preencheu o nome completo em menos de 4 segundos!',
+    icon: '⚡'
+  },
+  duck_friend: {
+    id: 'duck_friend',
+    title: '🦆 Amigo dos Animais',
+    description: 'Fez carinho ou irritou o ganso 5 vezes.',
+    icon: '🦆'
+  },
+  heist_victim: {
+    id: 'heist_victim',
+    title: '🛡️ Paciente Otimista',
+    description: 'Sobreviveu a um roubo de cursor sem reclamar.',
+    icon: '🛡️'
+  },
+  curious: {
+    id: 'curious',
+    title: '💡 Investigador',
+    description: 'Pesquisou/perguntou algo no assistente de chat.',
+    icon: '💡'
+  }
+};
+
+const playAchievementSound = () => {
+  try {
+    const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    const now = ctx.currentTime;
+    
+    // Retro arpeggio chime (C5 -> E5 -> G5 -> C6)
+    const notes = [523.25, 659.25, 783.99, 1046.50];
+    
+    notes.forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+      
+      // Volume envelope
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.12, now + idx * 0.08 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.25);
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.start(now + idx * 0.08);
+      osc.stop(now + idx * 0.08 + 0.3);
+    });
+  } catch (e) {
+    console.error("Audio Context failed:", e);
+  }
+};
 
 export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat }) => {
   const [formData, setFormData] = useState({
@@ -28,16 +95,82 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isShaking, setIsShaking] = useState(false);
 
+  // Gamification states
+  const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
+  const [activeToasts, setActiveToasts] = useState<{ id: string; title: string; description: string; icon: string }[]>([]);
+  const [focusedField, setFocusedField] = useState<'name' | 'email' | 'organization' | 'role' | null>(null);
+  const [clickCount, setClickCount] = useState(0);
+
+  const nameFocusTimeRef = useRef<number | null>(null);
+  const nameUnlockedRef = useRef(false);
+  const unlockedRef = useRef<string[]>([]);
+
+  const unlockAchievement = useCallback((id: string) => {
+    if (unlockedRef.current.includes(id)) return;
+    unlockedRef.current.push(id);
+
+    setUnlockedAchievements((prev) => [...prev, id]);
+
+    const achievement = ACHIEVEMENTS[id];
+    if (achievement) {
+      playAchievementSound();
+
+      const toastId = `${id}-${Date.now()}`;
+      setActiveToasts((currentToasts) => [
+        ...currentToasts,
+        {
+          id: toastId,
+          title: achievement.title,
+          description: achievement.description,
+          icon: achievement.icon,
+        },
+      ]);
+
+      // Auto-remove toast after 5 seconds
+      setTimeout(() => {
+        setActiveToasts((currentToasts) => currentToasts.filter((t) => t.id !== toastId));
+      }, 5000);
+    }
+  }, []);
+
+  // Listen to chatbot messages
+  useEffect(() => {
+    const handleChatSent = () => {
+      unlockAchievement('curious');
+    };
+    window.addEventListener('chat_message_sent', handleChatSent);
+    return () => window.removeEventListener('chat_message_sent', handleChatSent);
+  }, [unlockAchievement]);
+
   const handleGooseHonk = () => {
     setIsShaking(true);
     setTimeout(() => {
       setIsShaking(false);
     }, 350);
+
+    setClickCount((prev) => {
+      const nextCount = prev + 1;
+      if (nextCount >= 5) {
+        unlockAchievement('duck_friend');
+      }
+      return nextCount;
+    });
   };
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     setFormErrors((prev) => ({ ...prev, [field]: '' }));
+
+    // Speed typing check
+    if (field === 'name' && nameFocusTimeRef.current && !nameUnlockedRef.current) {
+      if (value.trim().length > 6 && value.trim().includes(' ')) {
+        const duration = Date.now() - nameFocusTimeRef.current;
+        if (duration < 4000) {
+          nameUnlockedRef.current = true;
+          unlockAchievement('speed');
+        }
+      }
+    }
   };
 
   const validateForm = () => {
@@ -68,6 +201,15 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
     }
 
     setFormErrors(errors);
+
+    // Auto-focus first field with error to slide the goose there
+    if (!valid) {
+      if (errors.name) setFocusedField('name');
+      else if (errors.email) setFocusedField('email');
+      else if (errors.organization) setFocusedField('organization');
+      else if (errors.role) setFocusedField('role');
+    }
+
     return valid;
   };
 
@@ -87,6 +229,9 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
   const handleReset = () => {
     setFormData({ name: '', email: '', organization: '', role: '' });
     setIsSubmitted(false);
+    nameFocusTimeRef.current = null;
+    nameUnlockedRef.current = false;
+    unlockedRef.current = [];
   };
 
   return (
@@ -116,7 +261,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
       <main className={styles.mainContent}>
         <div className={styles.formWrapper}>
           {/* Goose Mascot (Desktop Goose style) */}
-          <GooseMascot onHonk={handleGooseHonk} />
+          <GooseMascot 
+            onHonk={handleGooseHonk} 
+            focusedField={focusedField}
+            onUnlockHeistAchievement={() => unlockAchievement('heist_victim')}
+          />
 
           {!isSubmitted ? (
             <Card className={`${styles.formCard} ${isShaking ? styles.shake : ''}`} appearance="filled">
@@ -136,9 +285,17 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
                   validationState={formErrors.name ? 'error' : 'none'}
                 >
                   <Input
+                    id="field-name"
                     contentBefore={<Person24Regular />}
                     value={formData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
+                    onFocus={() => {
+                      setFocusedField('name');
+                      if (!nameFocusTimeRef.current) {
+                        nameFocusTimeRef.current = Date.now();
+                      }
+                    }}
+                    onBlur={() => setFocusedField(null)}
                     placeholder="Ex: João Silva"
                     disabled={isSubmitting}
                   />
@@ -152,10 +309,13 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
                   validationState={formErrors.email ? 'error' : 'none'}
                 >
                   <Input
+                    id="field-email"
                     contentBefore={<Mail24Regular />}
                     type="email"
                     value={formData.email}
                     onChange={(e) => handleInputChange('email', e.target.value)}
+                    onFocus={() => setFocusedField('email')}
+                    onBlur={() => setFocusedField(null)}
                     placeholder="Ex: joao.silva@empresa.com"
                     disabled={isSubmitting}
                   />
@@ -169,9 +329,12 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
                   validationState={formErrors.organization ? 'error' : 'none'}
                 >
                   <Input
+                    id="field-organization"
                     contentBefore={<Board24Regular />}
                     value={formData.organization}
                     onChange={(e) => handleInputChange('organization', e.target.value)}
+                    onFocus={() => setFocusedField('organization')}
+                    onBlur={() => setFocusedField(null)}
                     placeholder="Ex: Minha Empresa LTDA"
                     disabled={isSubmitting}
                   />
@@ -185,9 +348,12 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
                   validationState={formErrors.role ? 'error' : 'none'}
                 >
                   <Input
+                    id="field-role"
                     contentBefore={<Briefcase24Regular />}
                     value={formData.role}
                     onChange={(e) => handleInputChange('role', e.target.value)}
+                    onFocus={() => setFocusedField('role')}
+                    onBlur={() => setFocusedField(null)}
                     placeholder="Ex: Engenheiro de Software"
                     disabled={isSubmitting}
                   />
@@ -228,6 +394,19 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
 
       {/* Floating Chatbot Widget */}
       <FloatingChatWidget />
+
+      {/* Toast Notifications */}
+      <div className={styles.toastContainer}>
+        {activeToasts.map((toast) => (
+          <div key={toast.id} className={styles.toastCard}>
+            <div className={styles.toastIcon}>{toast.icon}</div>
+            <div className={styles.toastText}>
+              <div className={styles.toastTitle}>{toast.title}</div>
+              <div className={styles.toastDesc}>{toast.description}</div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
