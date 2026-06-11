@@ -252,9 +252,12 @@ export const GooseJourney: React.FC<GooseJourneyProps> = ({
                 </div>
               )}
 
-              {/* ── Connector ── */}
+              {/* ── Connectors ── */}
               {idx < PHASES.length - 1 && (
-                <div className={`${styles.connector} ${isCompleted ? styles.connectorDone : ''}`} />
+                <>
+                  <div className={`${styles.connector} ${isCompleted ? styles.connectorDone : ''}`} />
+                  <div className={`${styles.connectorRight} ${isCompleted ? styles.connectorDone : ''}`} />
+                </>
               )}
             </div>
           );

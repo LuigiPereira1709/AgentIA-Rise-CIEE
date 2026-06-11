@@ -339,6 +339,16 @@
   z-index: 1;
 }
 
+.connectorRight {
+  position: absolute;
+  bottom: -7px;
+  right: 22px;
+  width: 1px;
+  height: 7px;
+  background: rgba(255, 255, 255, 0.08);
+  z-index: 1;
+}
+
 .connectorDone {
   background: rgba(78, 237, 170, 0.3);
 }
