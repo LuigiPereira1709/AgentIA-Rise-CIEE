@@ -1,36 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button, Avatar } from '@fluentui/react-components';
-import { Dismiss24Regular, Send24Regular, Delete24Regular } from '@fluentui/react-icons';
+import { Chat24Regular, Dismiss24Regular, Send24Regular, Delete24Regular } from '@fluentui/react-icons';
 import { useLocalChat } from '../../hooks/useLocalChat';
 import { Markdown } from '../core/Markdown';
+import { GooseHeadIcon } from '../RegistrationForm';
 import styles from './FloatingChatWidget.module.css';
-
-// ── Goose FAB Icon ────────────────────────────────────────────────
-const GooseFabIcon: React.FC<{ isChaos?: boolean }> = ({ isChaos = false }) => (
-  <svg viewBox="0 0 80 80" width="32" height="32" style={{ overflow: 'visible' }}>
-    {/* Body */}
-    <ellipse cx="38" cy="52" rx="20" ry="14" fill="#ffffff" stroke="#0c0f1d" strokeWidth="2" />
-    {/* Wing hint */}
-    <path d="M 22 54 Q 28 60 38 58" fill="none" stroke="#e0e0e0" strokeWidth="1.5" />
-    {/* Neck */}
-    <path d="M 50 42 C 55 32 54 24 54 20" stroke="#ffffff" strokeWidth="7" strokeLinecap="round" fill="none" />
-    {/* Head */}
-    <circle cx="54" cy="17" r="10" fill="#ffffff" stroke="#0c0f1d" strokeWidth="2" />
-    {/* Eye */}
-    {isChaos
-      ? <path d="M 50 13 L 56 19" stroke="#000" strokeWidth="2" strokeLinecap="round" />
-      : <circle cx="57" cy="14" r="2" fill="#0c0f1d" />
-    }
-    {/* Beak */}
-    <path d="M 61 17 Q 73 17 76 19 Q 65 22 61 20 Z" fill="#ff9f1c" stroke="#0c0f1d" strokeWidth="1.5" />
-    {/* Legs */}
-    <line x1="32" y1="64" x2="30" y2="72" stroke="#ff9f1c" strokeWidth="2.5" strokeLinecap="round" />
-    <line x1="42" y1="65" x2="44" y2="73" stroke="#ff9f1c" strokeWidth="2.5" strokeLinecap="round" />
-    {/* Feet */}
-    <line x1="30" y1="72" x2="24" y2="72" stroke="#ff9f1c" strokeWidth="2" strokeLinecap="round" />
-    <line x1="44" y1="73" x2="50" y2="73" stroke="#ff9f1c" strokeWidth="2" strokeLinecap="round" />
-  </svg>
-);
 
 // ── Typing indicator (3 animated dots) ───────────────────────────
 const TypingIndicator: React.FC = () => (
@@ -179,7 +153,7 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
       >
         {isOpen
           ? <Dismiss24Regular style={{ color: '#ffffff', width: 22, height: 22 }} />
-          : <GooseFabIcon isChaos={isChaosMode} />
+          : <Chat24Regular style={{ color: '#ffffff', width: 24, height: 24 }} />
         }
         {/* Unread badge */}
         {hasUnread && !isOpen && <span className={styles.unreadBadge} />}
@@ -193,7 +167,9 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
           <div className={styles.chatHeader}>
             <div className={styles.headerTitle}>
               <div className={styles.avatarWrapper}>
-                <Avatar size={32} name="Assistente" className={styles.avatar} image={{ src: '/Avatar_Default.svg' }} />
+                <div className={styles.headIconContainer}>
+                  <GooseHeadIcon isChaos={isChaosMode} />
+                </div>
                 <span className={styles.onlineDot} />
               </div>
               <div>

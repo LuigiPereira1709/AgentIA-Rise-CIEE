@@ -6,7 +6,7 @@ import { GooseMascot } from './GooseMascot';
 import { GooseJourney } from './GooseJourney';
 import styles from './RegistrationForm.module.css';
 
-const GooseHeadIcon: React.FC<{ isChaos?: boolean }> = ({ isChaos = false }) => {
+export const GooseHeadIcon: React.FC<{ isChaos?: boolean }> = ({ isChaos = false }) => {
   return (
     <svg 
       viewBox="22 20 66 48" 
