@@ -1,88 +1,146 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Button, Card, Textarea, Avatar, Spinner } from '@fluentui/react-components';
-import { Chat24Regular, Dismiss24Regular, Send24Regular, Delete24Regular } from '@fluentui/react-icons';
+import { Button, Avatar } from '@fluentui/react-components';
+import { Dismiss24Regular, Send24Regular, Delete24Regular } from '@fluentui/react-icons';
 import { useLocalChat } from '../../hooks/useLocalChat';
 import { Markdown } from '../core/Markdown';
 import styles from './FloatingChatWidget.module.css';
 
-const GooseHeadIcon: React.FC<{ isChaos?: boolean }> = ({ isChaos = false }) => {
-  return (
-    <svg 
-      viewBox="22 20 66 48" 
-      width="28" 
-      height="22" 
-      style={{ overflow: 'visible' }}
-    >
-      {/* Head */}
-      <circle 
-        cx="46" 
-        cy="44" 
-        r="18" 
-        fill="#ffffff" 
-        stroke="#0c0f1d" 
-        strokeWidth="2.5" 
-      />
-      {/* Cheek / Blush */}
-      <circle cx="38" cy="50" r="3.5" fill="rgba(255, 90, 95, 0.4)" />
-      
-      {/* Eye */}
-      {isChaos ? (
-        <path d="M 42 38 L 50 44" stroke="#000000" strokeWidth="2.5" strokeLinecap="round" />
-      ) : (
-        <circle cx="48" cy="40" r="2.5" fill="#000000" />
-      )}
+// ── Goose FAB Icon ────────────────────────────────────────────────
+const GooseFabIcon: React.FC<{ isChaos?: boolean }> = ({ isChaos = false }) => (
+  <svg viewBox="0 0 80 80" width="32" height="32" style={{ overflow: 'visible' }}>
+    {/* Body */}
+    <ellipse cx="38" cy="52" rx="20" ry="14" fill="#ffffff" stroke="#0c0f1d" strokeWidth="2" />
+    {/* Wing hint */}
+    <path d="M 22 54 Q 28 60 38 58" fill="none" stroke="#e0e0e0" strokeWidth="1.5" />
+    {/* Neck */}
+    <path d="M 50 42 C 55 32 54 24 54 20" stroke="#ffffff" strokeWidth="7" strokeLinecap="round" fill="none" />
+    {/* Head */}
+    <circle cx="54" cy="17" r="10" fill="#ffffff" stroke="#0c0f1d" strokeWidth="2" />
+    {/* Eye */}
+    {isChaos
+      ? <path d="M 50 13 L 56 19" stroke="#000" strokeWidth="2" strokeLinecap="round" />
+      : <circle cx="57" cy="14" r="2" fill="#0c0f1d" />
+    }
+    {/* Beak */}
+    <path d="M 61 17 Q 73 17 76 19 Q 65 22 61 20 Z" fill="#ff9f1c" stroke="#0c0f1d" strokeWidth="1.5" />
+    {/* Legs */}
+    <line x1="32" y1="64" x2="30" y2="72" stroke="#ff9f1c" strokeWidth="2.5" strokeLinecap="round" />
+    <line x1="42" y1="65" x2="44" y2="73" stroke="#ff9f1c" strokeWidth="2.5" strokeLinecap="round" />
+    {/* Feet */}
+    <line x1="30" y1="72" x2="24" y2="72" stroke="#ff9f1c" strokeWidth="2" strokeLinecap="round" />
+    <line x1="44" y1="73" x2="50" y2="73" stroke="#ff9f1c" strokeWidth="2" strokeLinecap="round" />
+  </svg>
+);
 
-      {/* Beak */}
-      <path d="M 60 46 Q 74 48 81 48 Q 68 48 60 46 Z" fill="#ff9f1c" stroke="#0c0f1d" strokeWidth="2" />
-      <path d="M 60 38 Q 78 40 85 44 Q 70 48 60 46 Z" fill="#ff9f1c" stroke="#0c0f1d" strokeWidth="2" />
-    </svg>
-  );
+// ── Typing indicator (3 animated dots) ───────────────────────────
+const TypingIndicator: React.FC = () => (
+  <div className={styles.typingWrapper}>
+    <Avatar size={24} name="Assistente" className={styles.messageAvatar} image={{ src: '/Avatar_Default.svg' }} />
+    <div className={styles.typingBubble}>
+      <span className={styles.dot} />
+      <span className={styles.dot} />
+      <span className={styles.dot} />
+    </div>
+  </div>
+);
+
+// ── Contextual prompts per registration step ──────────────────────
+const STEP_PROMPTS: Record<number, { label: string; prompts: string[] }> = {
+  0: {
+    label: 'Dúvidas sobre Identidade',
+    prompts: [
+      'Posso usar meu e-mail pessoal?',
+      'Qual formato de nome devo usar?',
+      'Meu e-mail corporativo é obrigatório?'
+    ]
+  },
+  1: {
+    label: 'Dúvidas sobre Localização',
+    prompts: [
+      'Como preencher o campo Organização?',
+      'Devo usar o nome completo da empresa?',
+      'Posso colocar mais de uma empresa?'
+    ]
+  },
+  2: {
+    label: 'Dúvidas sobre o Cargo',
+    prompts: [
+      'Quais cargos são aceitos?',
+      'E se eu tiver mais de um cargo?',
+      'Posso usar cargo em inglês?'
+    ]
+  },
+  3: {
+    label: 'Pronto para enviar',
+    prompts: [
+      'Quanto tempo leva a aprovação?',
+      'Como vou saber se fui aprovado?',
+      'Posso editar meus dados depois?'
+    ]
+  }
 };
 
-export const FloatingChatWidget: React.FC<{ isChaosMode?: boolean }> = ({ isChaosMode = false }) => {
+// ── Helper: format timestamp ──────────────────────────────────────
+const formatTime = (date: Date) =>
+  date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+// ── Component ─────────────────────────────────────────────────────
+interface FloatingChatWidgetProps {
+  isChaosMode?: boolean;
+  currentStep?: number;
+}
+
+export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
+  isChaosMode = false,
+  currentStep = 0
+}) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [hasUnread, setHasUnread] = useState(false);
   const { messages, status, error, sendMessage, clearChat } = useLocalChat();
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const widgetRef = useRef<HTMLDivElement>(null);
+  const prevMsgCount = useRef(messages.length);
 
   const isStreaming = status === 'streaming';
   const isBusy = status === 'sending' || isStreaming;
+  const showTyping = isBusy && (messages.length === 0 || messages[messages.length - 1]?.role === 'user');
 
-  // Auto-scroll to the bottom of the chat list
+  // Mark unread when new assistant message arrives while closed
   useEffect(() => {
-    if (isOpen) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (!isOpen && messages.length > prevMsgCount.current) {
+      const lastMsg = messages[messages.length - 1];
+      if (lastMsg?.role === 'assistant') setHasUnread(true);
     }
+    prevMsgCount.current = messages.length;
   }, [messages, isOpen]);
 
-  // Focus input on open
+  // Clear unread on open
   useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => textareaRef.current?.focus(), 100);
-    }
+    if (isOpen) setHasUnread(false);
   }, [isOpen]);
 
-  // Escape key and Click Outside listeners to close the widget
+  // Auto-scroll
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setIsOpen(false);
-      }
-    };
+    if (isOpen) messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isOpen, showTyping]);
 
+  // Focus on open
+  useEffect(() => {
+    if (isOpen) setTimeout(() => textareaRef.current?.focus(), 100);
+  }, [isOpen]);
+
+  // Escape + click outside
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') setIsOpen(false); };
     const handleClickOutside = (e: MouseEvent) => {
-      if (widgetRef.current && !widgetRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
+      if (widgetRef.current && !widgetRef.current.contains(e.target as Node)) setIsOpen(false);
     };
-
     if (isOpen) {
       window.addEventListener('keydown', handleKeyDown);
       document.addEventListener('mousedown', handleClickOutside);
     }
-
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('mousedown', handleClickOutside);
@@ -91,17 +149,14 @@ export const FloatingChatWidget: React.FC<{ isChaosMode?: boolean }> = ({ isChao
 
   const handleSend = async () => {
     if (!inputText.trim() || isBusy) return;
-    const textToSend = inputText;
+    const text = inputText;
     setInputText('');
     window.dispatchEvent(new Event('chat_message_sent'));
-    await sendMessage(textToSend);
+    await sendMessage(text);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
   };
 
   const handleStarterPrompt = async (prompt: string) => {
@@ -109,143 +164,98 @@ export const FloatingChatWidget: React.FC<{ isChaosMode?: boolean }> = ({ isChao
     await sendMessage(prompt);
   };
 
+  const stepKey = Math.min(currentStep, 3) as 0 | 1 | 2 | 3;
+  const contextualPrompts = STEP_PROMPTS[stepKey];
+
   return (
     <div ref={widgetRef} className={styles.widgetContainer}>
-      {/* Floating Action Button (FAB) */}
-      <Button
-        shape="circular"
-        appearance="primary"
-        size="large"
-        className={styles.fabButton}
-        icon={isOpen ? <Dismiss24Regular /> : <Chat24Regular />}
-        onClick={() => setIsOpen(!isOpen)}
-        aria-label={isOpen ? "Fechar assistente de chat" : "Abrir assistente de chat"}
-      />
 
-      {/* Chat Popover Panel */}
+      {/* ── FAB ── */}
+      <button
+        className={`${styles.gooseFab} ${isChaosMode ? styles.chaosFab : ''} ${isOpen ? styles.fabOpen : ''}`}
+        onClick={() => setIsOpen(!isOpen)}
+        aria-label={isOpen ? 'Fechar assistente' : 'Abrir assistente'}
+        title={isOpen ? 'Fechar assistente' : 'Fala com o Ganso!'}
+      >
+        {isOpen
+          ? <Dismiss24Regular style={{ color: '#ffffff', width: 22, height: 22 }} />
+          : <GooseFabIcon isChaos={isChaosMode} />
+        }
+        {/* Unread badge */}
+        {hasUnread && !isOpen && <span className={styles.unreadBadge} />}
+      </button>
+
+      {/* ── Chat Popover ── */}
       {isOpen && (
-        <Card className={`${styles.chatPopover} ${isChaosMode ? styles.chaosWidget : ''}`} appearance="filled">
+        <div className={`${styles.chatPopover} ${isChaosMode ? styles.chaosWidget : ''}`}>
+
           {/* Header */}
           <div className={styles.chatHeader}>
             <div className={styles.headerTitle}>
-              {isChaosMode ? (
-                <div className={styles.chaosAvatarWrapper}>
-                  <GooseHeadIcon isChaos={true} />
-                </div>
-              ) : (
-                <Avatar
-                  size={28}
-                  name="Assistente de Cadastro"
-                  className={styles.avatar}
-                  image={{ src: '/Avatar_Default.svg' }}
-                />
-              )}
+              <div className={styles.avatarWrapper}>
+                <Avatar size={32} name="Assistente" className={styles.avatar} image={{ src: '/Avatar_Default.svg' }} />
+                <span className={styles.onlineDot} />
+              </div>
               <div>
                 <h4 className={styles.titleText}>
-                  {isChaosMode ? "Assistente em Pânico! 😱" : "Assistente Virtual"}
+                  {isChaosMode ? 'Assistente em Pânico! 😱' : 'Assistente Virtual'}
                 </h4>
                 <span className={styles.subtitleText}>
-                  {isChaosMode ? "O ganso dominou o sistema!" : "Tire suas dúvidas do cadastro"}
+                  {isChaosMode ? 'O ganso dominou o sistema!' : '● Online — Tire suas dúvidas'}
                 </span>
               </div>
             </div>
             <div className={styles.headerActions}>
-              <Button
-                appearance="subtle"
-                size="small"
-                icon={<Delete24Regular />}
-                onClick={clearChat}
-                title="Limpar histórico"
-                aria-label="Limpar histórico do chat"
-              />
-              <Button
-                appearance="subtle"
-                size="small"
-                icon={<Dismiss24Regular />}
-                onClick={() => setIsOpen(false)}
-                title="Fechar"
-                aria-label="Fechar assistente de chat"
-              />
+              <Button appearance="subtle" size="small" icon={<Delete24Regular />} onClick={clearChat} title="Limpar histórico" />
+              <Button appearance="subtle" size="small" icon={<Dismiss24Regular />} onClick={() => setIsOpen(false)} title="Fechar" />
             </div>
           </div>
 
-          {/* Messages Area */}
+          {/* Messages */}
           <div className={styles.messagesList}>
             {messages.length === 0 ? (
               <div className={styles.welcomeContainer}>
                 <p className={styles.welcomeText}>
-                  Olá! Sou o assistente virtual. Posso te ajudar a preencher o formulário ou tirar qualquer dúvida sobre o cadastro.
+                  Olá! 👋 Estou aqui para te ajudar no cadastro. Tem alguma dúvida?
                 </p>
                 <div className={styles.starterContainer}>
-                  <p className={styles.starterLabel}>Perguntas frequentes:</p>
-                  <button 
-                    onClick={() => handleStarterPrompt("Como preencher o campo Organização?")}
-                    className={styles.starterButton}
-                  >
-                    Como preencher o campo Organização?
-                  </button>
-                  <button 
-                    onClick={() => handleStarterPrompt("Quais cargos são válidos para cadastro?")}
-                    className={styles.starterButton}
-                  >
-                    Quais cargos são válidos?
-                  </button>
-                  <button 
-                    onClick={() => handleStarterPrompt("Preciso de e-mail corporativo?")}
-                    className={styles.starterButton}
-                  >
-                    Preciso de e-mail corporativo?
-                  </button>
+                  <p className={styles.starterLabel}>{contextualPrompts.label}:</p>
+                  {contextualPrompts.prompts.map((prompt) => (
+                    <button
+                      key={prompt}
+                      onClick={() => handleStarterPrompt(prompt)}
+                      className={styles.starterButton}
+                    >
+                      {prompt}
+                    </button>
+                  ))}
                 </div>
               </div>
             ) : (
               messages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={`${styles.messageWrapper} ${
-                    msg.role === 'user' ? styles.userWrapper : styles.assistantWrapper
-                  }`}
+                  className={`${styles.messageWrapper} ${msg.role === 'user' ? styles.userWrapper : styles.assistantWrapper}`}
                 >
                   {msg.role === 'assistant' && (
-                    <Avatar
-                      size={24}
-                      name="Assistente"
-                      className={styles.messageAvatar}
-                      image={{ src: '/Avatar_Default.svg' }}
-                    />
+                    <Avatar size={24} name="Assistente" className={styles.messageAvatar} image={{ src: '/Avatar_Default.svg' }} />
                   )}
-                  <div
-                    className={`${styles.messageBubble} ${
-                      msg.role === 'user' ? styles.userBubble : styles.assistantBubble
-                    }`}
-                  >
-                    {msg.role === 'user' ? (
-                      <span className={styles.userText}>{msg.content}</span>
-                    ) : (
-                      <Markdown content={msg.content || '...'} />
-                    )}
+                  <div className={`${styles.messageBubble} ${msg.role === 'user' ? styles.userBubble : styles.assistantBubble}`}>
+                    {msg.role === 'user'
+                      ? <span className={styles.userText}>{msg.content}</span>
+                      : <Markdown content={msg.content || '...'} />
+                    }
+                    <span className={styles.timestamp}>{formatTime(new Date(msg.createdAt ?? Date.now()))}</span>
                   </div>
                 </div>
               ))
             )}
 
-            {/* Loading / Sending Indicator */}
-            {status === 'sending' && (
-              <div className={styles.loaderContainer}>
-                <Spinner size="tiny" label="Enviando..." />
-              </div>
-            )}
-            {status === 'streaming' && messages[messages.length - 1]?.content === '' && (
-              <div className={styles.loaderContainer}>
-                <Spinner size="tiny" label="Pensando..." />
-              </div>
-            )}
+            {/* 3-dot typing indicator */}
+            {showTyping && <TypingIndicator />}
 
-            {/* Error Message */}
             {error && (
-              <div className={styles.errorBubble}>
-                Erro: {error}
-              </div>
+              <div className={styles.errorBubble}>Erro: {error}</div>
             )}
 
             <div ref={messagesEndRef} />
@@ -253,27 +263,26 @@ export const FloatingChatWidget: React.FC<{ isChaosMode?: boolean }> = ({ isChao
 
           {/* Input Area */}
           <div className={styles.inputArea}>
-            <Textarea
+            <textarea
               ref={textareaRef}
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Digite sua dúvida aqui..."
-              resize="none"
               rows={2}
               className={styles.textarea}
-              disabled={status === 'sending'}
+              disabled={isBusy}
             />
-            <Button
-              appearance="primary"
-              icon={<Send24Regular />}
+            <button
               onClick={handleSend}
               disabled={!inputText.trim() || isBusy}
               aria-label="Enviar mensagem"
-              className={styles.sendButton}
-            />
+              className={`${styles.sendButton} ${inputText.trim() && !isBusy ? styles.sendActive : ''}`}
+            >
+              <Send24Regular />
+            </button>
           </div>
-        </Card>
+        </div>
       )}
     </div>
   );

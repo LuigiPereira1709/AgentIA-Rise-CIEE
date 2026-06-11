@@ -3,6 +3,7 @@ import { Button, Input, Field, Text, Card, Avatar } from '@fluentui/react-compon
 import { ArrowLeft24Regular, Person24Regular, Mail24Regular, Board24Regular, Briefcase24Regular, CheckmarkCircle24Filled } from '@fluentui/react-icons';
 import { FloatingChatWidget } from './chat/FloatingChatWidget';
 import { GooseMascot } from './GooseMascot';
+import { GooseJourney } from './GooseJourney';
 import styles from './RegistrationForm.module.css';
 
 const GooseHeadIcon: React.FC<{ isChaos?: boolean }> = ({ isChaos = false }) => {
@@ -180,6 +181,14 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isShaking, setIsShaking] = useState(false);
+
+  const getActiveStep = () => {
+    if (isSubmitted) return 3;
+    if (formData.name && formData.email && formData.organization && formData.role) return 3;
+    if (formData.name && formData.email && formData.organization) return 2;
+    if (formData.name && formData.email) return 1;
+    return 0;
+  };
 
   // Gamification states
   const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
@@ -379,6 +388,15 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
 
       {/* Main Content */}
       <main className={styles.mainContent}>
+        {/* VSCode-style Goose Journey Sidebar - floats fixed at the top-left corner */}
+        <GooseJourney 
+          currentStep={getActiveStep()} 
+          formData={formData} 
+          isSubmitted={isSubmitted} 
+          focusedField={focusedField}
+          onFieldChange={(field, value) => handleInputChange(field, value)}
+        />
+
         <div className={styles.formWrapper}>
           {/* Goose Mascot (Desktop Goose style) */}
           <GooseMascot 
@@ -519,7 +537,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
       </main>
 
       {/* Floating Chatbot Widget */}
-      <FloatingChatWidget isChaosMode={isChaosMode} />
+      <FloatingChatWidget isChaosMode={isChaosMode} currentStep={getActiveStep()} />
 
       {/* Toast Notifications */}
       <div className={styles.toastContainer}>

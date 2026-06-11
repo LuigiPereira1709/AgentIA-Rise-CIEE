@@ -848,22 +848,22 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
   // Select eye element path based on eyeState (override to angry/X eye during drag)
   const effectiveEyeState = isDragging ? 'angry' : eyeState;
 
-  let eyeElement = <circle cx="48" cy="40" r="3" fill="#000000" />;
+  let eyeElement = <circle cx="58" cy="12" r="2.5" fill="#000000" />;
   if (effectiveEyeState === 'angry') {
     eyeElement = (
       <path 
-        d="M 44 37 L 52 41 M 52 37 L 44 41" 
+        d="M 54 8 L 62 14 M 62 8 L 54 14" 
         stroke="#000000" 
-        strokeWidth="2.5" 
+        strokeWidth="2" 
         strokeLinecap="round" 
       />
     );
   } else if (effectiveEyeState === 'wink') {
     eyeElement = (
       <path 
-        d="M 44 41 Q 48 36 52 41" 
+        d="M 54 14 Q 58 9 62 14" 
         stroke="#000000" 
-        strokeWidth="2.5" 
+        strokeWidth="2" 
         fill="none" 
         strokeLinecap="round" 
       />
@@ -871,22 +871,22 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
   } else if (effectiveEyeState === 'closed') {
     eyeElement = (
       <line 
-        x1="44" 
-        y1="40" 
-        x2="52" 
-        y2="40" 
+        x1="54" 
+        y1="12" 
+        x2="62" 
+        y2="12" 
         stroke="#000000" 
-        strokeWidth="2.5" 
+        strokeWidth="2" 
         strokeLinecap="round" 
       />
     );
   }
 
   // Beak paths:
-  const topBeakD = "M 60 38 Q 78 40 85 44 Q 70 48 60 46 Z";
+  const topBeakD = "M 64 16 Q 80 16 84 18.5 Q 70 19 64 18.5 Z";
   const bottomBeakD = (isHonking || isDragging)
-    ? "M 60 48 Q 74 57 78 59 Q 68 53 60 50 Z" 
-    : "M 60 46 Q 74 48 81 48 Q 68 48 60 46 Z";
+    ? "M 64 18.5 Q 74 27 82 24 Q 70 24 64 21 Z" 
+    : "M 64 18.5 Q 70 19 84 18.5 Q 70 23 64 21 Z";
 
   return (
     <div ref={containerRef} className={containerClass} style={inlineStyle}>
@@ -909,82 +909,72 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
         title={isChaosMode ? "FAÇA CARINHO PARA ACALMAR O GANSO!" : "Clique e arraste o ganso!"}
       >
         <svg 
-          viewBox="0 0 100 120" 
+          viewBox="0 0 80 80" 
           className={styles.gooseSvg}
+          style={{ overflow: 'visible' }}
         >
           <g>
-            {/* Neck border (creates outline) */}
-            <path 
-              d="M 30 120 C 30 85, 34 62, 46 48" 
-              stroke="#0c0f1d" 
-              strokeWidth="26" 
-              strokeLinecap="round" 
-              fill="none" 
-            />
-            {/* White Neck */}
-            <path 
-              d="M 30 120 C 30 85, 34 62, 46 48" 
-              stroke="#ffffff" 
-              strokeWidth="20" 
-              strokeLinecap="round" 
-              fill="none" 
-            />
+            {/* Body */}
+            <ellipse cx="38" cy="52" rx="20" ry="14" fill="#ffffff" stroke="#0c0f1d" strokeWidth="2" />
+            {/* Wing hint */}
+            <path d="M 22 54 Q 28 60 38 58" fill="none" stroke="#e0e0e0" strokeWidth="1.5" />
+            
+            {/* Neck */}
+            <path d="M 48 42 C 55 32 54 24 54 18" stroke="#ffffff" strokeWidth="10" strokeLinecap="round" fill="none" />
+            
+            {/* Legs */}
+            <line x1="32" y1="64" x2="30" y2="72" stroke="#ff9f1c" strokeWidth="2.5" strokeLinecap="round" />
+            <line x1="42" y1="65" x2="44" y2="73" stroke="#ff9f1c" strokeWidth="2.5" strokeLinecap="round" />
+            {/* Feet */}
+            <line x1="30" y1="72" x2="24" y2="72" stroke="#ff9f1c" strokeWidth="2" strokeLinecap="round" />
+            <line x1="44" y1="73" x2="50" y2="73" stroke="#ff9f1c" strokeWidth="2" strokeLinecap="round" />
 
             {/* Head */}
-            <circle 
-              cx="46" 
-              cy="44" 
-              r="18" 
-              fill="#ffffff" 
-              stroke="#0c0f1d" 
-              strokeWidth="2.5" 
-            />
+            <circle cx="54" cy="16" r="14" fill="#ffffff" stroke="#0c0f1d" strokeWidth="2" />
             
             {/* Cheek / Blush */}
-            <circle cx="38" cy="50" r="3.5" fill="rgba(255, 90, 95, 0.4)" />
+            <circle cx="53" cy="21" r="3.5" fill="rgba(255, 90, 95, 0.4)" />
 
             {/* Eye */}
             {eyeElement}
 
             {/* Beak */}
-            {/* Bottom Beak */}
-            <path d={bottomBeakD} fill="#ff9f1c" stroke="#0c0f1d" strokeWidth="2" />
-            {/* Top Beak */}
-            <path d={topBeakD} fill="#ff9f1c" stroke="#0c0f1d" strokeWidth="2" />
+            <path d={bottomBeakD} fill="#ff9f1c" stroke="#0c0f1d" strokeWidth="1.8" />
+            <path d={topBeakD} fill="#ff9f1c" stroke="#0c0f1d" strokeWidth="1.8" />
 
             {/* Chaos Accessories */}
             {isChaosMode && (
               <g>
                 {/* Temple/Arm */}
-                <path d="M 42 38 Q 32 36 28 42" stroke="#0c0f1d" strokeWidth="2.5" fill="none" />
+                <path d="M 50 8 Q 43 5 36 10" stroke="#0c0f1d" strokeWidth="2" fill="none" />
                 {/* Lens */}
-                <polygon points="40,35 56,35 53,46 43,46" fill="#000000" stroke="#0c0f1d" strokeWidth="2.2" />
+                <polygon points="46,5 64,5 61,15 49,15" fill="#000000" stroke="#0c0f1d" strokeWidth="2" />
                 {/* Lens reflection */}
-                <line x1="44" y1="37" x2="48" y2="43" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" />
+                <line x1="50" y1="8" x2="56" y2="12" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" />
               </g>
             )}
 
             {isChaosMode && (
-              <g transform="translate(62, 45) rotate(20)">
+              <g transform="translate(74, 18) rotate(20) scale(1.2)">
                 {/* Knife Handle (hilt) */}
-                <rect x="-14" y="-3" width="14" height="6" rx="1.5" fill="#704214" stroke="#0c0f1d" strokeWidth="1.5" />
+                <rect x="-8" y="-2" width="8" height="4" rx="1" fill="#704214" stroke="#0c0f1d" strokeWidth="1" />
                 {/* Guard */}
-                <rect x="0" y="-6" width="3" height="12" rx="0.5" fill="#b0b0b0" stroke="#0c0f1d" strokeWidth="1.5" />
+                <rect x="0" y="-4" width="2" height="8" rx="0.5" fill="#b0b0b0" stroke="#0c0f1d" strokeWidth="1" />
                 {/* Blade */}
-                <path d="M 3 -4 L 30 -4 C 30 -4, 34 2, 28 3 L 3 3 Z" fill="#d0d0d0" stroke="#0c0f1d" strokeWidth="1.8" />
+                <path d="M 2 -2 L 18 -2 C 18 -2, 21 1, 16 2 L 2 2 Z" fill="#d0d0d0" stroke="#0c0f1d" strokeWidth="1.2" />
                 {/* Blade cutting edge reflection */}
-                <path d="M 4 2 L 27 2" stroke="#ffffff" strokeWidth="1" />
+                <path d="M 3 1 L 16 1" stroke="#ffffff" strokeWidth="0.8" />
               </g>
             )}
 
             {/* Fake Cursor in the Beak */}
             {(heistState === 'holding' || heistState === 'retreating') && (
-              <g transform="translate(82, 44) rotate(-35)">
+              <g transform="translate(82, 19) rotate(-35) scale(1.3)">
                 <path 
-                  d="M 0 0 L 10 10 L 6 11 L 9 17 L 7 18 L 4 12 L 0 15 Z" 
+                  d="M 0 0 L 8 8 L 5 9 L 7 14 L 5 15 L 3 10 L 0 12 Z" 
                   fill="#ffffff" 
                   stroke="#0c0f1d" 
-                  strokeWidth="2.2" 
+                  strokeWidth="1.5" 
                   strokeLinejoin="round" 
                 />
               </g>

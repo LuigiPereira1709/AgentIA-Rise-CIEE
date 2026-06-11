@@ -2,7 +2,7 @@
 .gooseContainer {
   position: absolute;
   width: 90px;
-  height: 110px;
+  height: 90px;
   z-index: 1; /* Render behind the form card (z-index: 2) */
   pointer-events: none;
   transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -19,21 +19,21 @@
 
 /* Peeking from the Left */
 .left {
-  left: -78px;
+  left: -80px;
   opacity: 1;
   transform: scaleX(1);
 }
 
 /* Peeking from the Right */
 .right {
-  right: -78px;
+  right: -80px;
   opacity: 1;
   transform: scaleX(-1); /* Flip horizontally so beak points left */
 }
 
 /* Peeking from the Top */
 .top {
-  top: -65px; /* Pull down so head is visible above card */
+  top: -80px; /* Pull down so head is visible above card */
   opacity: 1;
   transform: rotate(0deg); /* Upright peeking over the top edge */
 }
@@ -41,7 +41,7 @@
 /* Interactive Goose Character */
 .gooseCharacter {
   width: 90px;
-  height: 110px;
+  height: 90px;
   cursor: pointer;
   pointer-events: auto;
   user-select: none;
