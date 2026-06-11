@@ -362,14 +362,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
               {isChaosMode ? "Ganso no MODO CAOS!" : "Travessura do Ganso"}
             </span>
             <div className={styles.mischiefControls}>
-              <button 
-                type="button"
-                className={styles.soundToggleButton}
-                onClick={() => setIsMuted(!isMuted)}
-                title={isMuted ? "Ativar som do ganso" : "Silenciar ganso"}
-              >
-                {isMuted ? "🔇" : "🔊"}
-              </button>
               <span className={styles.mischiefPercent}>{mischiefLevel}%</span>
             </div>
           </div>
@@ -382,6 +374,14 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
         </div>
 
         <div className={styles.navRight}>
+          <button 
+            type="button"
+            className={styles.soundToggleButton}
+            onClick={() => setIsMuted(!isMuted)}
+            title={isMuted ? "Ativar som do ganso" : "Silenciar ganso"}
+          >
+            {isMuted ? "🔇" : "🔊"}
+          </button>
           <Avatar size={32} name="User" image={{ src: '/Avatar_Default.svg' }} />
         </div>
       </header>
