@@ -16,7 +16,10 @@ const formatTime = (date: Date) =>
   date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
 const TypingIndicator: React.FC = () => (
-  <div className={styles.typingWrapper}>
+  <div className={styles.gooseTypingWrapper}>
+    <div className={styles.gooseTypingAvatar}>
+      <GooseHeadIcon />
+    </div>
     <div className={styles.typingBubble}>
       <span className={styles.dot} />
       <span className={styles.dot} />

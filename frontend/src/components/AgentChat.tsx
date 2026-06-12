@@ -12,6 +12,7 @@ import { ChatService } from '../services/chatService';
 import { useAppContext } from '../contexts/AppContext';
 import { exportAsMarkdown, downloadMarkdown } from '../utils/exportConversation';
 import { trackFeedback } from '../services/telemetry';
+import { playMessageSentSound, playMessageReceivedSound } from '../utils/sounds';
 import type { IChatItem } from '../types/chat';
 import styles from './AgentChat.module.css';
 
@@ -56,7 +57,19 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Agente IA', a
     return new ChatService(apiUrl, getAccessToken, dispatch);
   }, [apiUrl, getAccessToken, dispatch]);
 
+  const prevMessagesLengthRef = useRef(chat.messages.length);
+  useEffect(() => {
+    if (chat.messages.length > prevMessagesLengthRef.current) {
+      const lastMessage = chat.messages[chat.messages.length - 1];
+      if (lastMessage.role === 'assistant') {
+        playMessageReceivedSound();
+      }
+    }
+    prevMessagesLengthRef.current = chat.messages.length;
+  }, [chat.messages]);
+
   const handleSendMessage = async (text: string, files?: File[]) => {
+    playMessageSentSound();
     if (chat.status === 'streaming' || chat.status === 'sending') {
       dispatch({ type: 'CHAT_QUEUE_MESSAGE', text, files });
       return;

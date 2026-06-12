@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Button, Avatar } from '@fluentui/react-components';
+import { Button } from '@fluentui/react-components';
 import { Chat24Regular, Dismiss24Regular, Send24Regular, Delete24Regular } from '@fluentui/react-icons';
 import { useLocalChat } from '../../hooks/useLocalChat';
 import { Markdown } from '../core/Markdown';
@@ -8,8 +8,10 @@ import styles from './FloatingChatWidget.module.css';
 
 // ── Typing indicator (3 animated dots) ───────────────────────────
 const TypingIndicator: React.FC = () => (
-  <div className={styles.typingWrapper}>
-    <Avatar size={24} name="Assistente" className={styles.messageAvatar} image={{ src: '/Avatar_Default.svg' }} />
+  <div className={styles.gooseTypingWrapper}>
+    <div className={styles.gooseTypingAvatar}>
+      <GooseHeadIcon />
+    </div>
     <div className={styles.typingBubble}>
       <span className={styles.dot} />
       <span className={styles.dot} />
@@ -214,7 +216,9 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
                   className={`${styles.messageWrapper} ${msg.role === 'user' ? styles.userWrapper : styles.assistantWrapper}`}
                 >
                   {msg.role === 'assistant' && (
-                    <Avatar size={24} name="Assistente" className={styles.messageAvatar} image={{ src: '/Avatar_Default.svg' }} />
+                    <div className={styles.miniAvatar}>
+                      <GooseHeadIcon />
+                    </div>
                   )}
                   <div className={`${styles.messageBubble} ${msg.role === 'user' ? styles.userBubble : styles.assistantBubble}`}>
                     {msg.role === 'user'

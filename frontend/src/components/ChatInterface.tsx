@@ -8,6 +8,7 @@ import { DropZone } from "./chat/DropZone";
 import { Waves } from "./animations/Waves";
 import { ErrorMessage } from "./core/ErrorMessage";
 import { KeyboardShortcuts } from "./core/KeyboardShortcuts";
+import { GooseHeadIcon } from "./RegistrationForm";
 import type { IChatItem } from "../types/chat";
 import type { AppState } from "../types/appState";
 import type { AppError } from "../types/errors";
@@ -260,6 +261,19 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = (props) => {
                 );
               })
               })()}
+              
+              {status === 'sending' && (
+                <div className={styles.gooseTypingWrapper}>
+                  <div className={styles.gooseTypingAvatar}>
+                    <GooseHeadIcon />
+                  </div>
+                  <div className={styles.typingBubble}>
+                    <span className={styles.dot} />
+                    <span className={styles.dot} />
+                    <span className={styles.dot} />
+                  </div>
+                </div>
+              )}
               <div ref={messagesEndRef} style={{ height: '1px' }} />
             </>
           )}

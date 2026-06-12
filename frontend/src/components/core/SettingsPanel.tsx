@@ -19,6 +19,8 @@ import {
 } from '@fluentui/react-components';
 import { Dismiss24Regular, Delete24Regular } from '@fluentui/react-icons';
 import { ThemePicker } from './ThemePicker';
+import { isSoundEnabled, toggleGlobalSound } from '../../utils/sounds';
+import { Switch } from '@fluentui/react-components';
 import type { ChatService } from '../../services/chatService';
 
 interface SettingsPanelProps {
@@ -95,6 +97,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onOpenChan
   const [cleaning, setCleaning] = useState(false);
   const [status, setStatus] = useState<{ text: string; isError: boolean } | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(isSoundEnabled());
+
+  const handleToggleSound = () => {
+    const newState = toggleGlobalSound();
+    setSoundEnabled(newState);
+  };
 
   const loadFilesInfo = useCallback(async () => {
     setLoadingInfo(true);
@@ -166,8 +174,22 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onOpenChan
 
       <DrawerBody>
         <div className={styles.section}>
-          <div className={styles.sectionTitle}>Appearance</div>
+          <div className={styles.sectionTitle}>Aparência</div>
           <ThemePicker />
+        </div>
+
+        <div className={styles.section}>
+          <div className={styles.sectionTitle}>Experiência</div>
+          <div className={styles.filesRow}>
+            <Switch
+              checked={soundEnabled}
+              onChange={handleToggleSound}
+              label="Efeitos Sonoros (Mascote e Chat)"
+            />
+            <Text className={styles.filesHint}>
+              Habilita ou desabilita os sons de digitação, envio de mensagens e interação do Ganso.
+            </Text>
+          </div>
         </div>
 
         <div className={styles.section}>

@@ -160,3 +160,61 @@
 .undoButton:hover {
   color: var(--colorBrandForeground2);
 }
+
+/* ── Goose Typing Indicator ── */
+.gooseTypingWrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  max-width: 900px;
+  margin: 0 auto;
+  align-self: flex-start;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.gooseTypingAvatar {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(168, 85, 247, 0.1);
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  flex-shrink: 0;
+  animation: pulseAvatar 1.5s ease-in-out infinite alternate;
+}
+
+.typingBubble {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(168, 85, 247, 0.05);
+  border: 1px solid rgba(168, 85, 247, 0.1);
+  padding: 10px 16px;
+  border-radius: 16px;
+  border-bottom-left-radius: 4px;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  background-color: #a855f7;
+  border-radius: 50%;
+  animation: bounceDot 1.4s infinite ease-in-out both;
+}
+
+.dot:nth-child(1) { animation-delay: -0.32s; }
+.dot:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes bounceDot {
+  0%, 80%, 100% { transform: scale(0); opacity: 0.4; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes pulseAvatar {
+  0% { transform: scale(1); box-shadow: 0 0 0 rgba(168, 85, 247, 0); }
+  100% { transform: scale(1.05); box-shadow: 0 0 10px rgba(168, 85, 247, 0.3); }
+}
