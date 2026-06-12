@@ -70,7 +70,7 @@ const focusInput = (containerRef: React.RefObject<HTMLDivElement | null>) => {
 export const ChatInput: React.FC<ChatInputProps> = ({
   onSubmit,
   disabled = false,
-  placeholder = "Type your message...",
+  placeholder = "Digite sua mensagem...",
   onOpenSettings,
   onNewChat,
   onToggleSidebar,
@@ -349,7 +349,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         />
         <div className={styles.inputWrapper}>
         <ChatInputFluent
-          aria-label="Chat Input"
+          aria-label="Entrada de chat"
           aria-describedby={showCounter ? charCounterId : undefined}
           charactersRemainingMessage={() => ``}
           disabled={disabled}
@@ -363,7 +363,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         {showCounter && (
           <div className={counterStyles.container} id={charCounterId}>
             <Text className={`${counterStyles.text} ${getCounterStyle()}`}>
-              {charCount} / {CHAR_MAX_RECOMMENDED} characters (recommended limit)
+              {charCount} / {CHAR_MAX_RECOMMENDED} caracteres (limite recomendado)
             </Text>
           </div>
         )}
@@ -377,15 +377,16 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               icon={<Attach24Regular />}
               onClick={handleAttachClick}
               disabled={disabled}
-              aria-label="Attach files"
+              aria-label="Anexar arquivos"
+              title="Anexar arquivos"
             />
             <Button
               appearance="subtle"
               icon={<Stop24Regular />}
               onClick={isEditing ? onCancelEdit : handleCancelStream}
               disabled={!isStreaming && !isEditing}
-              aria-label={isEditing ? "Cancel edit" : "Cancel response"}
-              title={isEditing ? "Cancel edit" : undefined}
+              aria-label={isEditing ? "Cancelar edição" : "Cancelar resposta"}
+              title={isEditing ? "Cancelar edição" : "Cancelar resposta"}
               className={styles.cancelButton}
             />
             <VoiceInput
@@ -398,7 +399,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 icon={<ChatAdd24Regular />}
                 onClick={onNewChat}
                 disabled={disabled || !hasMessages}
-                aria-label="New chat"
+                aria-label="Nova conversa"
+                title="Nova conversa"
               />
             )}
             <Menu>
@@ -406,29 +408,30 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 <Button
                   appearance="subtle"
                   icon={<MoreHorizontal24Regular />}
-                  aria-label="More options"
+                  aria-label="Mais opções"
+                  title="Mais opções"
                 />
               </MenuTrigger>
               <MenuPopover>
                 <MenuList>
                   {onToggleSidebar && (
                     <MenuItem icon={<History24Regular />} onClick={onToggleSidebar} disabled={disabled}>
-                      Conversation history
+                      Histórico de conversas
                     </MenuItem>
                   )}
                   {onExportConversation && (
                     <MenuItem icon={<ArrowDownload24Regular />} onClick={onExportConversation} disabled={disabled || !hasMessages}>
-                      Export as Markdown
+                      Exportar como Markdown
                     </MenuItem>
                   )}
                   {onShowShortcuts && (
                     <MenuItem icon={<Keyboard24Regular />} onClick={onShowShortcuts}>
-                      Keyboard shortcuts
+                      Atalhos de teclado
                     </MenuItem>
                   )}
                   {onOpenSettings && (
                     <MenuItem icon={<Settings24Regular />} onClick={onOpenSettings} disabled={disabled}>
-                      Settings
+                      Configurações
                     </MenuItem>
                   )}
                 </MenuList>

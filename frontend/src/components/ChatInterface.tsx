@@ -269,9 +269,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = (props) => {
           <button
             className={styles.newMessagesPill}
             onClick={() => { scrollToBottom(); setHasNewMessages(false); }}
-            aria-label="Scroll to new messages"
+            aria-label="Ir para novas mensagens"
           >
-            ↓ New messages
+            ↓ Novas mensagens
           </button>
         )}
       </div>
@@ -303,7 +303,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = (props) => {
           onNewChat={onNewChat}
           onToggleSidebar={onToggleSidebar}
           hasMessages={hasMessages}
-          placeholder="Type your message here..."
+          placeholder="Digite sua mensagem aqui..."
           isStreaming={isStreaming}
           onCancelStream={isStreaming && onCancelStream ? onCancelStream : undefined}
           isEditing={isEditing}

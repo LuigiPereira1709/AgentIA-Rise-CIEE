@@ -1,0 +1,323 @@
+/* =====================================================
+   HomePage — Premium Dark Menu
+   ===================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=Inter:wght@400;500;600&display=swap');
+
+/* ---- Page Root ---- */
+.page {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  background: #09090f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Outfit', sans-serif;
+}
+
+/* ---- Animated background mesh ---- */
+.bgMesh {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(99, 60, 255, 0.18) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 85%, rgba(255, 75, 140, 0.15) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 55% 50%, rgba(0, 212, 255, 0.08) 0%, transparent 50%);
+  z-index: 0;
+}
+
+/* Subtle grid overlay */
+.bgGrid {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 100%);
+}
+
+/* Floating blobs */
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.35;
+  animation: floatBlob 12s ease-in-out infinite;
+}
+
+.blob1 {
+  width: 420px;
+  height: 420px;
+  background: radial-gradient(circle, #7b40ff 0%, transparent 70%);
+  top: -120px;
+  left: -100px;
+  animation-duration: 14s;
+}
+
+.blob2 {
+  width: 340px;
+  height: 340px;
+  background: radial-gradient(circle, #ff4b8c 0%, transparent 70%);
+  bottom: -80px;
+  right: -80px;
+  animation-duration: 10s;
+  animation-delay: -4s;
+}
+
+.blob3 {
+  width: 260px;
+  height: 260px;
+  background: radial-gradient(circle, #00d4ff 0%, transparent 70%);
+  bottom: 20%;
+  left: 10%;
+  animation-duration: 16s;
+  animation-delay: -7s;
+}
+
+@keyframes floatBlob {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%       { transform: translate(30px, -25px) scale(1.05); }
+  66%       { transform: translate(-20px, 20px) scale(0.95); }
+}
+
+/* ---- Main card ---- */
+.card {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding: 56px 48px 52px;
+  width: min(520px, 92vw);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 28px;
+  backdrop-filter: blur(32px);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.04),
+    0 32px 80px rgba(0,0,0,0.55),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+  animation: cardEntrance 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes cardEntrance {
+  from { opacity: 0; transform: translateY(32px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+
+/* ---- Mascot / Logo area ---- */
+.mascotWrapper {
+  position: relative;
+  margin-bottom: 28px;
+}
+
+.mascotGoose {
+  width: 88px;
+  height: 88px;
+  filter: drop-shadow(0 0 20px rgba(123, 64, 255, 0.5));
+  animation: gooseBob 3s ease-in-out infinite;
+  cursor: default;
+}
+
+@keyframes gooseBob {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50%       { transform: translateY(-8px) rotate(2deg); }
+}
+
+.glowRing {
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+  border: 2px solid rgba(123, 64, 255, 0.3);
+  animation: ringPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes ringPulse {
+  0%, 100% { transform: scale(1);    opacity: 0.6; }
+  50%       { transform: scale(1.12); opacity: 0; }
+}
+
+/* ---- Text content ---- */
+.title {
+  font-size: clamp(28px, 5vw, 36px);
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin: 0 0 8px;
+  background: linear-gradient(135deg, #ffffff 0%, #c0b4ff 50%, #ff8fc8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-align: center;
+}
+
+.subtitle {
+  font-size: 15px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.45);
+  text-align: center;
+  margin: 0 0 40px;
+  line-height: 1.5;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ---- Navigation buttons ---- */
+.navGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+
+.navBtn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  width: 100%;
+  padding: 20px 24px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  overflow: hidden;
+  text-align: left;
+}
+
+.navBtn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  border-radius: inherit;
+}
+
+.navBtn:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+}
+
+.navBtn:hover::before {
+  opacity: 1;
+}
+
+.navBtn:active {
+  transform: translateY(0) scale(0.985);
+}
+
+/* Button variants */
+.btnRegistration::before {
+  background: linear-gradient(135deg, rgba(123, 64, 255, 0.15) 0%, rgba(182, 100, 255, 0.08) 100%);
+}
+
+.btnRegistration:hover {
+  box-shadow: 0 12px 40px rgba(123, 64, 255, 0.25), 0 0 0 1px rgba(123, 64, 255, 0.3);
+  border-color: rgba(123, 64, 255, 0.4);
+}
+
+.btnChat::before {
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.12) 0%, rgba(59, 130, 246, 0.08) 100%);
+}
+
+.btnChat:hover {
+  box-shadow: 0 12px 40px rgba(0, 212, 255, 0.2), 0 0 0 1px rgba(0, 212, 255, 0.3);
+  border-color: rgba(0, 212, 255, 0.4);
+}
+
+/* Icon badge */
+.iconBadge {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  position: relative;
+  z-index: 1;
+}
+
+.iconBadgeRegistration {
+  background: linear-gradient(135deg, rgba(123, 64, 255, 0.3), rgba(182, 100, 255, 0.2));
+  box-shadow: 0 4px 16px rgba(123, 64, 255, 0.3);
+}
+
+.iconBadgeChat {
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.3), rgba(59, 130, 246, 0.2));
+  box-shadow: 0 4px 16px rgba(0, 212, 255, 0.25);
+}
+
+/* Button text */
+.btnTextGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+
+.btnLabel {
+  font-size: 16px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.92);
+  letter-spacing: -0.2px;
+}
+
+.btnDesc {
+  font-size: 12.5px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.38);
+  font-family: 'Inter', sans-serif;
+}
+
+/* Arrow icon */
+.btnArrow {
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.25);
+  font-size: 18px;
+  position: relative;
+  z-index: 1;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.navBtn:hover .btnArrow {
+  transform: translateX(4px);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ---- Footer note ---- */
+.footerNote {
+  margin-top: 32px;
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.2);
+  font-family: 'Inter', sans-serif;
+  text-align: center;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 480px) {
+  .card {
+    padding: 40px 24px 40px;
+    border-radius: 20px;
+  }
+
+  .navBtn {
+    padding: 16px 18px;
+    gap: 14px;
+  }
+
+  .iconBadge {
+    width: 42px;
+    height: 42px;
+    font-size: 19px;
+  }
+}

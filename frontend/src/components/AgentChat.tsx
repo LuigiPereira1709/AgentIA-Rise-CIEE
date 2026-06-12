@@ -12,15 +12,16 @@ import type { IChatItem } from '../types/chat';
 import styles from './AgentChat.module.css';
 
 interface AgentChatProps {
-  agentId: string;
-  agentName: string;
+  agentId?: string;
+  agentName?: string;
   agentDescription?: string;
   agentLogo?: string;
   starterPrompts?: string[];
   onNavigateToRegister?: () => void;
+  onBack?: () => void;
 }
 
-export const AgentChat: React.FC<AgentChatProps> = ({ agentName, agentDescription, agentLogo, starterPrompts, onNavigateToRegister }) => {
+export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Agente IA', agentDescription, agentLogo, starterPrompts, onNavigateToRegister, onBack }) => {
   const { chat, state } = useAppState();
   const { dispatch } = useAppContext();
   const { getAccessToken } = useAuth();
@@ -209,6 +210,30 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName, agentDescriptio
 
   return (
     <div className={styles.content}>
+      {/* ── Top navbar (only when onBack is provided) ── */}
+      {onBack && (
+        <header className={styles.chatNavbar}>
+          <button
+            id="btn-back-to-menu"
+            className={styles.backToMenuBtn}
+            onClick={onBack}
+            aria-label="Voltar ao menu"
+          >
+            <span className={styles.backArrow}>←</span>
+            <span>Menu</span>
+          </button>
+
+          <div className={styles.navbarCenter}>
+            <span className={styles.navbarAgentName}>
+              {agentName || 'Agente IA'}
+            </span>
+            <span className={styles.navbarOnlineDot} />
+          </div>
+
+          <div className={styles.navbarRight} />
+        </header>
+      )}
+
       <div className={styles.mainContent}>
         <ChatInterface 
           messages={chat.messages}
@@ -241,6 +266,7 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName, agentDescriptio
           agentDescription={agentDescription}
           agentLogo={agentLogo}
           starterPrompts={starterPrompts}
+          placeholder="Digite sua mensagem..."
         />
       </div>
 

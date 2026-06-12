@@ -20,6 +20,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   flex-shrink: 0;
   position: relative;
+  z-index: 50;
 }
 
 .navLeft {
@@ -284,6 +285,7 @@
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
+  pointer-events: none;
 }
 
 .navMischiefHeader {

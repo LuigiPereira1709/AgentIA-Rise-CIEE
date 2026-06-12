@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap');
+
 .content {
   width: 100%;
   height: 100vh;
@@ -7,10 +9,106 @@
   position: relative;
 }
 
+/* ── Chat top navbar ── */
+.chatNavbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  height: 52px;
+  flex-shrink: 0;
+  background: var(--colorNeutralBackground1);
+  border-bottom: 1px solid var(--colorNeutralStroke2);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  position: relative;
+  z-index: 50;
+}
+
+/* Back button */
+.backToMenuBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: 'Outfit', var(--fontFamilyBase, system-ui), sans-serif;
+  color: var(--colorNeutralForeground2);
+  background: var(--colorNeutralBackground3);
+  border: 1px solid var(--colorNeutralStroke2);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  letter-spacing: 0.1px;
+  flex-shrink: 0;
+}
+
+.backToMenuBtn:hover {
+  background: var(--colorNeutralBackground3Hover);
+  border-color: var(--colorBrandStroke1);
+  color: var(--colorBrandForeground1);
+}
+
+.backToMenuBtn:active {
+  transform: scale(0.96);
+}
+
+.backArrow {
+  font-size: 15px;
+  line-height: 1;
+  transition: transform 0.18s ease;
+}
+
+.backToMenuBtn:hover .backArrow {
+  transform: translateX(-3px);
+}
+
+/* Centered agent name */
+.navbarCenter {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.navbarAgentName {
+  font-size: 14px;
+  font-weight: 700;
+  font-family: 'Outfit', var(--fontFamilyBase, system-ui), sans-serif;
+  color: var(--colorNeutralForeground1);
+  letter-spacing: -0.1px;
+}
+
+.navbarOnlineDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.5);
+  animation: dotPulse 2.5s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes dotPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+/* Right side spacer (keeps center perfectly centered) */
+.navbarRight {
+  width: 100px;
+  flex-shrink: 0;
+}
+
+/* ── Main chat area ── */
 .mainContent {
   flex: 1;
   display: flex;
   width: 100%;
   position: relative;
   overflow: hidden;
+  min-height: 0;
 }
