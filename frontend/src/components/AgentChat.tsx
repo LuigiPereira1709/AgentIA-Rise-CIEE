@@ -3,7 +3,7 @@ import { Avatar } from '@fluentui/react-components';
 import { ChatInterface } from './ChatInterface';
 import { ConversationSidebar } from './ConversationSidebar';
 import { SettingsPanel } from './core/SettingsPanel';
-import { GooseMascot } from './GooseMascot';
+import { AuxiliaryChatSidebar } from './chat/AuxiliaryChatSidebar';
 import { useAppState } from '../hooks/useAppState';
 import { useAuth } from '../hooks/useAuth';
 import { ChatService } from '../services/chatService';
@@ -31,6 +31,7 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Agente IA', a
   const [mischiefLevel, setMischiefLevel] = useState(0);
   const [isChaosMode, setIsChaosMode] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [isAuxSidebarOpen, setIsAuxSidebarOpen] = useState(false);
 
   const handleGooseHonk = useCallback(() => {
     if (!isMuted) {
@@ -227,17 +228,6 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Agente IA', a
 
   return (
     <div className={styles.content}>
-      {/* ── Mascote do Ganso ── */}
-      <GooseMascot 
-        onHonk={handleGooseHonk} 
-        focusedField={null}
-        onChangeMischief={(level, isChaos) => {
-          setMischiefLevel(level);
-          setIsChaosMode(isChaos);
-        }}
-        isMuted={isMuted}
-      />
-
       {/* ── Top navbar (only when onBack is provided) ── */}
       {onBack && (
         <header className={styles.chatNavbar}>
@@ -264,39 +254,47 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Agente IA', a
         </header>
       )}
 
-      <div className={styles.mainContent}>
-        <ChatInterface 
-          messages={chat.messages}
-          status={chat.status}
-          error={chat.error}
-          streamingMessageId={chat.streamingMessageId}
-          recoveredInput={chat.recoveredInput}
-          recoveredAttachments={chat.recoveredAttachments}
-          onSendMessage={handleSendMessage}
-          onClearError={handleClearError}
-          onRecoveredInputConsumed={handleRecoveredInputConsumed}
-          onOpenSettings={() => setIsSettingsOpen(true)}
-          onNewChat={handleNewChat}
-          onCancelStream={handleCancelStream}
-          onMcpApproval={handleMcpApproval}
-          onToggleSidebar={handleToggleSidebar}
-          onExportConversation={handleExportConversation}
-          onRegenerate={handleRegenerate}
-          onEditMessage={handleEditMessage}
-          onCancelEdit={handleCancelEdit}
-          isEditing={!!chat.editSnapshot}
-          onFeedback={handleFeedback}
-          onDownloadFile={handleDownloadFile}
-          conversationId={chat.currentConversationId}
-          pendingMessages={chat.pendingMessages}
-          onDequeueMessage={handleDequeueMessage}
-          hasMessages={chat.messages.length > 0}
-          disabled={false}
-          agentName={agentName}
-          agentDescription={agentDescription}
-          agentLogo={agentLogo}
-          starterPrompts={starterPrompts}
-          placeholder="Digite sua mensagem..."
+      <div className={styles.bodyWrapper}>
+        <div className={`${styles.mainContent} ${isAuxSidebarOpen ? styles.mainContentShifted : ''}`}>
+          <ChatInterface 
+            messages={chat.messages}
+            status={chat.status}
+            error={chat.error}
+            streamingMessageId={chat.streamingMessageId}
+            recoveredInput={chat.recoveredInput}
+            recoveredAttachments={chat.recoveredAttachments}
+            onSendMessage={handleSendMessage}
+            onClearError={handleClearError}
+            onRecoveredInputConsumed={handleRecoveredInputConsumed}
+            onOpenSettings={() => setIsSettingsOpen(true)}
+            onNewChat={handleNewChat}
+            onCancelStream={handleCancelStream}
+            onMcpApproval={handleMcpApproval}
+            onToggleSidebar={handleToggleSidebar}
+            onExportConversation={handleExportConversation}
+            onRegenerate={handleRegenerate}
+            onEditMessage={handleEditMessage}
+            onCancelEdit={handleCancelEdit}
+            isEditing={!!chat.editSnapshot}
+            onFeedback={handleFeedback}
+            onDownloadFile={handleDownloadFile}
+            conversationId={chat.currentConversationId}
+            pendingMessages={chat.pendingMessages}
+            onDequeueMessage={handleDequeueMessage}
+            hasMessages={chat.messages.length > 0}
+            disabled={false}
+            agentName={agentName}
+            agentDescription={agentDescription}
+            agentLogo={agentLogo}
+            starterPrompts={starterPrompts}
+            placeholder="Digite sua mensagem..."
+          />
+        </div>
+        
+        <AuxiliaryChatSidebar 
+          isOpen={isAuxSidebarOpen} 
+          onOpen={() => setIsAuxSidebarOpen(true)}
+          onClose={() => setIsAuxSidebarOpen(false)} 
         />
       </div>
 
@@ -314,6 +312,7 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Agente IA', a
         onNavigateToRegister={onNavigateToRegister}
       />
       
+      {/* Modals & Panels */}
       <SettingsPanel
         isOpen={isSettingsOpen}
         onOpenChange={setIsSettingsOpen}

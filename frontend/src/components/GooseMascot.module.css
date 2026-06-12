@@ -19,23 +19,23 @@
 
 /* Peeking from the Left */
 .left {
-  left: -80px;
+  left: 0;
   opacity: 1;
-  transform: scaleX(1);
+  transform: translateX(-80px) scaleX(1);
 }
 
 /* Peeking from the Right */
 .right {
-  right: -80px;
+  right: 0;
   opacity: 1;
-  transform: scaleX(-1); /* Flip horizontally so beak points left */
+  transform: translateX(80px) scaleX(-1); /* Flip horizontally so beak points left */
 }
 
 /* Peeking from the Top */
 .top {
-  top: -80px; /* Pull down so head is visible above card */
+  top: 0; 
   opacity: 1;
-  transform: rotate(0deg); /* Upright peeking over the top edge */
+  transform: translateY(-80px) rotate(0deg); /* Upright peeking over the top edge */
 }
 
 /* Interactive Goose Character */
@@ -245,18 +245,15 @@
 /* Mobile responsive fixes */
 @media (max-width: 900px) {
   .left {
-    left: -40px;
-    transform: scale(0.8);
+    transform: translateX(-40px) scale(0.8);
   }
 
   .right {
-    right: -40px;
-    transform: scaleX(-1) scale(0.8);
+    transform: translateX(40px) scaleX(-1) scale(0.8);
   }
 
   .top {
-    top: -45px;
-    transform: rotate(0deg) scale(0.8);
+    transform: translateY(-45px) rotate(0deg) scale(0.8);
   }
 }
 

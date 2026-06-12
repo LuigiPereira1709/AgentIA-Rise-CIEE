@@ -13,56 +13,67 @@
   position: relative;
   width: 100%;
   border-radius: 8px;
-  background: var(--colorNeutralBackground1);
-  border: 1px solid var(--colorNeutralStroke1);
-  box-shadow: var(--shadow4);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  background-color: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: border-color 0.2s ease, background-color 0.2s ease;
 }
 
 .inputWrapper:focus-within {
-  border-color: var(--colorBrandStroke1);
-  box-shadow: var(--shadow8);
+  border-color: rgba(168, 85, 247, 0.6);
+  background-color: rgba(0, 0, 0, 0.8);
 }
 
-.inputWrapper :global(.fui-ChatInput) {
+.inputWrapper :global(.fai-ChatInput) {
   max-height: 120px;
   width: 100%;
-  background: transparent;
-  border: none;
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
   border-radius: 8px;
 }
 
-.inputWrapper :global(.fui-ChatInput) :global(textarea) {
-  background: transparent;
+.inputWrapper :global(.fai-ChatInput) :global(textarea) {
+  background: transparent !important;
+  background-color: transparent !important;
   min-height: 40px;
+  color: #ffffff;
+  font-family: 'Outfit', sans-serif;
 }
 
-.inputWrapper :global(.fui-ChatInput) :global(.fui-ChatInput__container) {
-  background: transparent;
+.inputWrapper :global(.fai-ChatInput) :global(textarea::placeholder) {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.inputWrapper :global(.fai-ChatInput) :global(.fai-ChatInput__container),
+.inputWrapper :global(.fai-ChatInput) :global(.fai-ChatInput__inputWrapper) {
+  background: transparent !important;
+  background-color: transparent !important;
 }
 
 /* Style the built-in send button to match our subtle buttons */
-.inputWrapper :global(.fui-ChatInput) :global(button) {
-  color: var(--colorNeutralForeground2);
+.inputWrapper :global(.fai-ChatInput) :global(button) {
+  color: rgba(255, 255, 255, 0.5);
   background: transparent !important;
   border: none;
+  transition: color 0.2s ease;
 }
 
-.inputWrapper :global(.fui-ChatInput) :global(button:hover:enabled) {
-  color: var(--colorNeutralForeground2Hover);
-  background: var(--colorSubtleBackgroundHover) !important;
+.inputWrapper :global(.fai-ChatInput) :global(button:hover:enabled) {
+  color: #ffffff;
+  background: transparent !important;
 }
 
-.inputWrapper :global(.fui-ChatInput) :global(button:active:enabled) {
-  color: var(--colorNeutralForeground2Pressed);
-  background: var(--colorSubtleBackgroundPressed) !important;
+.inputWrapper :global(.fai-ChatInput) :global(button:active:enabled) {
+  color: #a855f7;
+  background: transparent !important;
+  transform: scale(0.95);
 }
 
-.inputWrapper :global(.fui-ChatInput) :global(button:disabled) {
-  color: var(--colorNeutralForegroundDisabled);
+.inputWrapper :global(.fai-ChatInput) :global(button:disabled) {
+  color: rgba(255, 255, 255, 0.2);
   background: transparent !important;
   cursor: not-allowed;
-  opacity: 0.4;
+  opacity: 0.5;
 }
 
 .attachmentsPreview {
@@ -79,20 +90,22 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
-  background: var(--colorNeutralBackground2);
-  border: 1px solid var(--colorNeutralStroke1);
-  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
   font-size: 0.875rem;
-  transition: background 0.2s ease;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  color: #e0e0e0;
 }
 
 .attachmentItem:hover {
-  background: var(--colorNeutralBackground3);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(168, 85, 247, 0.3);
 }
 
 .attachmentName {
   font-weight: 500;
-  color: var(--colorNeutralForeground1);
+  color: #ffffff;
   max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -100,7 +113,7 @@
 }
 
 .attachmentSize {
-  color: var(--colorNeutralForeground3);
+  color: rgba(255, 255, 255, 0.5);
   font-size: 0.75rem;
 }
 
@@ -109,7 +122,7 @@
   align-items: center;
   justify-content: flex-end;
   padding: 0.5rem 0.75rem;
-  border-top: 1px solid var(--colorNeutralStroke2);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
   gap: 0.5rem;
 }
 
@@ -122,7 +135,7 @@
 .divider {
   width: 1px;
   height: 20px;
-  background-color: var(--colorNeutralStroke2);
+  background-color: rgba(255, 255, 255, 0.08);
   flex-shrink: 0;
 }
 
