@@ -7,37 +7,44 @@ interface HomePageProps {
   onNavigate: (page: Page) => void;
 }
 
-// Inline SVG goose (minimal, matching the mascot style)
 const GooseSvg: React.FC = () => (
-  <svg
-    viewBox="0 0 90 90"
-    width="88"
-    height="88"
+  <svg 
+    viewBox="0 0 80 80" 
+    width="110"
+    height="110"
     xmlns="http://www.w3.org/2000/svg"
     className={styles.mascotGoose}
+    style={{ overflow: 'visible' }}
   >
-    {/* Body */}
-    <ellipse cx="45" cy="60" rx="26" ry="22" fill="#f5f5f0" />
-    {/* Head */}
-    <circle cx="62" cy="32" r="16" fill="#f5f5f0" />
-    {/* Beak */}
-    <path d="M76 32 L86 30 L86 34 Z" fill="#f5a623" />
-    {/* Eye */}
-    <circle cx="67" cy="28" r="3" fill="#1a1a2e" />
-    <circle cx="68" cy="27" r="1" fill="white" />
-    {/* Wing */}
-    <path d="M22 58 Q18 45 30 42 Q40 44 38 60 Z" fill="#e8e8e0" />
-    {/* Tail */}
-    <path d="M22 72 Q12 68 16 60 Q24 64 26 74 Z" fill="#e8e8e0" />
-    {/* Feet */}
-    <line x1="38" y1="80" x2="34" y2="88" stroke="#f5a623" strokeWidth="3" strokeLinecap="round" />
-    <line x1="34" y1="88" x2="28" y2="88" stroke="#f5a623" strokeWidth="3" strokeLinecap="round" />
-    <line x1="34" y1="88" x2="34" y2="92" stroke="#f5a623" strokeWidth="3" strokeLinecap="round" />
-    <line x1="52" y1="80" x2="48" y2="88" stroke="#f5a623" strokeWidth="3" strokeLinecap="round" />
-    <line x1="48" y1="88" x2="42" y2="88" stroke="#f5a623" strokeWidth="3" strokeLinecap="round" />
-    <line x1="48" y1="88" x2="48" y2="92" stroke="#f5a623" strokeWidth="3" strokeLinecap="round" />
-    {/* Neck */}
-    <path d="M50 46 Q58 38 62 46 Q58 52 48 56 Z" fill="#f5f5f0" />
+    <g transform="translate(-10, 0)">
+      {/* Body */}
+      <ellipse cx="38" cy="52" rx="20" ry="14" fill="#ffffff" stroke="#0c0f1d" strokeWidth="2" />
+      {/* Wing hint */}
+      <path d="M 22 54 Q 28 60 38 58" fill="none" stroke="#e0e0e0" strokeWidth="1.5" />
+      
+      {/* Neck */}
+      <path d="M 48 42 C 55 32 54 24 54 18" stroke="#ffffff" strokeWidth="10" strokeLinecap="round" fill="none" />
+      
+      {/* Legs */}
+      <line x1="32" y1="64" x2="30" y2="72" stroke="#ff9f1c" strokeWidth="2.5" strokeLinecap="round" />
+      <line x1="42" y1="65" x2="44" y2="73" stroke="#ff9f1c" strokeWidth="2.5" strokeLinecap="round" />
+      {/* Feet */}
+      <line x1="30" y1="72" x2="24" y2="72" stroke="#ff9f1c" strokeWidth="2" strokeLinecap="round" />
+      <line x1="44" y1="73" x2="50" y2="73" stroke="#ff9f1c" strokeWidth="2" strokeLinecap="round" />
+
+      {/* Head */}
+      <circle cx="54" cy="16" r="14" fill="#ffffff" stroke="#0c0f1d" strokeWidth="2" />
+      
+      {/* Cheek / Blush */}
+      <circle cx="53" cy="21" r="3.5" fill="rgba(255, 90, 95, 0.4)" />
+
+      {/* Eye */}
+      <circle cx="58" cy="12" r="2.5" fill="#000000" />
+
+      {/* Beak */}
+      <path d="M 64 18.5 Q 70 19 84 18.5 Q 70 23 64 21 Z" fill="#ff9f1c" stroke="#0c0f1d" strokeWidth="1.8" />
+      <path d="M 64 16 Q 80 16 84 18.5 Q 70 19 64 18.5 Z" fill="#ff9f1c" stroke="#0c0f1d" strokeWidth="1.8" />
+    </g>
   </svg>
 );
 
