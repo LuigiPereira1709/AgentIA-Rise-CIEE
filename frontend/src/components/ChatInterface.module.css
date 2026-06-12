@@ -16,7 +16,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding: 2rem 1.5rem;
-  background-color: var(--colorNeutralBackground1);
+  background: radial-gradient(circle at top, #16213e 0%, #0c0f1d 70%);
   position: relative;
   min-height: 0;
   width: 100%;
@@ -39,8 +39,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: var(--colorNeutralBackground1);
-  border-top: 1px solid var(--colorNeutralStroke2);
+  background-color: #111424;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 /* Screen reader only content */
@@ -91,7 +91,8 @@
   position: relative;
   flex-shrink: 0;
   width: 100%;
-  background: var(--colorNeutralBackground1);
+  background-color: #111424;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -113,9 +114,10 @@
   transform: translateX(-50%);
   padding: 6px 16px;
   border-radius: 999px;
-  border: 1px solid var(--colorNeutralStroke1);
-  background-color: var(--colorNeutralBackground1);
-  color: var(--colorBrandForeground1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background-color: rgba(17, 20, 36, 0.9);
+  backdrop-filter: blur(8px);
+  color: #53a8b6;
   font-size: var(--fontSizeBase200);
   font-weight: var(--fontWeightSemibold);
   cursor: pointer;
@@ -125,8 +127,8 @@
 }
 
 .newMessagesPill:hover {
-  background-color: var(--colorNeutralBackground1Hover);
-  box-shadow: var(--shadow16);
+  background-color: rgba(17, 20, 36, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 /* Built with badge - centered under input */

@@ -403,6 +403,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 title="Nova conversa"
               />
             )}
+            {onShowShortcuts && (
+              <Button
+                appearance="subtle"
+                icon={<Keyboard24Regular />}
+                onClick={onShowShortcuts}
+                aria-label="Atalhos de teclado"
+                title="Atalhos de teclado"
+              />
+            )}
             <Menu>
               <MenuTrigger disableButtonEnhancement>
                 <Button
@@ -424,11 +433,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                       Exportar como Markdown
                     </MenuItem>
                   )}
-                  {onShowShortcuts && (
-                    <MenuItem icon={<Keyboard24Regular />} onClick={onShowShortcuts}>
-                      Atalhos de teclado
-                    </MenuItem>
-                  )}
+
                   {onOpenSettings && (
                     <MenuItem icon={<Settings24Regular />} onClick={onOpenSettings} disabled={disabled}>
                       Configurações

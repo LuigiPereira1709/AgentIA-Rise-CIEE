@@ -17,9 +17,9 @@
   padding: 0 20px;
   height: 52px;
   flex-shrink: 0;
-  background: var(--colorNeutralBackground1);
-  border-bottom: 1px solid var(--colorNeutralStroke2);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  background-color: #111424;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   position: relative;
   z-index: 50;
 }
@@ -33,9 +33,9 @@
   font-size: 13.5px;
   font-weight: 600;
   font-family: 'Outfit', var(--fontFamilyBase, system-ui), sans-serif;
-  color: var(--colorNeutralForeground2);
-  background: var(--colorNeutralBackground3);
-  border: 1px solid var(--colorNeutralStroke2);
+  color: #a0a0b0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.18s ease;
@@ -44,9 +44,9 @@
 }
 
 .backToMenuBtn:hover {
-  background: var(--colorNeutralBackground3Hover);
-  border-color: var(--colorBrandStroke1);
-  color: var(--colorBrandForeground1);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
 }
 
 .backToMenuBtn:active {
@@ -78,7 +78,7 @@
   font-size: 14px;
   font-weight: 700;
   font-family: 'Outfit', var(--fontFamilyBase, system-ui), sans-serif;
-  color: var(--colorNeutralForeground1);
+  color: #ffffff;
   letter-spacing: -0.1px;
 }
 

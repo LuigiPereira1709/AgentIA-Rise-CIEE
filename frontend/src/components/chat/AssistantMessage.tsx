@@ -231,7 +231,7 @@ function AssistantMessageComponent({
         <>
           <Suspense fallback={<Spinner size="small" />}>
             <Markdown 
-              content={message.content} 
+              content={isStreaming ? message.content + ' ▍' : message.content} 
               annotations={message.annotations}
               onCitationClick={handleCitationClick}
               onDownloadFile={onDownloadFile}

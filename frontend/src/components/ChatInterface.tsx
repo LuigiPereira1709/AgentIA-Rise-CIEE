@@ -8,7 +8,6 @@ import { DropZone } from "./chat/DropZone";
 import { Waves } from "./animations/Waves";
 import { ErrorMessage } from "./core/ErrorMessage";
 import { KeyboardShortcuts } from "./core/KeyboardShortcuts";
-import { BuiltWithBadge } from "./core/BuiltWithBadge";
 import type { IChatItem } from "../types/chat";
 import type { AppState } from "../types/appState";
 import type { AppError } from "../types/errors";
@@ -318,7 +317,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = (props) => {
           droppedFiles={droppedFiles}
           onDroppedFilesConsumed={handleDroppedFilesConsumed}
         />
-        <BuiltWithBadge className={styles.builtWithBadge} />
       </div>
     </div>
   );

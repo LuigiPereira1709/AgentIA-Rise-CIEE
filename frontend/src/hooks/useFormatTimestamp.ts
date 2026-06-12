@@ -34,31 +34,30 @@ export const useFormatTimestamp = () => {
 
     // Just now (< 1 minute)
     if (diffMinutes < 1) {
-      return 'just now';
+      return 'agora mesmo';
     }
 
     // Minutes ago (< 60 minutes)
     if (diffMinutes < 60) {
-      return `${diffMinutes} minute${diffMinutes === 1 ? '' : 's'} ago`;
+      return `há ${diffMinutes} minuto${diffMinutes === 1 ? '' : 's'}`;
     }
 
     // Hours ago (< 24 hours)
     if (diffHours < 24) {
-      return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+      return `há ${diffHours} hora${diffHours === 1 ? '' : 's'}`;
     }
 
     // Days ago (< 7 days)
     if (diffDays < 7) {
-      return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+      return `há ${diffDays} dia${diffDays === 1 ? '' : 's'}`;
     }
 
     // Absolute time for older messages
-    return new Intl.DateTimeFormat('en', {
+    return new Intl.DateTimeFormat('pt-BR', {
       month: 'short',
       day: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true,
     }).format(date);
   }, []);
 };

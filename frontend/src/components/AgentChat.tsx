@@ -1,7 +1,9 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { Avatar } from '@fluentui/react-components';
 import { ChatInterface } from './ChatInterface';
 import { ConversationSidebar } from './ConversationSidebar';
 import { SettingsPanel } from './core/SettingsPanel';
+import { GooseMascot } from './GooseMascot';
 import { useAppState } from '../hooks/useAppState';
 import { useAuth } from '../hooks/useAuth';
 import { ChatService } from '../services/chatService';
@@ -26,6 +28,21 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Agente IA', a
   const { dispatch } = useAppContext();
   const { getAccessToken } = useAuth();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [mischiefLevel, setMischiefLevel] = useState(0);
+  const [isChaosMode, setIsChaosMode] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+
+  const handleGooseHonk = useCallback(() => {
+    if (!isMuted) {
+      try {
+        const audio = new Audio('/honk.mp3');
+        audio.volume = 0.4;
+        audio.play().catch(e => console.warn('Audio play failed:', e));
+      } catch (e) {
+        console.warn('Audio not supported', e);
+      }
+    }
+  }, [isMuted]);
 
   // Create service instances
   const apiUrl = import.meta.env.VITE_API_URL || '/api';
@@ -210,6 +227,17 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Agente IA', a
 
   return (
     <div className={styles.content}>
+      {/* ── Mascote do Ganso ── */}
+      <GooseMascot 
+        onHonk={handleGooseHonk} 
+        focusedField={null}
+        onChangeMischief={(level, isChaos) => {
+          setMischiefLevel(level);
+          setIsChaosMode(isChaos);
+        }}
+        isMuted={isMuted}
+      />
+
       {/* ── Top navbar (only when onBack is provided) ── */}
       {onBack && (
         <header className={styles.chatNavbar}>
@@ -230,7 +258,9 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Agente IA', a
             <span className={styles.navbarOnlineDot} />
           </div>
 
-          <div className={styles.navbarRight} />
+          <div className={styles.navbarRight}>
+            <Avatar name="Usuário" size={28} />
+          </div>
         </header>
       )}
 
