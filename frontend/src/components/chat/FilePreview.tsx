@@ -1,4 +1,4 @@
-import { makeStyles, tokens, Button, Badge, Text } from '@fluentui/react-components';
+import { makeStyles } from '@fluentui/react-components';
 import { 
   Dismiss24Regular, 
   ImageRegular, 
@@ -7,7 +7,7 @@ import {
   DocumentTextRegular,
   CodeRegular
 } from '@fluentui/react-icons';
-import { useState, useEffect, useRef } from 'react';
+
 import { getEffectiveMimeType } from '../../utils/fileAttachments';
 
 
@@ -33,7 +33,10 @@ const useStyles = makeStyles({
     transition: 'background-color 0.2s ease, border-color 0.2s ease',
     '&:hover': {
       backgroundColor: 'rgba(255, 255, 255, 0.12)',
-      borderColor: 'rgba(168, 85, 247, 0.3)',
+      borderTopColor: 'rgba(168, 85, 247, 0.3)',
+      borderRightColor: 'rgba(168, 85, 247, 0.3)',
+      borderBottomColor: 'rgba(168, 85, 247, 0.3)',
+      borderLeftColor: 'rgba(168, 85, 247, 0.3)',
     }
   },
   iconWrapper: {
@@ -80,73 +83,6 @@ interface FilePreviewProps {
 
 export const FilePreview: React.FC<FilePreviewProps> = ({ files, onRemove, disabled }) => {
   const styles = useStyles();
-  // Key thumbnails by unique file identifier to prevent stale mappings on reorder
-  const [thumbnails, setThumbnails] = useState<Map<string, string>>(new Map());
-  // Track files that are currently being read to prevent duplicate reads
-  const pendingReadsRef = useRef<Set<string>>(new Set());
-
-  // Generate a stable unique key for each file
-  const getFileKey = (file: File): string => `${file.name}-${file.size}-${file.lastModified}`;
-
-  useEffect(() => {
-    const currentFileKeys = new Set(files.map(getFileKey));
-    
-    // Clean up previews for removed files
-    setThumbnails(prev => {
-      const updated = new Map<string, string>();
-      for (const [key, value] of prev) {
-        if (currentFileKeys.has(key)) {
-          updated.set(key, value);
-        }
-      }
-      return updated;
-    });
-    
-    // Clear pending reads for removed files
-    for (const key of pendingReadsRef.current) {
-      if (!currentFileKeys.has(key)) {
-        pendingReadsRef.current.delete(key);
-      }
-    }
-
-    // Generate previews for new files
-    for (const file of files) {
-      const fileKey = getFileKey(file);
-      const mimeType = getEffectiveMimeType(file);
-      
-      // Skip if already loaded or currently loading
-      if (pendingReadsRef.current.has(fileKey)) continue;
-      
-      if (mimeType.startsWith('image/')) {
-        // Check if already have this thumbnail
-        setThumbnails(prev => {
-          if (prev.has(fileKey)) return prev;
-          
-          pendingReadsRef.current.add(fileKey);
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            pendingReadsRef.current.delete(fileKey);
-            if (e.target?.result) {
-              setThumbnails(p => new Map(p).set(fileKey, e.target!.result as string));
-            }
-          };
-          reader.onerror = () => {
-            pendingReadsRef.current.delete(fileKey);
-          };
-          reader.readAsDataURL(file);
-          return prev;
-        });
-      }
-    }
-  }, [files]);
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), sizes.length - 1);
-    return `${Math.round(bytes / Math.pow(k, i) * 10) / 10} ${sizes[i]}`;
-  };
 
   const getFileIcon = (file: File, size = 20) => {
     const mimeType = getEffectiveMimeType(file);
@@ -166,20 +102,12 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ files, onRemove, disab
     return <DocumentRegular fontSize={size} aria-hidden="true" />;
   };
 
-  const getFileExtension = (fileName: string): string => {
-    const parts = fileName.split('.');
-    return parts.length > 1 ? `.${parts[parts.length - 1].toUpperCase()}` : '';
-  };
-
   if (files.length === 0) return null;
 
   return (
     <div className={styles.container} role="list" aria-label="Attached files">
       {files.map((file, index) => {
-        const fileKey = getFileKey(file);
-        const mimeType = getEffectiveMimeType(file);
-        const isImage = mimeType.startsWith('image/');
-        const thumbnail = thumbnails.get(fileKey);
+        const fileKey = `${file.name}-${file.size}-${index}`;
         
         return (
           <div key={fileKey} className={styles.previewItem} role="listitem" title={file.name}>

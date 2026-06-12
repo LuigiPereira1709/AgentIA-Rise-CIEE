@@ -1,10 +1,11 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { Avatar } from '@fluentui/react-components';
-import { Navigation24Regular } from '@fluentui/react-icons';
+import { Navigation24Regular, Map24Regular } from '@fluentui/react-icons';
 import { ChatInterface } from './ChatInterface';
 import { ConversationSidebar } from './ConversationSidebar';
 import { SettingsPanel } from './core/SettingsPanel';
 import { AuxiliaryChatSidebar } from './chat/AuxiliaryChatSidebar';
+import { GooseJourney } from './GooseJourney';
 import { useAppState } from '../hooks/useAppState';
 import { useAuth } from '../hooks/useAuth';
 import { ChatService } from '../services/chatService';
@@ -29,22 +30,24 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Agente IA', a
   const { dispatch } = useAppContext();
   const { getAccessToken } = useAuth();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [mischiefLevel, setMischiefLevel] = useState(0);
-  const [isChaosMode, setIsChaosMode] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
   const [isAuxSidebarOpen, setIsAuxSidebarOpen] = useState(false);
+  const [isJourneyOpen, setIsJourneyOpen] = useState(false);
 
-  const handleGooseHonk = useCallback(() => {
-    if (!isMuted) {
-      try {
-        const audio = new Audio('/honk.mp3');
-        audio.volume = 0.4;
-        audio.play().catch(e => console.warn('Audio play failed:', e));
-      } catch (e) {
-        console.warn('Audio not supported', e);
-      }
+  // Mock state for Journey
+  const [journeyFormData, setJourneyFormData] = useState({
+    name: 'Usuário',
+    email: '',
+    organization: '',
+    role: ''
+  });
+  const [journeyStep, setJourneyStep] = useState(1);
+
+  const handleJourneyFieldChange = (field: 'name' | 'email' | 'organization' | 'role', value: string) => {
+    setJourneyFormData(prev => ({ ...prev, [field]: value }));
+    if (field === 'email' && value.includes('@')) {
+      setJourneyStep(Math.max(journeyStep, 1));
     }
-  }, [isMuted]);
+  };
 
   // Create service instances
   const apiUrl = import.meta.env.VITE_API_URL || '/api';
@@ -231,14 +234,25 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Agente IA', a
     <div className={styles.content}>
       {/* ── Top navbar ── */}
       <header className={styles.chatNavbar}>
-        <button
-          id="btn-open-sidebar"
-          className={styles.backToMenuBtn}
-          onClick={handleToggleSidebar}
-          aria-label="Abrir Menu"
-        >
-          <Navigation24Regular />
-        </button>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <button
+            id="btn-open-sidebar"
+            className={styles.backToMenuBtn}
+            onClick={handleToggleSidebar}
+            aria-label="Abrir Menu"
+          >
+            <Navigation24Regular />
+          </button>
+          
+          <button
+            className={styles.backToMenuBtn}
+            onClick={() => setIsJourneyOpen(!isJourneyOpen)}
+            aria-label="Progresso da Jornada"
+            title="Sua Jornada"
+          >
+            <Map24Regular />
+          </button>
+        </div>
 
           <div className={styles.navbarCenter}>
             <span className={styles.navbarAgentName}>
@@ -285,7 +299,6 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Agente IA', a
             agentDescription={agentDescription}
             agentLogo={agentLogo}
             starterPrompts={starterPrompts}
-            placeholder="Digite sua mensagem..."
           />
         </div>
         
@@ -294,6 +307,16 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Agente IA', a
           onOpen={() => setIsAuxSidebarOpen(true)}
           onClose={() => setIsAuxSidebarOpen(false)} 
         />
+
+        {isJourneyOpen && (
+          <GooseJourney
+            currentStep={journeyStep}
+            formData={journeyFormData}
+            isSubmitted={false}
+            focusedField={null}
+            onFieldChange={handleJourneyFieldChange}
+          />
+        )}
       </div>
 
       <ConversationSidebar

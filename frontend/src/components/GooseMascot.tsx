@@ -7,6 +7,7 @@ interface GooseMascotProps {
   onUnlockHeistAchievement?: () => void;
   onUnlockChaosAchievement?: () => void;
   onChangeMischief?: (level: number, isChaos: boolean) => void;
+  isMuted?: boolean;
 }
 
 const GANSO_PHRASES = [
@@ -451,10 +452,7 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
     // Set baseCoord
     setBaseCoord(Math.max(10, Math.min(parentRect.height - 110, targetTop)));
 
-    // Peek from the left if hidden
-    if (side === 'hidden') {
-      setSide('left');
-    }
+    // Default to left if needed, but side is always one of the valid values.
 
     // Set a field-specific hint
     const hints = FIELD_HINTS[focusedField];

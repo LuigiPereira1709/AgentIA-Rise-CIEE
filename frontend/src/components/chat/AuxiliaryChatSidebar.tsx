@@ -145,7 +145,7 @@ export const AuxiliaryChatSidebar: React.FC<AuxiliaryChatSidebarProps> = ({
                   ? <span className={styles.userText}>{msg.content}</span>
                   : <Markdown content={msg.content || '...'} />
                 }
-                <span className={styles.timestamp}>{formatTime(new Date(msg.createdAt ?? Date.now()))}</span>
+                <span className={styles.timestamp}>{formatTime(new Date(msg.more?.time ?? Date.now()))}</span>
               </div>
             </div>
           ))

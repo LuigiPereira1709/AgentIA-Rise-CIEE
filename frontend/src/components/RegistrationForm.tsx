@@ -191,13 +191,13 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
   };
 
   // Gamification states
-  const [unlockedAchievements, setUnlockedAchievements] = useState<string[]>([]);
+
   const [activeToasts, setActiveToasts] = useState<{ id: string; title: string; description: string; icon: string }[]>([]);
   const [focusedField, setFocusedField] = useState<'name' | 'email' | 'organization' | 'role' | null>(null);
   const [mischiefLevel, setMischiefLevel] = useState(20);
   const [isChaosMode, setIsChaosMode] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
-  const [clickCount, setClickCount] = useState(0);
+
 
   const nameFocusTimeRef = useRef<number | null>(null);
   const nameUnlockedRef = useRef(false);
@@ -207,7 +207,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
     if (unlockedRef.current.includes(id)) return;
     unlockedRef.current.push(id);
 
-    setUnlockedAchievements((prev) => [...prev, id]);
 
     const achievement = ACHIEVEMENTS[id];
     if (achievement) {
@@ -248,14 +247,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
     setTimeout(() => {
       setIsShaking(false);
     }, 350);
-
-    setClickCount((prev) => {
-      const nextCount = prev + 1;
-      if (nextCount >= 5) {
-        unlockAchievement('duck_friend');
-      }
-      return nextCount;
-    });
   };
 
   const handleInputChange = (field: string, value: string) => {
