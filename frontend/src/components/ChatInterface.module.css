@@ -73,17 +73,17 @@
 }
 
 .messagesContainer::-webkit-scrollbar-track {
-  background: var(--colorNeutralBackground3);
+  background: rgba(0, 0, 0, 0.2);
   border-radius: 4px;
 }
 
 .messagesContainer::-webkit-scrollbar-thumb {
-  background: var(--colorNeutralStroke1);
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 4px;
 }
 
 .messagesContainer::-webkit-scrollbar-thumb:hover {
-  background: var(--colorNeutralStroke2);
+  background: rgba(168, 85, 247, 0.5);
 }
 
 /* Chat input area with wave animation */
@@ -114,21 +114,23 @@
   transform: translateX(-50%);
   padding: 6px 16px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background-color: rgba(17, 20, 36, 0.9);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  background-color: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(8px);
-  color: #53a8b6;
-  font-size: var(--fontSizeBase200);
-  font-weight: var(--fontWeightSemibold);
+  color: #c084fc;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
   z-index: 10;
-  box-shadow: var(--shadow8);
-  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .newMessagesPill:hover {
-  background-color: rgba(17, 20, 36, 1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  background-color: rgba(0, 0, 0, 0.8);
+  border-color: rgba(168, 85, 247, 0.6);
+  color: #d8b4fe;
+  box-shadow: 0 4px 20px rgba(168, 85, 247, 0.2);
 }
 
 /* Built with badge - centered under input */

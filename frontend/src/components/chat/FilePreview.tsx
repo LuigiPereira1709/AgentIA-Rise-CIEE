@@ -10,93 +10,65 @@ import {
 import { useState, useEffect, useRef } from 'react';
 import { getEffectiveMimeType } from '../../utils/fileAttachments';
 
-// MIME types that can be previewed as text content
-const TEXT_PREVIEW_TYPES = new Set([
-  'text/plain',
-  'text/markdown',
-  'text/csv',
-  'application/json',
-  'text/html',
-  'application/xml',
-  'text/xml',
-]);
 
 const useStyles = makeStyles({
   container: {
     display: 'flex',
     flexWrap: 'wrap',
-    gap: tokens.spacingHorizontalS,
-    padding: tokens.spacingVerticalS,
-    backgroundColor: tokens.colorNeutralBackground2,
-    borderRadius: tokens.borderRadiusMedium,
-    marginBottom: tokens.spacingVerticalS,
+    gap: '8px',
+    padding: '4px 0',
+    backgroundColor: 'transparent',
+    marginBottom: '8px',
   },
   previewItem: {
     position: 'relative',
-    width: '80px',
-    height: '80px',
-    borderRadius: tokens.borderRadiusMedium,
-    overflow: 'hidden',
-    border: `1px solid ${tokens.colorNeutralStroke1}`,
-    backgroundColor: tokens.colorNeutralBackground1,
-  },
-  thumbnail: {
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover',
-  },
-  textPreview: {
-    width: '100%',
-    height: '100%',
-    padding: '4px',
-    fontSize: '7px',
-    fontFamily: 'monospace',
-    lineHeight: '1.2',
-    whiteSpace: 'pre-wrap',
-    wordBreak: 'break-all',
-    overflow: 'hidden',
-    color: tokens.colorNeutralForeground2,
-    backgroundColor: tokens.colorNeutralBackground1,
-  },
-  placeholderIcon: {
-    width: '100%',
-    height: '100%',
     display: 'flex',
-    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '6px 12px',
+    paddingRight: '6px', /* less padding on right because of close button */
+    borderRadius: '999px',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    transition: 'background-color 0.2s ease, border-color 0.2s ease',
+    '&:hover': {
+      backgroundColor: 'rgba(255, 255, 255, 0.12)',
+      borderColor: 'rgba(168, 85, 247, 0.3)',
+    }
+  },
+  iconWrapper: {
+    display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: tokens.spacingVerticalXXS,
-    color: tokens.colorNeutralForeground3,
-    padding: tokens.spacingHorizontalXS,
+    color: '#818cf8', /* Soft blue/purple */
   },
   fileName: {
-    fontSize: '9px',
-    textAlign: 'center',
-    wordBreak: 'break-word',
-    lineHeight: '1.1',
-    maxHeight: '22px',
+    fontSize: '13px',
+    fontFamily: 'Outfit, sans-serif',
+    fontWeight: 500,
+    color: '#ffffff',
+    maxWidth: '140px', /* Reduced to save space and trigger abbreviation sooner */
     overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    lineHeight: '1',
   },
   removeButton: {
-    position: 'absolute',
-    top: '2px',
-    right: '2px',
-    minWidth: '20px',
-    minHeight: '20px',
-    padding: '2px',
-    backgroundColor: tokens.colorNeutralBackground1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: 'transparent',
+    border: 'none',
+    color: 'rgba(255, 255, 255, 0.5)',
+    cursor: 'pointer',
+    padding: '4px',
     borderRadius: '50%',
-    boxShadow: tokens.shadow4,
+    marginLeft: '2px',
+    transition: 'color 0.2s ease, background-color 0.2s ease',
     '&:hover': {
-      backgroundColor: tokens.colorNeutralBackground1Hover,
-    },
-  },
-  sizeBadge: {
-    position: 'absolute',
-    bottom: '4px',
-    left: '4px',
-    fontSize: '10px',
-    padding: '2px 4px',
+      color: '#ffffff',
+      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    }
   },
 });
 
@@ -110,35 +82,17 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ files, onRemove, disab
   const styles = useStyles();
   // Key thumbnails by unique file identifier to prevent stale mappings on reorder
   const [thumbnails, setThumbnails] = useState<Map<string, string>>(new Map());
-  // Store text content previews for text-based files
-  const [textPreviews, setTextPreviews] = useState<Map<string, string>>(new Map());
   // Track files that are currently being read to prevent duplicate reads
   const pendingReadsRef = useRef<Set<string>>(new Set());
 
   // Generate a stable unique key for each file
   const getFileKey = (file: File): string => `${file.name}-${file.size}-${file.lastModified}`;
 
-  // Check if a file can be previewed as text using the shared MIME type utility
-  const isTextPreviewable = (file: File): boolean => {
-    const mimeType = getEffectiveMimeType(file);
-    return TEXT_PREVIEW_TYPES.has(mimeType);
-  };
-
   useEffect(() => {
     const currentFileKeys = new Set(files.map(getFileKey));
     
     // Clean up previews for removed files
     setThumbnails(prev => {
-      const updated = new Map<string, string>();
-      for (const [key, value] of prev) {
-        if (currentFileKeys.has(key)) {
-          updated.set(key, value);
-        }
-      }
-      return updated;
-    });
-    
-    setTextPreviews(prev => {
       const updated = new Map<string, string>();
       for (const [key, value] of prev) {
         if (currentFileKeys.has(key)) {
@@ -182,27 +136,6 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ files, onRemove, disab
           reader.readAsDataURL(file);
           return prev;
         });
-      } else if (isTextPreviewable(file)) {
-        // Check if already have this text preview
-        setTextPreviews(prev => {
-          if (prev.has(fileKey)) return prev;
-          
-          pendingReadsRef.current.add(fileKey);
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            pendingReadsRef.current.delete(fileKey);
-            if (e.target?.result) {
-              const text = e.target.result as string;
-              // Limit preview to first 200 characters for display
-              setTextPreviews(p => new Map(p).set(fileKey, text.slice(0, 200)));
-            }
-          };
-          reader.onerror = () => {
-            pendingReadsRef.current.delete(fileKey);
-          };
-          reader.readAsText(file);
-          return prev;
-        });
       }
     }
   }, [files]);
@@ -215,22 +148,22 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ files, onRemove, disab
     return `${Math.round(bytes / Math.pow(k, i) * 10) / 10} ${sizes[i]}`;
   };
 
-  const getFileIcon = (file: File) => {
+  const getFileIcon = (file: File, size = 20) => {
     const mimeType = getEffectiveMimeType(file);
 
     if (mimeType.startsWith('image/')) {
-      return <ImageRegular fontSize={32} aria-hidden="true" />;
+      return <ImageRegular fontSize={size} aria-hidden="true" />;
     }
     if (mimeType === 'application/pdf') {
-      return <DocumentPdfRegular fontSize={32} aria-hidden="true" />;
+      return <DocumentPdfRegular fontSize={size} aria-hidden="true" />;
     }
     if (mimeType === 'application/json' || mimeType === 'text/xml' || mimeType === 'application/xml' || mimeType === 'text/html') {
-      return <CodeRegular fontSize={32} aria-hidden="true" />;
+      return <CodeRegular fontSize={size} aria-hidden="true" />;
     }
     if (mimeType === 'text/plain' || mimeType === 'text/markdown' || mimeType === 'text/csv') {
-      return <DocumentTextRegular fontSize={32} aria-hidden="true" />;
+      return <DocumentTextRegular fontSize={size} aria-hidden="true" />;
     }
-    return <DocumentRegular fontSize={32} aria-hidden="true" />;
+    return <DocumentRegular fontSize={size} aria-hidden="true" />;
   };
 
   const getFileExtension = (fileName: string): string => {
@@ -247,44 +180,23 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ files, onRemove, disab
         const mimeType = getEffectiveMimeType(file);
         const isImage = mimeType.startsWith('image/');
         const thumbnail = thumbnails.get(fileKey);
-        const textPreview = textPreviews.get(fileKey);
         
         return (
           <div key={fileKey} className={styles.previewItem} role="listitem" title={file.name}>
-            {isImage && thumbnail ? (
-              <img 
-                src={thumbnail} 
-                alt={file.name}
-                className={styles.thumbnail}
-              />
-            ) : textPreview ? (
-              <div className={styles.textPreview}>
-                {textPreview}
-              </div>
-            ) : (
-              <div className={styles.placeholderIcon}>
-                {getFileIcon(file)}
-                <Text className={styles.fileName}>
-                  {getFileExtension(file.name)}
-                </Text>
-              </div>
-            )}
-            <Badge 
-              appearance="filled" 
-              size="small"
-              className={styles.sizeBadge}
-            >
-              {formatFileSize(file.size)}
-            </Badge>
-            <Button
-              appearance="subtle"
-              size="small"
-              icon={<Dismiss24Regular />}
+            <div className={styles.iconWrapper}>
+              {getFileIcon(file, 20)}
+            </div>
+            <span className={styles.fileName}>
+              {file.name}
+            </span>
+            <button
               onClick={() => onRemove(index)}
               disabled={disabled}
               aria-label={`Remove ${file.name}`}
               className={styles.removeButton}
-            />
+            >
+              <Dismiss24Regular fontSize={16} />
+            </button>
           </div>
         );
       })}

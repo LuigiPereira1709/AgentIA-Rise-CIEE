@@ -132,6 +132,22 @@
   gap: 0.25rem;
 }
 
+/* Override Fluent UI default grey hover for action buttons */
+.actionButtons :global(.fui-Button) {
+  color: rgba(255, 255, 255, 0.6);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.actionButtons :global(.fui-Button:hover) {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+}
+
+.actionButtons :global(.fui-Button:active) {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  color: #c084fc !important;
+}
+
 .divider {
   width: 1px;
   height: 20px;

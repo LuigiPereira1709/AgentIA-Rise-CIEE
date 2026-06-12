@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { Avatar } from '@fluentui/react-components';
+import { Navigation24Regular } from '@fluentui/react-icons';
 import { ChatInterface } from './ChatInterface';
 import { ConversationSidebar } from './ConversationSidebar';
 import { SettingsPanel } from './core/SettingsPanel';
@@ -228,18 +229,16 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Agente IA', a
 
   return (
     <div className={styles.content}>
-      {/* ── Top navbar (only when onBack is provided) ── */}
-      {onBack && (
-        <header className={styles.chatNavbar}>
-          <button
-            id="btn-back-to-menu"
-            className={styles.backToMenuBtn}
-            onClick={onBack}
-            aria-label="Voltar ao menu"
-          >
-            <span className={styles.backArrow}>←</span>
-            <span>Menu</span>
-          </button>
+      {/* ── Top navbar ── */}
+      <header className={styles.chatNavbar}>
+        <button
+          id="btn-open-sidebar"
+          className={styles.backToMenuBtn}
+          onClick={handleToggleSidebar}
+          aria-label="Abrir Menu"
+        >
+          <Navigation24Regular />
+        </button>
 
           <div className={styles.navbarCenter}>
             <span className={styles.navbarAgentName}>
@@ -252,7 +251,6 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Agente IA', a
             <Avatar name="Usuário" size={28} />
           </div>
         </header>
-      )}
 
       <div className={styles.bodyWrapper}>
         <div className={`${styles.mainContent} ${isAuxSidebarOpen ? styles.mainContentShifted : ''}`}>
@@ -310,6 +308,7 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Agente IA', a
         onDeleteConversation={handleDeleteConversation}
         onLoadMore={handleLoadMoreConversations}
         onNavigateToRegister={onNavigateToRegister}
+        onBack={onBack}
       />
       
       {/* Modals & Panels */}

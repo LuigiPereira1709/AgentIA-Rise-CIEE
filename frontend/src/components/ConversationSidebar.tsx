@@ -32,11 +32,22 @@ interface ConversationSidebarProps {
   onDeleteConversation: (conversationId: string) => void;
   onLoadMore: () => void;
   onNavigateToRegister?: () => void;
+  onBack?: () => void;
 }
 
 const useStyles = makeStyles({
   drawer: {
     width: '320px',
+    backgroundColor: 'rgba(12, 15, 29, 0.95) !important',
+    backdropFilter: 'blur(16px)',
+    borderRight: '1px solid rgba(255, 255, 255, 0.1) !important',
+    color: '#ffffff !important',
+  },
+  headerTitle: {
+    color: '#ffffff',
+    fontSize: '18px',
+    fontWeight: 600,
+    fontFamily: 'Outfit, sans-serif',
   },
   newChatButton: {
     width: '100%',
@@ -58,12 +69,17 @@ const useStyles = makeStyles({
     width: '100%',
     textAlign: 'left',
     gap: tokens.spacingHorizontalS,
+    color: '#d0d0df',
+    transition: 'background-color 0.2s ease, color 0.2s ease',
     '&:hover': {
-      backgroundColor: tokens.colorNeutralBackground1Hover,
+      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+      color: '#ffffff',
     },
   },
   conversationItemActive: {
-    backgroundColor: tokens.colorNeutralBackground1Selected,
+    backgroundColor: 'rgba(255, 255, 255, 0.1) !important',
+    color: '#ffffff',
+    borderLeft: '3px solid #a855f7',
   },
   conversationContent: {
     flex: 1,
@@ -79,7 +95,7 @@ const useStyles = makeStyles({
   },
   conversationDate: {
     fontSize: tokens.fontSizeBase100,
-    color: tokens.colorNeutralForeground3,
+    color: 'rgba(255, 255, 255, 0.5)',
   },
   deleteButton: {
     flexShrink: 0,
@@ -97,7 +113,7 @@ const useStyles = makeStyles({
     alignItems: 'center',
     justifyContent: 'center',
     padding: tokens.spacingVerticalXXL,
-    color: tokens.colorNeutralForeground3,
+    color: 'rgba(255, 255, 255, 0.5)',
     textAlign: 'center',
   },
   spinnerContainer: {
@@ -118,7 +134,7 @@ const useStyles = makeStyles({
     alignItems: 'center',
     justifyContent: 'center',
     padding: tokens.spacingVerticalL,
-    color: tokens.colorNeutralForeground3,
+    color: 'rgba(255, 255, 255, 0.5)',
     textAlign: 'center',
   },
 });
@@ -147,6 +163,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
   onDeleteConversation,
   onLoadMore,
   onNavigateToRegister,
+  onBack,
 }) => {
   const styles = useStyles();
   const [searchQuery, setSearchQuery] = useState('');
@@ -196,16 +213,18 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
     >
       <DrawerHeader>
         <DrawerHeaderTitle
+          className={styles.headerTitle}
           action={
             <Button
               appearance="subtle"
               aria-label="Close sidebar"
               icon={<Dismiss24Regular />}
               onClick={() => onOpenChange(false)}
+              style={{ color: '#ffffff' }}
             />
           }
         >
-          Conversations
+          Conversas
         </DrawerHeaderTitle>
       </DrawerHeader>
 
@@ -219,19 +238,34 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
             onOpenChange(false);
           }}
         >
-          New Chat
+          Nova Conversa
         </Button>
 
-        <Button
-          appearance="outline"
-          style={{ width: '100%', marginBottom: '16px' }}
-          onClick={() => {
-            onNavigateToRegister?.();
-            onOpenChange(false);
-          }}
-        >
-          Solicitar Cadastro
-        </Button>
+        {onBack && (
+          <Button
+            appearance="outline"
+            style={{ width: '100%', marginBottom: '16px' }}
+            onClick={() => {
+              onBack();
+              onOpenChange(false);
+            }}
+          >
+            Voltar ao Menu
+          </Button>
+        )}
+
+        {onNavigateToRegister && (
+          <Button
+            appearance="subtle"
+            style={{ width: '100%', marginBottom: '16px' }}
+            onClick={() => {
+              onNavigateToRegister();
+              onOpenChange(false);
+            }}
+          >
+            Solicitar Cadastro
+          </Button>
+        )}
 
         {conversations.length > 0 && (
           <Input

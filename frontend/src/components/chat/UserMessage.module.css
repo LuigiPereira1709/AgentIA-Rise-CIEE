@@ -31,10 +31,11 @@
   align-items: center;
   gap: 0.625rem;
   padding: 0.5rem 0.75rem;
-  background-color: var(--colorNeutralBackground3);
-  border: 1px solid var(--colorNeutralStroke2);
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 6px;
   font-size: 0.875rem;
+  color: #e0e0e0;
 }
 
 .attachmentIcon {
@@ -51,14 +52,14 @@
 
 .attachmentName {
   font-weight: 500;
-  color: var(--colorNeutralForeground1);
+  color: #ffffff;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .attachmentSize {
-  color: var(--colorNeutralForeground3);
+  color: rgba(255, 255, 255, 0.5);
   font-size: 0.75rem;
 }
 
@@ -68,8 +69,8 @@
   height: 80px;
   border-radius: 6px;
   overflow: hidden;
-  border: 1px solid var(--colorNeutralStroke1);
-  background-color: var(--colorNeutralBackground1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 .thumbnail {
