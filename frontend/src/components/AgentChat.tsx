@@ -34,20 +34,23 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Agente IA', a
   const [isAuxSidebarOpen, setIsAuxSidebarOpen] = useState(false);
   const [isJourneyOpen, setIsJourneyOpen] = useState(false);
 
-  // Mock state for Journey
+  // Form state for Journey
   const [journeyFormData, setJourneyFormData] = useState({
-    name: 'Usuário',
+    name: '',
     email: '',
     organization: '',
     role: ''
   });
-  const [journeyStep, setJourneyStep] = useState(1);
+
+  const journeyStep = useMemo(() => {
+    if (journeyFormData.name && journeyFormData.email && journeyFormData.organization && journeyFormData.role) return 3;
+    if (journeyFormData.name && journeyFormData.email && journeyFormData.organization) return 2;
+    if (journeyFormData.name && journeyFormData.email) return 1;
+    return 0;
+  }, [journeyFormData]);
 
   const handleJourneyFieldChange = (field: 'name' | 'email' | 'organization' | 'role', value: string) => {
     setJourneyFormData(prev => ({ ...prev, [field]: value }));
-    if (field === 'email' && value.includes('@')) {
-      setJourneyStep(Math.max(journeyStep, 1));
-    }
   };
 
   // Create service instances
