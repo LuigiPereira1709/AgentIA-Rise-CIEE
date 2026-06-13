@@ -38,6 +38,7 @@ public class AgentFrameworkService : IDisposable
     /// versions, so pinning is useful for reproducibility across deployments.
     /// </summary>
     private readonly string? _configuredAgentVersion;
+    private readonly string _modelName;
     private readonly ILogger<AgentFrameworkService> _logger;
     private readonly IHttpContextAccessor? _httpContextAccessor;
     private readonly string? _backendClientId;
@@ -85,6 +86,8 @@ public class AgentFrameworkService : IDisposable
         _configuredAgentVersion = string.IsNullOrWhiteSpace(configuration["AI_AGENT_VERSION"])
             ? null
             : configuration["AI_AGENT_VERSION"];
+
+        _modelName = configuration["AI_AGENT_MODEL"] ?? "gpt-oss-120b";
 
         _logger.LogDebug(
             "Initializing AgentFrameworkService: endpoint={Endpoint}, agentId={AgentId}, version={Version}", 
@@ -309,7 +312,7 @@ public class AgentFrameworkService : IDisposable
                     {
                         newInstructions += instructionsSuffix;
                     }
-                    var modelName = definition?.Model ?? "gpt-4o";
+                    var modelName = _modelName;
 
                     var newDefinition = new DeclarativeAgentDefinition(modelName)
                     {
