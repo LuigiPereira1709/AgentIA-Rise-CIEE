@@ -427,3 +427,78 @@
 .animateParticle {
   animation: flyParticle 1.5s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
 }
+
+/* Tabs & Custom Layout for 18 fields */
+.tabList {
+  display: flex;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.tabButton {
+  flex: 1;
+  background: none;
+  border: none;
+  color: #8f9bba;
+  padding: 10px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  outline: none;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.tabButton:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.tabButtonActive {
+  background: #53a8b6 !important;
+  color: #0c0f1d !important;
+  box-shadow: 0 4px 12px rgba(83, 168, 182, 0.25);
+}
+
+.fieldRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 600px) {
+  .fieldRow {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+.fieldGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dropdownSelect {
+  width: 100%;
+  height: 32px;
+  background-color: #1a1e30;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  color: #ffffff;
+  padding: 0 8px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s ease;
+  box-sizing: border-box;
+}
+
+.dropdownSelect:focus {
+  border-color: #53a8b6;
+}
+

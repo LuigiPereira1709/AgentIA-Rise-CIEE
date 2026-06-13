@@ -272,7 +272,9 @@ public class AgentFrameworkService : IDisposable
 
             var definition = s_cachedAgentVersion?.Definition as DeclarativeAgentDefinition;
             bool hasInstructions = false;
-            if (definition?.Instructions != null && definition.Instructions.Contains("[ESTADO_DO_FORMULARIO:"))
+            if (definition?.Instructions != null && 
+                definition.Instructions.Contains("varNomeCompleto") && 
+                definition.Instructions.Contains("utilize a chamada de função update_registration_form"))
             {
                 hasInstructions = true;
             }
@@ -282,13 +284,65 @@ public class AgentFrameworkService : IDisposable
                 _logger.LogInformation("Agent {AgentId} does not exist, was not loaded successfully, or does not have the updated instructions. Provisioning new version programmatically...", _agentId);
                 try
                 {
-                    var instructionsSuffix = "\nSempre atente-se ao padrão '[ESTADO_DO_FORMULARIO: ...]' no início das mensagens do usuário para saber quais dados já estão preenchidos na tela de cadastro.\nQuando o usuário fornecer ou corrigir qualquer informação do cadastro (como Nome Completo, E-mail Corporativo, Organização/Empresa, Cargo ou CEP), você DEVE incluir a tag correspondente no formato exato: '[[UPDATE_FORM: {campo}={valor}]]' ao final da sua resposta (ou no fluxo da conversa) para atualizar a tela.\nCampos suportados:\n- name (Nome Completo)\n- email (E-mail Corporativo)\n- organization (Organização/Empresa)\n- role (Cargo)\n- cep (CEP)\n\nExemplo:\nSe o usuário disser 'Meu nome é João da Silva', você responde e inclui: [[UPDATE_FORM: name=João da Silva]]";
-                    var currentInstructions = definition?.Instructions ?? "Você é o assistente Zoggy encarregado de ajudar o usuário a preencher o formulário de cadastro. Os campos são: Nome Completo (name), E-mail Corporativo (email), Organização/Empresa (organization) e Cargo (role). CEP (cep) também deve ser coletado se necessário.";
-                    var newInstructions = currentInstructions;
-                    if (!newInstructions.Contains("[ESTADO_DO_FORMULARIO:"))
-                    {
-                        newInstructions += instructionsSuffix;
-                    }
+                    var newInstructions = @"Você é o Agente Orquestrador de Cadastro de Estudantes (Zoggy). Seu objetivo é coletar os 18 dados cadastrais obrigatórios dos estudantes de forma fluida, amigável, empática e conversacional, eliminando o aspecto frio de formulários rígidos.
+
+# Recursos e Base de Conhecimento (Knowledge)
+
+Você possui acesso aos seguintes arquivos em sua Base de Conhecimento (Knowledge) para consultas rápidas:
+
+- `manual_linguagem_e_diversidade.md`: Guia de tom de voz, inclusão e uso de gírias.
+- `politica_privacidade_e_lgpd.md`: Para responder dúvidas sobre segurança de dados e LGPD.
+- `faq_regras_de_negocio_cadastro.md`: Esclarecimentos sobre idade mínima, regras e exceções.
+- `fallback_e_ajuda_humana.md`: Protocolo de suporte em caso de falhas ou irritação do usuário.
+
+# Instruções de Comportamento (Persona)
+
+- **Tom de Voz:** Jovem, acolhedor, inclusivo e respeitoso. Baseie-se nas diretrizes do `manual_linguagem_e_diversidade.md`.
+- **Humor e Conexão:** É permitido o uso de humor leve e quebras sutis da quarta parede para engajar o usuário, desde que não atrase a coleta de dados ou falte com o respeito.
+- **Ritmo Conversacional:** Faça perguntas curtas e diretas. Nunca envie uma lista de campos de uma vez só. Colete um ou dois dados correlacionados por mensagem.
+- **Flexibilidade e Firmeza:** Trate respostas evasivas com acolhimento. Se o usuário demonstrar desconforto com um dado, consulte a `politica_privacidade_e_lgpd.md` para explicar a importância e necessidade do dado.
+- **Preenchimento Obrigatório (Sem Pulos):** Não permita que o usuário pule o preenchimento de campos obrigatórios (especialmente CPF, E-mail, Telefone e CEP) sem fornecer uma resposta ou acionar as diretrizes de fallback. Se o usuário tentar desviar, insista com empatia na obtenção do dado.
+- **Posicionamento de Tags de Sincronização:** Sempre emita a tag de atualização correspondente (ex: `[[UPDATE_FORM: varNomeCompleto=João da Silva]]`) no **início absoluto** de sua resposta, antes de qualquer outro caractere ou texto conversacional.
+- **Validação de Campos Críticos (E-mail, Telefone, Data de Nascimento e CEP):** 
+  1. Ao receber um desses dados, emita a tag correspondente no início absoluto de sua resposta ou utilize a chamada de função `update_registration_form`.
+  2. Se a validação falhar (seja por corte de stream ou porque a função retornou um erro com `status: error`), você **DEVE** interromper o fluxo conversacional imediatamente, não agradecer e pedir de forma educada para o usuário tentar fornecer o dado correto novamente.
+  3. Na mensagem seguinte, observe o `[ESTADO_DO_FORMULARIO: ...]`. Se o campo continuar vazio, significa que a validação anterior falhou; peça educadamente para o usuário tentar fornecer o dado correto novamente.
+  4. Se o usuário fornecer um novo valor na mensagem atual, você **DEVE** sempre enviar a tag ou chamada de função correspondente para validação, mesmo que o campo esteja vazio no estado anterior. Nunca assuma que falhou ou crie regras de dígitos antes de enviar.
+- **Atualização Fora de Ordem:** Se o usuário fornecer, corrigir ou complementar qualquer informação pendente ou de etapas anteriores/posteriores a qualquer momento da conversa (ex: informar o CPF quando você já estiver perguntando sobre os dados educacionais), você **DEVE** capturar a informação imediatamente, emitir a respectiva tag `[[UPDATE_FORM: {nomeDaVariavel}={valor}]]` no início de sua resposta e atualizar o formulário.
+- **Opções Fechadas:** Exiba opções de clique rápido (Quick Replies/Botões) para `varSexo`, `varEstadoCivil`, `varNivelEscolar`, `varModalidadeEnsino` e `varTurnoEnsino`.
+- **Sincronização de Estado:** Sempre atente-se ao padrão `[ESTADO_DO_FORMULARIO: ...]` no início das mensagens do usuário para saber quais dados já estão preenchidos na tela de cadastro e evitar perguntá-los novamente.
+
+# Fluxo de Coleta e Orquestração (Ordem Lógica)
+
+Siga estritamente esta ordem lógica durante a conversa:
+
+1. **Saudação e Apresentação:** Dê as boas-vindas ao estudante e contextualize o objetivo do cadastro.
+2. **Dados Pessoais (Identificação):** Peça o nome completo (`varNomeCompleto`), CPF (`varCPF`), data de nascimento (`varDataNascimento`), sexo (`varSexo`) e estado civil (`varEstadoCivil`).
+   - Apresente botões de clique rápido para Sexo e Estado Civil.
+3. **Contato:** Colete o e-mail (`varEmail`) e o telefone (`varTelefone`).
+4. **Endereço e Localização:**
+   - Peça o CEP (`varCEP`). Se o usuário não souber o CEP, pergunte o Estado (UF), Cidade e rua/avenida (Logradouro), e execute a busca automática (veja a seção de tags de Endereço abaixo).
+   - Uma vez que o CEP e o endereço completo sejam carregados na tela, colete de forma isolada o número da casa (`varNumeroCasa`).
+5. **Dados Educacionais:** Colete o nível escolar (`varNivelEscolar`), estado e cidade da instituição, nome da instituição (`varInstituicaoNome`), período/ano atual (`varPeriodoCursando`), modalidade de ensino (`varModalidadeEnsino`) e turno (`varTurnoEnsino`).
+   - Use botões para Nível Escolar, Modalidade e Turno.
+6. **Validação Geral:** Exiba um resumo amigável de todos os dados coletados para confirmação final do estudante.
+7. **Encerramento:** Agradeça, informe os canais de suporte adicionais listados em `fallback_e_ajuda_humana.md` e finalize a conversa.
+
+# Sincronização de Dados via Tags
+
+Quando o usuário fornecer ou corrigir qualquer informação do cadastro, você DEVE incluir a tag correspondente no formato exato:
+`[[UPDATE_FORM: {nomeDaVariavel}={valor}]]` ao final da sua resposta para atualizar a tela em tempo real.
+Exemplo: `[[UPDATE_FORM: varNomeCompleto=João da Silva]]` ou `[[UPDATE_FORM: varSexo=Masculino]]`.
+
+# Requisitos do Bloco de Endereço
+
+Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
+- **Fluxo A (Entrada por CEP):** Peça o CEP. Ao receber, envie `[[UPDATE_FORM: varCEP=XXXXX-XXX]]`. O sistema consultará a API ViaCEP e preencherá automaticamente as variáveis `varCEP`, `varLogradouro`, `varBairro`, `varCidade` e `varEstado`.
+- **Fluxo B (Busca por Logradouro):** Se o usuário não souber o CEP, pergunte a ele o Estado (UF), Cidade e nome da rua/avenida. Ao coletar esses dados, envie a tag:
+  `[[SEARCH_CEP: UF/Cidade/Logradouro]]` (exemplo: `[[SEARCH_CEP: SP/São Paulo/Avenida Paulista]]`).
+  O sistema fará a varredura e preencherá o CEP e o endereço automaticamente.
+
+*Importante:* Colete o número da casa (`varNumeroCasa`) de forma isolada *após* a confirmação do endereço.";
                     var modelName = _modelName;
 
                     var newDefinition = new DeclarativeAgentDefinition(modelName)
@@ -497,65 +551,86 @@ public class AgentFrameworkService : IDisposable
                                 currentStr = _tagBuffer.ToString();
                             }
 
-                            // Check if current buffer is still a prefix of "[[UPDATE_FORM:"
-                            string expectedPrefix = "[[UPDATE_FORM:";
-                            if (currentStr.Length <= expectedPrefix.Length)
+                            // Look for any of our tags closing with "]]"
+                            if (currentStr.EndsWith("]]"))
                             {
-                                if (!expectedPrefix.StartsWith(currentStr))
+                                if (currentStr.StartsWith("[[UPDATE_FORM:"))
                                 {
-                                    // Not the tag, flush buffer
-                                    yield return StreamChunk.Text(currentStr);
-                                    _inTagBuffer = false;
-                                    _tagBuffer.Clear();
-                                }
-                            }
-                            else
-                            {
-                                // We are past the prefix, look for the closing suffix "]]"
-                                if (currentStr.EndsWith("]]"))
-                                {
+                                    string expectedPrefix = "[[UPDATE_FORM:";
                                     string content = currentStr.Substring(expectedPrefix.Length, currentStr.Length - expectedPrefix.Length - 2);
                                     var parts = content.Split('=', 2);
                                     if (parts.Length == 2)
                                     {
-                                        string field = parts[0].Trim().ToLowerInvariant();
+                                        string field = parts[0].Trim();
                                         string val = parts[1].Trim();
                                         
-                                        var allowedFields = new[] { "name", "email", "organization", "role", "cep" };
-                                        if (allowedFields.Contains(field) && !string.IsNullOrEmpty(val) && val != "null" && val != "undefined")
+                                        var processed = await ProcessAndValidateFieldAsync(field, val);
+                                        if (processed.IsValid)
                                         {
-                                            // Optional CEP/Email validation
-                                            bool valid = true;
-                                            if (field == "email")
+                                            if (processed.FieldUpdates != null)
                                             {
-                                                if (!val.Contains("@") || !val.Contains("."))
+                                                foreach (var updatePair in processed.FieldUpdates)
                                                 {
-                                                    valid = false;
-                                                    yield return StreamChunk.Text("\n*(Zoggy: O formato de e-mail corporativo fornecido parece inválido. Por favor, corrija-o.)*\n");
+                                                    yield return StreamChunk.FormField(updatePair.Key, updatePair.Value);
                                                 }
                                             }
-                                            else if (field == "cep")
+                                            if (!string.IsNullOrEmpty(processed.Message))
                                             {
-                                                string cleanCep = new string(val.Where(char.IsDigit).ToArray());
-                                                if (cleanCep.Length != 8)
-                                                {
-                                                    valid = false;
-                                                    yield return StreamChunk.Text("\n*(Zoggy: O CEP deve conter exatamente 8 dígitos.)*\n");
-                                                }
-                                            }
-                                            
-                                            if (valid)
-                                            {
-                                                yield return StreamChunk.FormField(field, val);
+                                                yield return StreamChunk.Text(processed.Message);
                                             }
                                         }
+                                        else
+                                        {
+                                            if (!string.IsNullOrEmpty(processed.Message))
+                                            {
+                                                yield return StreamChunk.Text(processed.Message);
+                                            }
+                                            hasPendingAction = false;
+                                            _inTagBuffer = false;
+                                            _tagBuffer.Clear();
+                                            yield break;
+                                        }
                                     }
+                                }
+                                else if (currentStr.StartsWith("[[SEARCH_CEP:"))
+                                {
+                                    string expectedPrefix = "[[SEARCH_CEP:";
+                                    string query = currentStr.Substring(expectedPrefix.Length, currentStr.Length - expectedPrefix.Length - 2).Trim();
+                                    
+                                    var searchResult = await SearchCepAsync(query);
+                                    if (searchResult.Success && searchResult.FieldUpdates != null)
+                                    {
+                                        foreach (var updatePair in searchResult.FieldUpdates)
+                                        {
+                                            yield return StreamChunk.FormField(updatePair.Key, updatePair.Value);
+                                        }
+                                    }
+                                    if (!string.IsNullOrEmpty(searchResult.Message))
+                                    {
+                                        yield return StreamChunk.Text(searchResult.Message);
+                                    }
+                                }
+                                else
+                                {
+                                    yield return StreamChunk.Text(currentStr);
+                                }
+                                
+                                _inTagBuffer = false;
+                                _tagBuffer.Clear();
+                            }
+                            else
+                            {
+                                bool isPrefixOfUpdate = "[[UPDATE_FORM:".StartsWith(currentStr) || currentStr.StartsWith("[[UPDATE_FORM:");
+                                bool isPrefixOfSearch = "[[SEARCH_CEP:".StartsWith(currentStr) || currentStr.StartsWith("[[SEARCH_CEP:");
+                                
+                                if (!isPrefixOfUpdate && !isPrefixOfSearch)
+                                {
+                                    yield return StreamChunk.Text(currentStr);
                                     _inTagBuffer = false;
                                     _tagBuffer.Clear();
                                 }
-                                else if (currentStr.Length > 300)
+                                else if (currentStr.Length > 400)
                                 {
-                                    // Safeguard for very long buffers that don't close
                                     yield return StreamChunk.Text(currentStr);
                                     _inTagBuffer = false;
                                     _tagBuffer.Clear();
@@ -595,6 +670,7 @@ public class AgentFrameworkService : IDisposable
                     string resultJson = "{\"status\":\"success\"}";
                     string? field = null;
                     string? val = null;
+                    var functionFieldUpdates = new List<StreamChunk>();
 
                     if (functionName == "update_registration_form")
                     {
@@ -606,25 +682,22 @@ public class AgentFrameworkService : IDisposable
                                 field = fieldProp.GetString();
                                 val = valueProp.GetString();
 
-                                if (field == "email" && !string.IsNullOrEmpty(val))
+                                if (field != null && val != null)
                                 {
-                                    if (!val.Contains("@") || !val.Contains("."))
+                                    var processed = await ProcessAndValidateFieldAsync(field, val);
+                                    if (processed.IsValid && processed.FieldUpdates != null)
                                     {
-                                        resultJson = "{\"status\":\"error\",\"message\":\"Formato de e-mail corporativo inválido. Por favor, forneça um e-mail válido.\"}";
+                                        resultJson = "{\"status\":\"success\"}";
+                                        foreach (var updatePair in processed.FieldUpdates)
+                                        {
+                                            functionFieldUpdates.Add(StreamChunk.FormField(updatePair.Key, updatePair.Value));
+                                        }
                                         field = null;
                                         val = null;
                                     }
-                                }
-                                else if (field == "cep" && !string.IsNullOrEmpty(val))
-                                {
-                                    string cleanCep = new string(val.Where(char.IsDigit).ToArray());
-                                    if (cleanCep.Length == 8)
-                                    {
-                                        resultJson = "{\"status\":\"success\",\"address\":\"Avenida Paulista, São Paulo, SP\"}";
-                                    }
                                     else
                                     {
-                                        resultJson = "{\"status\":\"error\",\"message\":\"CEP deve conter 8 dígitos.\"}";
+                                        resultJson = $"{{\"status\":\"error\",\"message\":\"{processed.Message ?? "Valor inválido"}\"}}";
                                         field = null;
                                         val = null;
                                     }
@@ -638,7 +711,19 @@ public class AgentFrameworkService : IDisposable
                         }
                     }
 
+                    // Reset options for the follow-up request with only the function output and PreviousResponseId set
+                    options = new CreateResponseOptions { StreamingEnabled = true };
+                    if (!string.IsNullOrEmpty(currentResponseId))
+                    {
+                        options.PreviousResponseId = currentResponseId;
+                    }
                     options.InputItems.Add(ResponseItem.CreateFunctionCallOutputItem(argsDone.ItemId, resultJson));
+
+
+                    foreach (var chunk in functionFieldUpdates)
+                    {
+                        yield return chunk;
+                    }
 
                     if (field != null && val != null)
                     {
@@ -1451,6 +1536,325 @@ public class AgentFrameworkService : IDisposable
 
         _logger.LogInformation("CleanupUploadedFiles: deleted={Deleted} failed={Failed}", deleted, failed);
         return new UploadedFilesCleanupResult(deleted, failed);
+    }
+
+    private static readonly Dictionary<string, string> NormalizedToCanonicalFields = new(StringComparer.OrdinalIgnoreCase)
+    {
+        { "varnomecompleto", "varNomeCompleto" },
+        { "varcpf", "varCPF" },
+        { "vardatanascimento", "varDataNascimento" },
+        { "varemail", "varEmail" },
+        { "vartelefone", "varTelefone" },
+        { "varnumerocasa", "varNumeroCasa" },
+        { "varsexo", "varSexo" },
+        { "varestadocivil", "varEstadoCivil" },
+        { "varnivelescolar", "varNivelEscolar" },
+        { "varmodalidadeensino", "varModalidadeEnsino" },
+        { "varturnoensino", "varTurnoEnsino" },
+        { "varcep", "varCEP" },
+        { "varlogradouro", "varLogradouro" },
+        { "varbairro", "varBairro" },
+        { "varcidade", "varCidade" },
+        { "varestado", "varEstado" },
+        { "varinstituicaonome", "varInstituicaoNome" },
+        { "varperiodocursando", "varPeriodoCursando" }
+    };
+
+    private class FieldProcessResult
+    {
+        public bool IsValid { get; set; }
+        public string? Message { get; set; }
+        public Dictionary<string, string>? FieldUpdates { get; set; }
+    }
+
+    private async Task<FieldProcessResult> ProcessAndValidateFieldAsync(string field, string value)
+    {
+        var result = new FieldProcessResult { IsValid = true };
+        
+        if (!NormalizedToCanonicalFields.TryGetValue(field, out string? canonicalField))
+        {
+            result.IsValid = false;
+            return result;
+        }
+        
+        if (string.IsNullOrEmpty(value) || value.Equals("null", StringComparison.OrdinalIgnoreCase) || value.Equals("undefined", StringComparison.OrdinalIgnoreCase))
+        {
+            result.IsValid = false;
+            return result;
+        }
+
+        string canonicalLower = canonicalField.ToLowerInvariant();
+
+        if (canonicalLower == "varcpf")
+        {
+            string cleanCpf = new string(value.Where(char.IsDigit).ToArray());
+            if (cleanCpf.Length == 11)
+            {
+                string formattedCpf = $"{cleanCpf[..3]}.{cleanCpf[3..6]}.{cleanCpf[6..9]}-{cleanCpf[9..]}";
+                result.FieldUpdates = new Dictionary<string, string> { { canonicalField, formattedCpf } };
+            }
+            else
+            {
+                result.FieldUpdates = new Dictionary<string, string> { { canonicalField, value } };
+            }
+        }
+        else if (canonicalLower == "varemail")
+        {
+            if (!value.Contains("@") || !value.Contains("."))
+            {
+                result.IsValid = false;
+                result.Message = "\n*(Zoggy: O formato de e-mail fornecido parece inválido. Por favor, verifique-o.)*\n";
+            }
+            else
+            {
+                result.FieldUpdates = new Dictionary<string, string> { { canonicalField, value } };
+            }
+        }
+        else if (canonicalLower == "vartelefone")
+        {
+            string cleanPhone = new string(value.Where(char.IsDigit).ToArray());
+            if (cleanPhone.Length != 10 && cleanPhone.Length != 11)
+            {
+                result.IsValid = false;
+                result.Message = "\n*(Zoggy: O telefone deve conter 10 ou 11 dígitos com o DDD.)*\n";
+            }
+            else
+            {
+                string formattedPhone = cleanPhone.Length == 11
+                    ? $"({cleanPhone[..2]}) {cleanPhone[2..7]}-{cleanPhone[7..]}"
+                    : $"({cleanPhone[..2]}) {cleanPhone[2..6]}-{cleanPhone[6..]}";
+                result.FieldUpdates = new Dictionary<string, string> { { canonicalField, formattedPhone } };
+            }
+        }
+        else if (canonicalLower == "vardatanascimento")
+        {
+            string cleanDate = new string(value.Where(char.IsDigit).ToArray());
+            if (cleanDate.Length != 8)
+            {
+                result.IsValid = false;
+                result.Message = "\n*(Zoggy: A data de nascimento deve conter exatamente 8 dígitos no formato DD/MM/AAAA.)*\n";
+            }
+            else
+            {
+                string dayStr = cleanDate[..2];
+                string monthStr = cleanDate[2..4];
+                string yearStr = cleanDate[4..];
+                string dateStr = $"{dayStr}/{monthStr}/{yearStr}";
+                
+                if (System.DateTime.TryParseExact(dateStr, "dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out _))
+                {
+                    result.FieldUpdates = new Dictionary<string, string> { { canonicalField, dateStr } };
+                }
+                else
+                {
+                    result.IsValid = false;
+                    result.Message = "\n*(Zoggy: A data de nascimento fornecida não é uma data válida do calendário.)*\n";
+                }
+            }
+        }
+        else if (canonicalLower == "varcep")
+        {
+            string cleanCep = new string(value.Where(char.IsDigit).ToArray());
+            if (cleanCep.Length != 8)
+            {
+                result.IsValid = false;
+                result.Message = "\n*(Zoggy: O CEP deve conter exatamente 8 dígitos.)*\n";
+            }
+            else
+            {
+                var lookup = await LookupCepAsync(cleanCep);
+                if (lookup.Success && lookup.FieldUpdates != null)
+                {
+                    result.FieldUpdates = lookup.FieldUpdates;
+                    result.Message = lookup.Message;
+                }
+                else
+                {
+                    result.IsValid = false;
+                    result.Message = lookup.Message ?? "\n*(Zoggy: Não foi possível obter o endereço para o CEP informado.)*\n";
+                }
+            }
+        }
+        else if (canonicalLower == "varnumerocasa")
+        {
+            string cleanNum = new string(value.Where(char.IsDigit).ToArray());
+            if (string.IsNullOrEmpty(cleanNum))
+            {
+                result.IsValid = false;
+                result.Message = "\n*(Zoggy: O número da casa deve conter apenas dígitos numéricos.)*\n";
+            }
+            else
+            {
+                result.FieldUpdates = new Dictionary<string, string> { { canonicalField, cleanNum } };
+            }
+        }
+        else
+        {
+            result.FieldUpdates = new Dictionary<string, string> { { canonicalField, value } };
+        }
+
+        return result;
+    }
+
+    private static bool IsValidCpf(string cpf)
+    {
+        if (cpf.Length != 11) return false;
+        if (new string(cpf[0], 11) == cpf) return false;
+
+        int[] tempCpf = new int[11];
+        for (int i = 0; i < 11; i++)
+            tempCpf[i] = cpf[i] - '0';
+
+        int sum = 0;
+        for (int i = 0; i < 9; i++)
+            sum += tempCpf[i] * (10 - i);
+            
+        int r = (sum * 10) % 11;
+        if (r == 10) r = 0;
+        if (r != tempCpf[9]) return false;
+
+        sum = 0;
+        for (int i = 0; i < 10; i++)
+            sum += tempCpf[i] * (11 - i);
+            
+        r = (sum * 10) % 11;
+        if (r == 10) r = 0;
+        if (r != tempCpf[10]) return false;
+
+        return true;
+    }
+
+    private class CepLookupResult
+    {
+        public bool Success { get; set; }
+        public string? Message { get; set; }
+        public Dictionary<string, string>? FieldUpdates { get; set; }
+    }
+
+    private async Task<CepLookupResult> LookupCepAsync(string cep)
+    {
+        try
+        {
+            var client = _httpClientFactory.CreateClient();
+            client.Timeout = TimeSpan.FromSeconds(5);
+            var response = await client.GetAsync($"https://viacep.com.br/ws/{cep}/json/");
+            if (!response.IsSuccessStatusCode)
+            {
+                return new CepLookupResult { Success = false, Message = "\n*(Zoggy: Erro de rede ao buscar o CEP. Por favor, tente novamente.)*\n" };
+            }
+
+            string content = await response.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(content);
+            var root = doc.RootElement;
+            
+            if (root.TryGetProperty("erro", out var erroProp) && (erroProp.ValueKind == JsonValueKind.True || (erroProp.ValueKind == JsonValueKind.String && erroProp.GetString() == "true")))
+            {
+                return new CepLookupResult { Success = false, Message = "\n*(Zoggy: CEP não encontrado na base do ViaCEP.)*\n" };
+            }
+
+            string formattedCep = root.TryGetProperty("cep", out var c) ? c.GetString() ?? "" : cep;
+            string logradouro = root.TryGetProperty("logradouro", out var l) ? l.GetString() ?? "" : "";
+            string bairro = root.TryGetProperty("bairro", out var b) ? b.GetString() ?? "" : "";
+            string cidade = root.TryGetProperty("localidade", out var loc) ? loc.GetString() ?? "" : "";
+            string estado = root.TryGetProperty("uf", out var u) ? u.GetString() ?? "" : "";
+
+            var updates = new Dictionary<string, string>
+            {
+                { "varCEP", formattedCep },
+                { "varLogradouro", logradouro },
+                { "varBairro", bairro },
+                { "varCidade", cidade },
+                { "varEstado", estado }
+            };
+
+            return new CepLookupResult
+            {
+                Success = true,
+                FieldUpdates = updates,
+                Message = $"\n*(Zoggy: CEP {formattedCep} localizado! Endereço: {logradouro}, {bairro}, {cidade} - {estado})*\n"
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error checking CEP {Cep}", cep);
+            return new CepLookupResult { Success = false, Message = "\n*(Zoggy: Não foi possível realizar a consulta do CEP no momento.)*\n" };
+        }
+    }
+
+    private async Task<CepLookupResult> SearchCepAsync(string query)
+    {
+        var parts = query.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length < 3)
+        {
+            return new CepLookupResult 
+            { 
+                Success = false, 
+                Message = "\n*(Zoggy: Formato de busca por endereço inválido. O agente deve fornecer no formato 'UF/Cidade/Logradouro'.)*\n" 
+            };
+        }
+
+        string uf = parts[0].Trim();
+        string cidade = Uri.EscapeDataString(parts[1].Trim());
+        string logradouro = Uri.EscapeDataString(parts[2].Trim());
+
+        if (uf.Length != 2)
+        {
+            return new CepLookupResult 
+            { 
+                Success = false, 
+                Message = "\n*(Zoggy: O Estado (UF) para busca de endereço deve conter exatamente 2 letras, ex: SP.)*\n" 
+            };
+        }
+
+        try
+        {
+            var client = _httpClientFactory.CreateClient();
+            client.Timeout = TimeSpan.FromSeconds(5);
+            
+            string url = $"https://viacep.com.br/ws/{uf}/{cidade}/{logradouro}/json/";
+            var response = await client.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                return new CepLookupResult { Success = false, Message = "\n*(Zoggy: Erro de rede ao buscar endereço. Por favor, tente novamente.)*\n" };
+            }
+
+            string content = await response.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(content);
+            
+            if (doc.RootElement.ValueKind != JsonValueKind.Array || doc.RootElement.GetArrayLength() == 0)
+            {
+                return new CepLookupResult { Success = false, Message = $"\n*(Zoggy: Nenhum CEP correspondente encontrado para '{parts[2]}, {parts[1]} - {parts[0]}'.)*\n" };
+            }
+
+            var firstMatch = doc.RootElement[0];
+            
+            string cep = firstMatch.TryGetProperty("cep", out var c) ? c.GetString() ?? "" : "";
+            string street = firstMatch.TryGetProperty("logradouro", out var l) ? l.GetString() ?? "" : "";
+            string neighborhood = firstMatch.TryGetProperty("bairro", out var b) ? b.GetString() ?? "" : "";
+            string city = firstMatch.TryGetProperty("localidade", out var loc) ? loc.GetString() ?? "" : "";
+            string state = firstMatch.TryGetProperty("uf", out var u) ? u.GetString() ?? "" : "";
+
+            var updates = new Dictionary<string, string>
+            {
+                { "varCEP", cep },
+                { "varLogradouro", street },
+                { "varBairro", neighborhood },
+                { "varCidade", city },
+                { "varEstado", state }
+            };
+
+            return new CepLookupResult
+            {
+                Success = true,
+                FieldUpdates = updates,
+                Message = $"\n*(Zoggy: Encontrei o endereço! CEP: {cep}, Logradouro: {street}, Bairro: {neighborhood}, Cidade: {city} - {state})*\n"
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error searching address {Query}", query);
+            return new CepLookupResult { Success = false, Message = "\n*(Zoggy: Ocorreu um erro ao pesquisar o endereço.)*\n" };
+        }
     }
 
     public void Dispose()

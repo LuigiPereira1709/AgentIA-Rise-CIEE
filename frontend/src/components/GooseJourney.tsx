@@ -4,42 +4,70 @@ import styles from './GooseJourney.module.css';
 interface GooseJourneyProps {
   currentStep: number;
   formData: {
-    name: string;
-    email: string;
-    organization: string;
-    role: string;
+    varNomeCompleto: string;
+    varCPF: string;
+    varDataNascimento: string;
+    varEmail: string;
+    varTelefone: string;
+    varSexo: string;
+    varEstadoCivil: string;
+    varCEP: string;
+    varLogradouro: string;
+    varBairro: string;
+    varCidade: string;
+    varEstado: string;
+    varNumeroCasa: string;
+    varNivelEscolar: string;
+    varInstituicaoNome: string;
+    varPeriodoCursando: string;
+    varModalidadeEnsino: string;
+    varTurnoEnsino: string;
   };
   isSubmitted: boolean;
-  focusedField: 'name' | 'email' | 'organization' | 'role' | null;
-  onFieldChange: (field: 'name' | 'email' | 'organization' | 'role', value: string) => void;
+  focusedField: string | null;
+  onFieldChange: (field: any, value: string) => void;
 }
 
-type FormKey = 'name' | 'email' | 'organization' | 'role';
+type FormKey = keyof GooseJourneyProps['formData'];
 
 const PHASES = [
   {
     id: 0,
-    title: 'Identidade',
+    title: 'Pessoal',
     icon: '👤',
     fields: [
-      { key: 'name' as FormKey, label: 'Nome Completo', type: 'text' },
-      { key: 'email' as FormKey, label: 'E-mail Corporativo', type: 'email' }
+      { key: 'varNomeCompleto' as FormKey, label: 'Nome Completo', type: 'text' },
+      { key: 'varCPF' as FormKey, label: 'CPF', type: 'text' },
+      { key: 'varDataNascimento' as FormKey, label: 'Nascimento', type: 'text' },
+      { key: 'varSexo' as FormKey, label: 'Sexo', type: 'text' },
+      { key: 'varEstadoCivil' as FormKey, label: 'Estado Civil', type: 'text' }
     ]
   },
   {
     id: 1,
-    title: 'Localização',
+    title: 'Contato/Endereço',
     icon: '📍',
     fields: [
-      { key: 'organization' as FormKey, label: 'Empresa / Organização', type: 'text' }
+      { key: 'varEmail' as FormKey, label: 'E-mail', type: 'email' },
+      { key: 'varTelefone' as FormKey, label: 'Telefone', type: 'tel' },
+      { key: 'varCEP' as FormKey, label: 'CEP', type: 'text' },
+      { key: 'varLogradouro' as FormKey, label: 'Logradouro', type: 'text' },
+      { key: 'varBairro' as FormKey, label: 'Bairro', type: 'text' },
+      { key: 'varCidade' as FormKey, label: 'Cidade', type: 'text' },
+      { key: 'varEstado' as FormKey, label: 'Estado', type: 'text' },
+      { key: 'varNumeroCasa' as FormKey, label: 'Número', type: 'text' }
     ]
   },
   {
     id: 2,
-    title: 'Mundo Acadêmico',
+    title: 'Educação',
     icon: '🎓',
     fields: [
-      { key: 'role' as FormKey, label: 'Cargo / Função', type: 'text' }
+      { key: 'varNivelEscolar' as FormKey, label: 'Nível Escolar', type: 'text' },
+      { key: 'varInstituicaoNome' as FormKey, label: 'Instituição', type: 'text' },
+      { key: 'varPeriodoCursando' as FormKey, label: 'Período', type: 'text' },
+      { key: 'varModalidadeEnsino' as FormKey, label: 'Modalidade', type: 'text' },
+      { key: 'varTurnoEnsino' as FormKey, label: 'Turno', type: 'text' }
     ]
   },
   {

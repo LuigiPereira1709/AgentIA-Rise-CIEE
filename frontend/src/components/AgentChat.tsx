@@ -36,20 +36,42 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Agente IA', a
 
   // Form state for Journey
   const [journeyFormData, setJourneyFormData] = useState({
-    name: '',
-    email: '',
-    organization: '',
-    role: ''
+    varNomeCompleto: '',
+    varCPF: '',
+    varDataNascimento: '',
+    varEmail: '',
+    varTelefone: '',
+    varSexo: '',
+    varEstadoCivil: '',
+    varCEP: '',
+    varLogradouro: '',
+    varBairro: '',
+    varCidade: '',
+    varEstado: '',
+    varNumeroCasa: '',
+    varNivelEscolar: '',
+    varInstituicaoNome: '',
+    varPeriodoCursando: '',
+    varModalidadeEnsino: '',
+    varTurnoEnsino: ''
   });
 
   const journeyStep = useMemo(() => {
-    if (journeyFormData.name && journeyFormData.email && journeyFormData.organization && journeyFormData.role) return 3;
-    if (journeyFormData.name && journeyFormData.email && journeyFormData.organization) return 2;
-    if (journeyFormData.name && journeyFormData.email) return 1;
+    const p0Fields = ['varNomeCompleto', 'varCPF', 'varDataNascimento', 'varSexo', 'varEstadoCivil'];
+    const p1Fields = ['varEmail', 'varTelefone', 'varCEP', 'varLogradouro', 'varBairro', 'varCidade', 'varEstado', 'varNumeroCasa'];
+    const p2Fields = ['varNivelEscolar', 'varInstituicaoNome', 'varPeriodoCursando', 'varModalidadeEnsino', 'varTurnoEnsino'];
+
+    const p0Done = p0Fields.every(f => (journeyFormData as any)[f]?.trim() !== '');
+    const p1Done = p1Fields.every(f => (journeyFormData as any)[f]?.trim() !== '');
+    const p2Done = p2Fields.every(f => (journeyFormData as any)[f]?.trim() !== '');
+
+    if (p0Done && p1Done && p2Done) return 3;
+    if (p0Done && p1Done) return 2;
+    if (p0Done) return 1;
     return 0;
   }, [journeyFormData]);
 
-  const handleJourneyFieldChange = (field: 'name' | 'email' | 'organization' | 'role', value: string) => {
+  const handleJourneyFieldChange = (field: string, value: string) => {
     setJourneyFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -59,7 +81,7 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Agente IA', a
   const chatService = useMemo(() => {
     const service = new ChatService(apiUrl, getAccessToken, dispatch);
     service.onFormUpdate = (field, value) => {
-      handleJourneyFieldChange(field as any, value);
+      handleJourneyFieldChange(field, value);
     };
     service.getFormState = () => journeyFormData;
     return service;

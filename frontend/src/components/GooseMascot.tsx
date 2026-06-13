@@ -3,7 +3,7 @@ import styles from './GooseMascot.module.css';
 
 interface GooseMascotProps {
   onHonk?: () => void;
-  focusedField?: 'name' | 'email' | 'organization' | 'role' | null;
+  focusedField?: string | null;
   onUnlockHeistAchievement?: () => void;
   onUnlockChaosAchievement?: () => void;
   onChangeMischief?: (level: number, isChaos: boolean) => void;
@@ -138,6 +138,19 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
   onChangeMischief,
   isMuted = false
 }) => {
+  const getMappedField = (field: string | null | undefined): 'name' | 'email' | 'organization' | 'role' | null => {
+    if (!field) return null;
+    const nameFields = ['varNomeCompleto', 'varCPF', 'varDataNascimento', 'varSexo', 'varEstadoCivil', 'name'];
+    const emailFields = ['varEmail', 'varTelefone', 'email'];
+    const orgFields = ['varCEP', 'varLogradouro', 'varBairro', 'varCidade', 'varEstado', 'varNumeroCasa', 'organization'];
+    const roleFields = ['varNivelEscolar', 'varInstituicaoNome', 'varPeriodoCursando', 'varModalidadeEnsino', 'varTurnoEnsino', 'role'];
+
+    if (nameFields.includes(field)) return 'name';
+    if (emailFields.includes(field)) return 'email';
+    if (orgFields.includes(field)) return 'organization';
+    if (roleFields.includes(field)) return 'role';
+    return null;
+  };
   const [side, setSide] = useState<'left' | 'right' | 'top'>('left');
   const [isHonking, setIsHonking] = useState(false);
   const [eyeState, setEyeState] = useState<'normal' | 'angry' | 'wink' | 'closed'>('normal');
@@ -455,7 +468,8 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
     // Default to left if needed, but side is always one of the valid values.
 
     // Set a field-specific hint
-    const hints = FIELD_HINTS[focusedField];
+    const mapped = getMappedField(focusedField);
+    const hints = mapped ? FIELD_HINTS[mapped] : FIELD_HINTS.name;
     const chosenHint = hints[Math.floor(Math.random() * hints.length)];
     setSpeechBubble(chosenHint);
     setEyeState('normal');
