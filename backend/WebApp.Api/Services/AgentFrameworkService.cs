@@ -271,41 +271,18 @@ public class AgentFrameworkService : IDisposable
             s_cachedAgentVersion = loaded;
 
             var definition = s_cachedAgentVersion?.Definition as DeclarativeAgentDefinition;
-            bool hasTool = false;
-            if (definition?.Tools != null)
+            bool hasInstructions = false;
+            if (definition?.Instructions != null && definition.Instructions.Contains("[ESTADO_DO_FORMULARIO:"))
             {
-                foreach (var t in definition.Tools)
-                {
-                    if (t is FunctionTool ft && ft.FunctionName == "update_registration_form")
-                    {
-                        hasTool = true;
-                        break;
-                    }
-                }
+                hasInstructions = true;
             }
 
-            if (loaded is null || !hasTool)
+            if (loaded is null || !hasInstructions)
             {
-                _logger.LogInformation("Agent {AgentId} does not exist, was not loaded successfully, or does not have the 'update_registration_form' tool. Provisioning new version programmatically...", _agentId);
+                _logger.LogInformation("Agent {AgentId} does not exist, was not loaded successfully, or does not have the updated instructions. Provisioning new version programmatically...", _agentId);
                 try
                 {
-                    var registerTool = ResponseTool.CreateFunctionTool(
-                        "update_registration_form",
-                        BinaryData.FromObjectAsJson(new
-                        {
-                            type = "object",
-                            properties = new
-                            {
-                                field = new { type = "string", @enum = new[] { "name", "email", "organization", "role", "cep" }, description = "O campo a ser atualizado." },
-                                value = new { type = "string", description = "O valor fornecido pelo usuário." }
-                            },
-                            required = new[] { "field", "value" }
-                        }),
-                        false,
-                        "Atualiza um campo específico no formulário de cadastro. Use sempre que o usuário fornecer ou corrigir o Nome (name), E-mail (email), Organização (organization), Cargo (role) ou CEP (cep)."
-                    );
-
-                    var instructionsSuffix = "\nSempre atente-se ao padrão '[ESTADO_DO_FORMULARIO: ...]' no início das mensagens do usuário para saber quais dados já estão preenchidos na tela de cadastro. Quando coletar Nome, E-mail, Organização, Cargo ou CEP, invoque a ferramenta correspondente.";
+                    var instructionsSuffix = "\nSempre atente-se ao padrão '[ESTADO_DO_FORMULARIO: ...]' no início das mensagens do usuário para saber quais dados já estão preenchidos na tela de cadastro.\nQuando o usuário fornecer ou corrigir qualquer informação do cadastro (como Nome Completo, E-mail Corporativo, Organização/Empresa, Cargo ou CEP), você DEVE incluir a tag correspondente no formato exato: '[[UPDATE_FORM: {campo}={valor}]]' ao final da sua resposta (ou no fluxo da conversa) para atualizar a tela.\nCampos suportados:\n- name (Nome Completo)\n- email (E-mail Corporativo)\n- organization (Organização/Empresa)\n- role (Cargo)\n- cep (CEP)\n\nExemplo:\nSe o usuário disser 'Meu nome é João da Silva', você responde e inclui: [[UPDATE_FORM: name=João da Silva]]";
                     var currentInstructions = definition?.Instructions ?? "Você é o assistente Zoggy encarregado de ajudar o usuário a preencher o formulário de cadastro. Os campos são: Nome Completo (name), E-mail Corporativo (email), Organização/Empresa (organization) e Cargo (role). CEP (cep) também deve ser coletado se necessário.";
                     var newInstructions = currentInstructions;
                     if (!newInstructions.Contains("[ESTADO_DO_FORMULARIO:"))
@@ -316,8 +293,7 @@ public class AgentFrameworkService : IDisposable
 
                     var newDefinition = new DeclarativeAgentDefinition(modelName)
                     {
-                        Instructions = newInstructions,
-                        Tools = { registerTool }
+                        Instructions = newInstructions
                     };
 
                     if (definition?.Tools != null)
@@ -466,6 +442,9 @@ public class AgentFrameworkService : IDisposable
         // Dictionary to track function names by item ID in current response run
         var trackedFunctions = new Dictionary<string, string>();
 
+        bool _inTagBuffer = false;
+        var _tagBuffer = new System.Text.StringBuilder();
+
         bool hasPendingAction = true;
         while (hasPendingAction)
         {
@@ -486,7 +465,87 @@ public class AgentFrameworkService : IDisposable
 
                 if (update is StreamingResponseOutputTextDeltaUpdate deltaUpdate)
                 {
-                    yield return StreamChunk.Text(deltaUpdate.Delta);
+                    foreach (char c in deltaUpdate.Delta)
+                    {
+                        if (!_inTagBuffer)
+                        {
+                            if (c == '[')
+                            {
+                                _inTagBuffer = true;
+                                _tagBuffer.Append(c);
+                            }
+                            else
+                            {
+                                yield return StreamChunk.Text(c.ToString());
+                            }
+                        }
+                        else
+                        {
+                            _tagBuffer.Append(c);
+                            string currentStr = _tagBuffer.ToString();
+                            
+                            // Check if current buffer is still a prefix of "[[UPDATE_FORM:"
+                            string expectedPrefix = "[[UPDATE_FORM:";
+                            if (currentStr.Length <= expectedPrefix.Length)
+                            {
+                                if (!expectedPrefix.StartsWith(currentStr))
+                                {
+                                    // Not the tag, flush buffer
+                                    yield return StreamChunk.Text(currentStr);
+                                    _inTagBuffer = false;
+                                    _tagBuffer.Clear();
+                                }
+                            }
+                            else
+                            {
+                                // We are past the prefix, look for the closing suffix "]]"
+                                if (currentStr.EndsWith("]]"))
+                                {
+                                    string content = currentStr.Substring(expectedPrefix.Length, currentStr.Length - expectedPrefix.Length - 2);
+                                    var parts = content.Split('=', 2);
+                                    if (parts.Length == 2)
+                                    {
+                                        string field = parts[0].Trim().ToLowerInvariant();
+                                        string val = parts[1].Trim();
+                                        
+                                        // Optional CEP/Email validation
+                                        bool valid = true;
+                                        if (field == "email" && !string.IsNullOrEmpty(val))
+                                        {
+                                            if (!val.Contains("@") || !val.Contains("."))
+                                            {
+                                                valid = false;
+                                                yield return StreamChunk.Text("\n*(Zoggy: O formato de e-mail corporativo fornecido parece inválido. Por favor, corrija-o.)*\n");
+                                            }
+                                        }
+                                        else if (field == "cep" && !string.IsNullOrEmpty(val))
+                                        {
+                                            string cleanCep = new string(val.Where(char.IsDigit).ToArray());
+                                            if (cleanCep.Length != 8)
+                                            {
+                                                valid = false;
+                                                yield return StreamChunk.Text("\n*(Zoggy: O CEP deve conter exatamente 8 dígitos.)*\n");
+                                            }
+                                        }
+                                        
+                                        if (valid)
+                                        {
+                                            yield return StreamChunk.FormField(field, val);
+                                        }
+                                    }
+                                    _inTagBuffer = false;
+                                    _tagBuffer.Clear();
+                                }
+                                else if (currentStr.Length > 300)
+                                {
+                                    // Safeguard for very long buffers that don't close
+                                    yield return StreamChunk.Text(currentStr);
+                                    _inTagBuffer = false;
+                                    _tagBuffer.Clear();
+                                }
+                            }
+                        }
+                    }
                 }
                 else if (update is StreamingResponseOutputItemAddedUpdate itemAddedUpdate)
                 {
@@ -634,6 +693,13 @@ public class AgentFrameworkService : IDisposable
                     _logger.LogDebug("Unhandled stream update type: {Type}", update.GetType().Name);
                 }
             }
+        }
+
+        if (_inTagBuffer && _tagBuffer.Length > 0)
+        {
+            yield return StreamChunk.Text(_tagBuffer.ToString());
+            _tagBuffer.Clear();
+            _inTagBuffer = false;
         }
 
         _logger.LogInformation("Completed streaming for conversation: {ConversationId}", conversationId);
