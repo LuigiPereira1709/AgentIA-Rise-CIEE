@@ -484,6 +484,19 @@ public class AgentFrameworkService : IDisposable
                             _tagBuffer.Append(c);
                             string currentStr = _tagBuffer.ToString();
                             
+                            // Self-healing: if a new tag start "[[" is detected inside the buffer,
+                            // flush everything before it to the user and restart buffering from "[["
+                            int secondStart = currentStr.IndexOf("[[", 2);
+                            if (secondStart != -1)
+                            {
+                                string malformedPrefix = currentStr.Substring(0, secondStart);
+                                yield return StreamChunk.Text(malformedPrefix);
+                                
+                                _tagBuffer.Clear();
+                                _tagBuffer.Append(currentStr.Substring(secondStart));
+                                currentStr = _tagBuffer.ToString();
+                            }
+
                             // Check if current buffer is still a prefix of "[[UPDATE_FORM:"
                             string expectedPrefix = "[[UPDATE_FORM:";
                             if (currentStr.Length <= expectedPrefix.Length)
@@ -508,29 +521,33 @@ public class AgentFrameworkService : IDisposable
                                         string field = parts[0].Trim().ToLowerInvariant();
                                         string val = parts[1].Trim();
                                         
-                                        // Optional CEP/Email validation
-                                        bool valid = true;
-                                        if (field == "email" && !string.IsNullOrEmpty(val))
+                                        var allowedFields = new[] { "name", "email", "organization", "role", "cep" };
+                                        if (allowedFields.Contains(field) && !string.IsNullOrEmpty(val) && val != "null" && val != "undefined")
                                         {
-                                            if (!val.Contains("@") || !val.Contains("."))
+                                            // Optional CEP/Email validation
+                                            bool valid = true;
+                                            if (field == "email")
                                             {
-                                                valid = false;
-                                                yield return StreamChunk.Text("\n*(Zoggy: O formato de e-mail corporativo fornecido parece inválido. Por favor, corrija-o.)*\n");
+                                                if (!val.Contains("@") || !val.Contains("."))
+                                                {
+                                                    valid = false;
+                                                    yield return StreamChunk.Text("\n*(Zoggy: O formato de e-mail corporativo fornecido parece inválido. Por favor, corrija-o.)*\n");
+                                                }
                                             }
-                                        }
-                                        else if (field == "cep" && !string.IsNullOrEmpty(val))
-                                        {
-                                            string cleanCep = new string(val.Where(char.IsDigit).ToArray());
-                                            if (cleanCep.Length != 8)
+                                            else if (field == "cep")
                                             {
-                                                valid = false;
-                                                yield return StreamChunk.Text("\n*(Zoggy: O CEP deve conter exatamente 8 dígitos.)*\n");
+                                                string cleanCep = new string(val.Where(char.IsDigit).ToArray());
+                                                if (cleanCep.Length != 8)
+                                                {
+                                                    valid = false;
+                                                    yield return StreamChunk.Text("\n*(Zoggy: O CEP deve conter exatamente 8 dígitos.)*\n");
+                                                }
                                             }
-                                        }
-                                        
-                                        if (valid)
-                                        {
-                                            yield return StreamChunk.FormField(field, val);
+                                            
+                                            if (valid)
+                                            {
+                                                yield return StreamChunk.FormField(field, val);
+                                            }
                                         }
                                     }
                                     _inTagBuffer = false;
