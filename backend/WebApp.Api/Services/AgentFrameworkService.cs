@@ -232,37 +232,37 @@ public class AgentFrameworkService : IDisposable
             // Use the same credential path as all other operations (MI or OBO)
             var client = GetProjectClient();
 
-            ProjectsAgentVersion? loaded;
-            if (!string.IsNullOrWhiteSpace(_configuredAgentVersion))
+            ProjectsAgentVersion? loaded = null;
+            try
             {
-                _logger.LogInformation("Loading agent: {AgentId} version={Version}", _agentId, _configuredAgentVersion);
-                var response = await client.AgentAdministrationClient.GetAgentVersionAsync(
-                    _agentId,
-                    _configuredAgentVersion!,
-                    cancellationToken);
-                loaded = response.Value;
+                if (!string.IsNullOrWhiteSpace(_configuredAgentVersion))
+                {
+                    _logger.LogInformation("Loading agent: {AgentId} version={Version}", _agentId, _configuredAgentVersion);
+                    var response = await client.AgentAdministrationClient.GetAgentVersionAsync(
+                        _agentId,
+                        _configuredAgentVersion!,
+                        cancellationToken);
+                    loaded = response.Value;
+                }
+                else
+                {
+                    _logger.LogInformation("Loading agent: {AgentId} version=<latest>", _agentId);
+                    await foreach (var v in client.AgentAdministrationClient.GetAgentVersionsAsync(
+                        agentName: _agentId,
+                        limit: 1,
+                        order: AgentListOrder.Descending,
+                        after: null,
+                        before: null,
+                        cancellationToken: cancellationToken))
+                    {
+                        loaded = v;
+                        break;
+                    }
+                }
             }
-            else
+            catch (Exception ex)
             {
-                _logger.LogInformation("Loading agent: {AgentId} version=<latest>", _agentId);
-                loaded = null;
-                await foreach (var v in client.AgentAdministrationClient.GetAgentVersionsAsync(
-                    agentName: _agentId,
-                    limit: 1,
-                    order: AgentListOrder.Descending,
-                    after: null,
-                    before: null,
-                    cancellationToken: cancellationToken))
-                {
-                    loaded = v;
-                    break;
-                }
-
-                if (loaded is null)
-                {
-                    throw new InvalidOperationException(
-                        $"Agent '{_agentId}' has no versions. Create at least one version in AI Foundry.");
-                }
+                _logger.LogWarning(ex, "Failed to load agent {AgentId} (version={Version}) from Azure. Will attempt to provision it. Error: {Message}", _agentId, _configuredAgentVersion ?? "<latest>", ex.Message);
             }
 
             s_cachedAgentVersion = loaded;
@@ -281,9 +281,9 @@ public class AgentFrameworkService : IDisposable
                 }
             }
 
-            if (loaded is not null && !hasTool)
+            if (loaded is null || !hasTool)
             {
-                _logger.LogInformation("Agent {AgentId} does not have the 'update_registration_form' tool. Provisioning new version programmatically...", _agentId);
+                _logger.LogInformation("Agent {AgentId} does not exist, was not loaded successfully, or does not have the 'update_registration_form' tool. Provisioning new version programmatically...", _agentId);
                 try
                 {
                     var registerTool = ResponseTool.CreateFunctionTool(
@@ -302,12 +302,18 @@ public class AgentFrameworkService : IDisposable
                         "Atualiza um campo específico no formulário de cadastro. Use sempre que o usuário fornecer ou corrigir o Nome (name), E-mail (email), Organização (organization), Cargo (role) ou CEP (cep)."
                     );
 
-                    var currentInstructions = definition?.Instructions ?? "Você é o assistente Zoggy encarregado de ajudar o usuário a preencher o formulário de cadastro. Os campos são: Nome Completo (name), E-mail Corporativo (email), Organização/Empresa (organization) e Cargo (role).";
+                    var instructionsSuffix = "\nSempre atente-se ao padrão '[ESTADO_DO_FORMULARIO: ...]' no início das mensagens do usuário para saber quais dados já estão preenchidos na tela de cadastro. Quando coletar Nome, E-mail, Organização, Cargo ou CEP, invoque a ferramenta correspondente.";
+                    var currentInstructions = definition?.Instructions ?? "Você é o assistente Zoggy encarregado de ajudar o usuário a preencher o formulário de cadastro. Os campos são: Nome Completo (name), E-mail Corporativo (email), Organização/Empresa (organization) e Cargo (role). CEP (cep) também deve ser coletado se necessário.";
+                    var newInstructions = currentInstructions;
+                    if (!newInstructions.Contains("[ESTADO_DO_FORMULARIO:"))
+                    {
+                        newInstructions += instructionsSuffix;
+                    }
                     var modelName = definition?.Model ?? "gpt-4o";
 
                     var newDefinition = new DeclarativeAgentDefinition(modelName)
                     {
-                        Instructions = currentInstructions + "\nSempre atente-se ao padrão '[ESTADO_DO_FORMULARIO: ...]' no início das mensagens do usuário para saber quais dados já estão preenchidos na tela de cadastro. Quando coletar Nome, E-mail, Organização ou Cargo, invoque a ferramenta correspondente.",
+                        Instructions = newInstructions,
                         Tools = { registerTool }
                     };
 
@@ -335,8 +341,13 @@ public class AgentFrameworkService : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to programmatically provision agent version. Falling back to existing version. Error: {Message}", ex.Message);
+                    _logger.LogWarning(ex, "Failed to programmatically provision agent version. Error: {Message}", ex.Message);
                 }
+            }
+
+            if (s_cachedAgentVersion == null)
+            {
+                throw new InvalidOperationException($"Could not load or provision agent '{_agentId}'. The agent version does not exist and auto-provisioning failed.");
             }
 
             _logger.LogInformation(
@@ -402,7 +413,7 @@ public class AgentFrameworkService : IDisposable
 
         // Resolve the concrete agent version up front so streaming and metadata use the same version.
         var resolvedAgent = await GetAgentAsync(cancellationToken);
-        var resolvedVersion = _configuredAgentVersion ?? resolvedAgent.Version;
+        var resolvedVersion = resolvedAgent.Version;
 
         // Always bind to conversation — the conversation maintains MCP approval state
         ProjectResponsesClient responsesClient
