@@ -107,7 +107,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
           </button>
         </nav>
 
-        <p className={styles.footerNote}>HONK · Powered by Azure AI Foundry</p>
+        <p className={styles.footerNote}>HONK</p>
       </div>
     </div>
   );
