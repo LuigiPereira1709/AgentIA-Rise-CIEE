@@ -5,9 +5,12 @@ using Azure.Core;
 using Azure.Identity;
 using OpenAI.Files;
 using OpenAI.Responses;
+using OpenAI.Assistants;
 using Microsoft.Identity.Client;
 using Microsoft.Identity.Web;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
+using System.Linq;
 using WebApp.Api.Models;
 
 namespace WebApp.Api.Services;
@@ -264,7 +267,77 @@ public class AgentFrameworkService : IDisposable
 
             s_cachedAgentVersion = loaded;
 
-            var definition = s_cachedAgentVersion.Definition as DeclarativeAgentDefinition;
+            var definition = s_cachedAgentVersion?.Definition as DeclarativeAgentDefinition;
+            bool hasTool = false;
+            if (definition?.Tools != null)
+            {
+                foreach (var t in definition.Tools)
+                {
+                    if (t is FunctionTool ft && ft.FunctionName == "update_registration_form")
+                    {
+                        hasTool = true;
+                        break;
+                    }
+                }
+            }
+
+            if (loaded is not null && !hasTool)
+            {
+                _logger.LogInformation("Agent {AgentId} does not have the 'update_registration_form' tool. Provisioning new version programmatically...", _agentId);
+                try
+                {
+                    var registerTool = ResponseTool.CreateFunctionTool(
+                        "update_registration_form",
+                        BinaryData.FromObjectAsJson(new
+                        {
+                            type = "object",
+                            properties = new
+                            {
+                                field = new { type = "string", @enum = new[] { "name", "email", "organization", "role", "cep" }, description = "O campo a ser atualizado." },
+                                value = new { type = "string", description = "O valor fornecido pelo usuário." }
+                            },
+                            required = new[] { "field", "value" }
+                        }),
+                        false,
+                        "Atualiza um campo específico no formulário de cadastro. Use sempre que o usuário fornecer ou corrigir o Nome (name), E-mail (email), Organização (organization), Cargo (role) ou CEP (cep)."
+                    );
+
+                    var currentInstructions = definition?.Instructions ?? "Você é o assistente Zoggy encarregado de ajudar o usuário a preencher o formulário de cadastro. Os campos são: Nome Completo (name), E-mail Corporativo (email), Organização/Empresa (organization) e Cargo (role).";
+                    var modelName = definition?.Model ?? "gpt-4o";
+
+                    var newDefinition = new DeclarativeAgentDefinition(modelName)
+                    {
+                        Instructions = currentInstructions + "\nSempre atente-se ao padrão '[ESTADO_DO_FORMULARIO: ...]' no início das mensagens do usuário para saber quais dados já estão preenchidos na tela de cadastro. Quando coletar Nome, E-mail, Organização ou Cargo, invoque a ferramenta correspondente.",
+                        Tools = { registerTool }
+                    };
+
+                    if (definition?.Tools != null)
+                    {
+                        foreach (var existingTool in definition.Tools)
+                        {
+                            if (existingTool is not FunctionTool ft || ft.FunctionName != "update_registration_form")
+                            {
+                                newDefinition.Tools.Add(existingTool);
+                            }
+                        }
+                    }
+
+                    var creationResponse = await client.AgentAdministrationClient.CreateAgentVersionAsync(
+                        _agentId,
+                        new ProjectsAgentVersionCreationOptions(newDefinition),
+                        cancellationToken: cancellationToken
+                    );
+
+                    loaded = creationResponse.Value;
+                    definition = loaded.Definition as DeclarativeAgentDefinition;
+                    s_cachedAgentVersion = loaded;
+                    _logger.LogInformation("Successfully provisioned new agent version: {Version}", loaded.Version);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to programmatically provision agent version. Falling back to existing version. Error: {Message}", ex.Message);
+                }
+            }
 
             _logger.LogInformation(
                 "Loaded agent: name={AgentName}, model={Model}, version={Version} (pinned={Pinned})",
@@ -312,16 +385,18 @@ public class AgentFrameworkService : IDisposable
         List<FileAttachment>? fileDataUris = null,
         string? previousResponseId = null,
         McpApprovalResponse? mcpApproval = null,
+        Dictionary<string, string>? formState = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
         _logger.LogInformation(
-            "Streaming message to conversation: {ConversationId}, ImageCount: {ImageCount}, FileCount: {FileCount}, HasApproval: {HasApproval}",
+            "Streaming message to conversation: {ConversationId}, ImageCount: {ImageCount}, FileCount: {FileCount}, HasApproval: {HasApproval}, HasFormState: {HasFormState}",
             conversationId,
             imageDataUris?.Count ?? 0,
             fileDataUris?.Count ?? 0,
-            mcpApproval != null);
+            mcpApproval != null,
+            formState != null);
 
         CreateResponseOptions options = new() { StreamingEnabled = true };
 
@@ -357,8 +432,16 @@ public class AgentFrameworkService : IDisposable
                 throw new ArgumentException("Message cannot be null or whitespace", nameof(message));
             }
 
+            // Append formState context as a prefix of the message if available
+            string processedMessage = message;
+            if (formState != null && formState.Count > 0)
+            {
+                var formJson = System.Text.Json.JsonSerializer.Serialize(formState);
+                processedMessage = $"[ESTADO_DO_FORMULARIO: {formJson}]\n\n{message}";
+            }
+
             // Build user message with optional images and files
-            ResponseItem userMessage = await BuildUserMessageAsync(message, imageDataUris, fileDataUris, cancellationToken);
+            ResponseItem userMessage = await BuildUserMessageAsync(processedMessage, imageDataUris, fileDataUris, cancellationToken);
             options.InputItems.Add(userMessage);
         }
 
@@ -366,103 +449,176 @@ public class AgentFrameworkService : IDisposable
         var fileSearchQuotes = new Dictionary<string, string>();
         // Track the current response ID for MCP approval resume flow
         string? currentResponseId = null;
+        // Dictionary to track function names by item ID in current response run
+        var trackedFunctions = new Dictionary<string, string>();
 
-        await foreach (StreamingResponseUpdate update
-            in responsesClient.CreateResponseStreamingAsync(
-                options: options,
-                cancellationToken: cancellationToken))
+        bool hasPendingAction = true;
+        while (hasPendingAction)
         {
-            // Capture response ID from created event (needed for MCP approval resume)
-            if (update is StreamingResponseCreatedUpdate createdUpdate)
-            {
-                currentResponseId = createdUpdate.Response.Id;
-                _logger.LogDebug("Response created: {ResponseId}", currentResponseId);
-                continue;
-            }
+            hasPendingAction = false;
 
-            if (update is StreamingResponseOutputTextDeltaUpdate deltaUpdate)
+            await foreach (StreamingResponseUpdate update
+                in responsesClient.CreateResponseStreamingAsync(
+                    options: options,
+                    cancellationToken: cancellationToken))
             {
-                yield return StreamChunk.Text(deltaUpdate.Delta);
-            }
-            else if (update is StreamingResponseOutputItemDoneUpdate itemDoneUpdate)
-            {
-                // Check for MCP tool approval request
-                if (itemDoneUpdate.Item is McpToolCallApprovalRequestItem mcpApprovalItem)
+                // Capture response ID from created event (needed for MCP approval resume)
+                if (update is StreamingResponseCreatedUpdate createdUpdate)
                 {
-                    _logger.LogInformation(
-                        "MCP tool approval requested: Id={Id}, Tool={Tool}, Server={Server}",
-                        mcpApprovalItem.Id,
-                        mcpApprovalItem.ToolName,
-                        mcpApprovalItem.ServerLabel);
-                    
-                    // Parse tool arguments from BinaryData to string (JSON)
-                    string? argumentsJson = mcpApprovalItem.ToolArguments?.ToString();
-                    
-                    yield return StreamChunk.McpApproval(new McpApprovalRequest
-                    {
-                        Id = mcpApprovalItem.Id,
-                        ToolName = mcpApprovalItem.ToolName ?? "Unknown tool",
-                        ServerLabel = mcpApprovalItem.ServerLabel ?? "MCP Server",
-                        Arguments = argumentsJson,
-                        PreviousResponseId = currentResponseId
-                    });
+                    currentResponseId = createdUpdate.Response.Id;
+                    _logger.LogDebug("Response created: {ResponseId}", currentResponseId);
                     continue;
                 }
-                
-                // Capture file search results for quote extraction
-                if (itemDoneUpdate.Item is FileSearchCallResponseItem fileSearchItem)
+
+                if (update is StreamingResponseOutputTextDeltaUpdate deltaUpdate)
                 {
-                    foreach (var result in fileSearchItem.Results)
+                    yield return StreamChunk.Text(deltaUpdate.Delta);
+                }
+                else if (update is StreamingResponseOutputItemAddedUpdate itemAddedUpdate)
+                {
+                    if (itemAddedUpdate.Item is FunctionCallResponseItem functionCallItem)
                     {
-                        if (!string.IsNullOrEmpty(result.FileId) && !string.IsNullOrEmpty(result.Text))
+                        trackedFunctions[functionCallItem.Id] = functionCallItem.FunctionName;
+                    }
+
+                    // Detect tool-use steps and signal the frontend for progress indicators
+                    string? toolName = itemAddedUpdate.Item switch
+                    {
+                        FileSearchCallResponseItem => "file_search",
+                        CodeInterpreterCallResponseItem => "code_interpreter",
+                        _ when itemAddedUpdate.Item?.GetType().Name.Contains("ToolCall") == true => "function_call",
+                        _ => null
+                    };
+
+                    if (toolName != null)
+                    {
+                        _logger.LogDebug("Tool use detected: {ToolName}", toolName);
+                        yield return StreamChunk.ToolUse(toolName);
+                    }
+                }
+                else if (update is StreamingResponseFunctionCallArgumentsDoneUpdate argsDone)
+                {
+                    string functionName = trackedFunctions.GetValueOrDefault(argsDone.ItemId) ?? "update_registration_form";
+                    string argumentsJson = argsDone.FunctionArguments.ToString();
+                    _logger.LogInformation("Model requested function call: {FunctionName} with arguments: {Arguments}", functionName, argumentsJson);
+
+                    string resultJson = "{\"status\":\"success\"}";
+                    string? field = null;
+                    string? val = null;
+
+                    if (functionName == "update_registration_form")
+                    {
+                        try
                         {
-                            fileSearchQuotes[result.FileId] = result.Text;
-                            _logger.LogDebug(
-                                "Captured file search quote for FileId={FileId}, QuoteLength={Length}", 
-                                result.FileId, 
-                                result.Text.Length);
+                            using var doc = JsonDocument.Parse(argumentsJson);
+                            if (doc.RootElement.TryGetProperty("field", out var fieldProp) && doc.RootElement.TryGetProperty("value", out var valueProp))
+                            {
+                                field = fieldProp.GetString();
+                                val = valueProp.GetString();
+
+                                if (field == "email" && !string.IsNullOrEmpty(val))
+                                {
+                                    if (!val.Contains("@") || !val.Contains("."))
+                                    {
+                                        resultJson = "{\"status\":\"error\",\"message\":\"Formato de e-mail corporativo inválido. Por favor, forneça um e-mail válido.\"}";
+                                        field = null;
+                                        val = null;
+                                    }
+                                }
+                                else if (field == "cep" && !string.IsNullOrEmpty(val))
+                                {
+                                    string cleanCep = new string(val.Where(char.IsDigit).ToArray());
+                                    if (cleanCep.Length == 8)
+                                    {
+                                        resultJson = "{\"status\":\"success\",\"address\":\"Avenida Paulista, São Paulo, SP\"}";
+                                    }
+                                    else
+                                    {
+                                        resultJson = "{\"status\":\"error\",\"message\":\"CEP deve conter 8 dígitos.\"}";
+                                        field = null;
+                                        val = null;
+                                    }
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error parsing function call arguments.");
+                            resultJson = $"{{\"status\":\"error\",\"message\":\"{ex.Message}\"}}";
                         }
                     }
-                    continue;
-                }
-                
-                // Extract annotations/citations from completed output items
-                var annotations = ExtractAnnotations(itemDoneUpdate.Item, fileSearchQuotes);
-                if (annotations.Count > 0)
-                {
-                    _logger.LogInformation("Extracted {Count} annotations from response", annotations.Count);
-                    yield return StreamChunk.WithAnnotations(annotations);
-                }
-            }
-            else if (update is StreamingResponseOutputItemAddedUpdate itemAddedUpdate)
-            {
-                // Detect tool-use steps and signal the frontend for progress indicators
-                string? toolName = itemAddedUpdate.Item switch
-                {
-                    FileSearchCallResponseItem => "file_search",
-                    CodeInterpreterCallResponseItem => "code_interpreter",
-                    _ when itemAddedUpdate.Item?.GetType().Name.Contains("ToolCall") == true => "function_call",
-                    _ => null
-                };
 
-                if (toolName != null)
-                {
-                    _logger.LogDebug("Tool use detected: {ToolName}", toolName);
-                    yield return StreamChunk.ToolUse(toolName);
+                    options.InputItems.Add(ResponseItem.CreateFunctionCallOutputItem(argsDone.ItemId, resultJson));
+
+                    if (field != null && val != null)
+                    {
+                        yield return StreamChunk.FormField(field, val);
+                    }
+
+                    hasPendingAction = true;
+                    break; // Exit foreach to re-invoke CreateResponseStreamingAsync with the function output in options
                 }
-            }
-            else if (update is StreamingResponseCompletedUpdate completedUpdate)
-            {
-                _lastUsage = completedUpdate.Response.Usage;
-            }
-            else if (update is StreamingResponseErrorUpdate errorUpdate)
-            {
-                _logger.LogError("Stream error: {Error}", errorUpdate.Message);
-                throw new InvalidOperationException($"Stream error: {errorUpdate.Message}");
-            }
-            else
-            {
-                _logger.LogDebug("Unhandled stream update type: {Type}", update.GetType().Name);
+                else if (update is StreamingResponseOutputItemDoneUpdate itemDoneUpdate)
+                {
+                    // Check for MCP tool approval request
+                    if (itemDoneUpdate.Item is McpToolCallApprovalRequestItem mcpApprovalItem)
+                    {
+                        _logger.LogInformation(
+                            "MCP tool approval requested: Id={Id}, Tool={Tool}, Server={Server}",
+                            mcpApprovalItem.Id,
+                            mcpApprovalItem.ToolName,
+                            mcpApprovalItem.ServerLabel);
+                        
+                        string? argumentsJson = mcpApprovalItem.ToolArguments?.ToString();
+                        
+                        yield return StreamChunk.McpApproval(new McpApprovalRequest
+                        {
+                            Id = mcpApprovalItem.Id,
+                            ToolName = mcpApprovalItem.ToolName ?? "Unknown tool",
+                            ServerLabel = mcpApprovalItem.ServerLabel ?? "MCP Server",
+                            Arguments = argumentsJson,
+                            PreviousResponseId = currentResponseId
+                        });
+                        continue;
+                    }
+                    
+                    // Capture file search results for quote extraction
+                    if (itemDoneUpdate.Item is FileSearchCallResponseItem fileSearchItem)
+                    {
+                        foreach (var result in fileSearchItem.Results)
+                        {
+                            if (!string.IsNullOrEmpty(result.FileId) && !string.IsNullOrEmpty(result.Text))
+                            {
+                                fileSearchQuotes[result.FileId] = result.Text;
+                                _logger.LogDebug(
+                                    "Captured file search quote for FileId={FileId}, QuoteLength={Length}", 
+                                    result.FileId, 
+                                    result.Text.Length);
+                            }
+                        }
+                    }
+
+                    // Extract annotations/citations from completed output items
+                    var annotations = ExtractAnnotations(itemDoneUpdate.Item, fileSearchQuotes);
+                    if (annotations.Count > 0)
+                    {
+                        _logger.LogInformation("Extracted {Count} annotations from response", annotations.Count);
+                        yield return StreamChunk.WithAnnotations(annotations);
+                    }
+                }
+                else if (update is StreamingResponseCompletedUpdate completedUpdate)
+                {
+                    _lastUsage = completedUpdate.Response.Usage;
+                }
+                else if (update is StreamingResponseErrorUpdate errorUpdate)
+                {
+                    _logger.LogError("Stream error: {Error}", errorUpdate.Message);
+                    throw new InvalidOperationException($"Stream error: {errorUpdate.Message}");
+                }
+                else
+                {
+                    _logger.LogDebug("Unhandled stream update type: {Type}", update.GetType().Name);
+                }
             }
         }
 

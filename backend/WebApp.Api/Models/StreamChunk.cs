@@ -22,6 +22,11 @@ public record StreamChunk
     public McpApprovalRequest? McpApprovalRequest { get; init; }
     
     /// <summary>
+    /// Form field update event. Null if this chunk contains text, annotations, or approval request.
+    /// </summary>
+    public FormFieldUpdate? FormUpdate { get; init; }
+    
+    /// <summary>
     /// Whether this chunk signals a tool-use step (e.g. file_search, code_interpreter).
     /// </summary>
     public bool IsToolUse { get; init; }
@@ -52,6 +57,11 @@ public record StreamChunk
     public static StreamChunk ToolUse(string toolName) => new() { IsToolUse = true, ToolName = toolName };
     
     /// <summary>
+    /// Creates a form update chunk.
+    /// </summary>
+    public static StreamChunk FormField(string field, string value) => new() { FormUpdate = new FormFieldUpdate { Field = field, Value = value } };
+    
+    /// <summary>
     /// Whether this chunk contains text content.
     /// </summary>
     public bool IsText => TextDelta != null;
@@ -65,6 +75,11 @@ public record StreamChunk
     /// Whether this chunk contains an MCP approval request.
     /// </summary>
     public bool IsMcpApprovalRequest => McpApprovalRequest != null;
+    
+    /// <summary>
+    /// Whether this chunk contains a form update.
+    /// </summary>
+    public bool IsFormUpdate => FormUpdate != null;
 }
 
 /// <summary>
@@ -77,4 +92,13 @@ public record McpApprovalRequest
     public required string ServerLabel { get; init; }
     public string? Arguments { get; init; }
     public string? PreviousResponseId { get; init; }
+}
+
+/// <summary>
+/// Represents a form field update event streamed to the client.
+/// </summary>
+public record FormFieldUpdate
+{
+    public required string Field { get; init; }
+    public required string Value { get; init; }
 }

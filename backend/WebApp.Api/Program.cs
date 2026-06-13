@@ -193,6 +193,7 @@ app.MapPost("/api/chat/stream", async (
             request.FileDataUris,
             request.PreviousResponseId,
             request.McpApproval,
+            request.FormState,
             cancellationToken))
         {
             if (chunk.IsText && chunk.TextDelta != null)
@@ -210,6 +211,10 @@ app.MapPost("/api/chat/stream", async (
             else if (chunk.IsToolUse && chunk.ToolName != null)
             {
                 await WriteToolUseEvent(httpContext.Response, chunk.ToolName, cancellationToken);
+            }
+            else if (chunk.IsFormUpdate && chunk.FormUpdate != null)
+            {
+                await WriteFormUpdateEvent(httpContext.Response, chunk.FormUpdate, cancellationToken);
             }
         }
 
@@ -295,6 +300,18 @@ static async Task WriteAnnotationsEvent(HttpResponse response, List<WebApp.Api.M
             endIndex = a.EndIndex,
             quote = a.Quote
         })
+    });
+    await response.WriteAsync($"data: {json}\n\n", ct);
+    await response.Body.FlushAsync(ct);
+}
+
+static async Task WriteFormUpdateEvent(HttpResponse response, WebApp.Api.Models.FormFieldUpdate formUpdate, CancellationToken ct)
+{
+    var json = System.Text.Json.JsonSerializer.Serialize(new
+    {
+        type = "formUpdate",
+        field = formUpdate.Field,
+        value = formUpdate.Value
     });
     await response.WriteAsync($"data: {json}\n\n", ct);
     await response.Body.FlushAsync(ct);

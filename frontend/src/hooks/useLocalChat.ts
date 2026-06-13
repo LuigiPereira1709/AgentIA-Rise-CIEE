@@ -12,7 +12,12 @@ export interface UseLocalChatResult {
   clearChat: () => void;
 }
 
-export function useLocalChat(): UseLocalChatResult {
+export interface UseLocalChatOptions {
+  formData?: Record<string, string>;
+  onFormUpdate?: (field: string, value: string) => void;
+}
+
+export function useLocalChat(options?: UseLocalChatOptions): UseLocalChatResult {
   const { getAccessToken } = useAuth();
   const [messages, setMessages] = useState<IChatItem[]>([]);
   const [status, setStatus] = useState<UseLocalChatResult['status']>('idle');
@@ -85,7 +90,8 @@ export function useLocalChat(): UseLocalChatResult {
           message: text,
           conversationId: conversationId,
           imageDataUris: [],
-          fileDataUris: []
+          fileDataUris: [],
+          formState: options?.formData
         }),
         signal: abortController.signal
       });
@@ -128,6 +134,14 @@ export function useLocalChat(): UseLocalChatResult {
             case 'conversationId':
               setConversationId(event.data.conversationId);
               break;
+
+            case 'formUpdate': {
+              const { field, value } = event.data;
+              if (options?.onFormUpdate) {
+                options.onFormUpdate(field, value);
+              }
+              break;
+            }
 
             case 'chunk': {
               const contentDelta = event.data.content;

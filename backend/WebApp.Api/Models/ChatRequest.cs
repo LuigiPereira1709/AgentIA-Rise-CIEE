@@ -5,6 +5,10 @@ public record ChatRequest
     public required string Message { get; init; }
     public string? ConversationId { get; init; }
     /// <summary>
+    /// Current form data state passed from the frontend for context synchronization.
+    /// </summary>
+    public Dictionary<string, string>? FormState { get; init; }
+    /// <summary>
     /// Base64-encoded image data URIs (e.g., data:image/png;base64,iVBORw0KG...)
     /// Images are sent inline with the message, no file upload needed.
     /// </summary>

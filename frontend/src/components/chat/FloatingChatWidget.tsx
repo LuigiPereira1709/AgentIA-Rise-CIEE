@@ -64,15 +64,22 @@ const formatTime = (date: Date) =>
 interface FloatingChatWidgetProps {
   isChaosMode?: boolean;
   currentStep?: number;
+  formData?: Record<string, string>;
+  onFormUpdate?: (field: string, value: string) => void;
 }
 
 export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
   isChaosMode = false,
-  currentStep = 0
+  currentStep = 0,
+  formData,
+  onFormUpdate
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
-  const { messages, status, error, sendMessage, clearChat } = useLocalChat();
+  const { messages, status, error, sendMessage, clearChat } = useLocalChat({
+    formData,
+    onFormUpdate
+  });
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);

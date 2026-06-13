@@ -528,7 +528,12 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
       </main>
 
       {/* Floating Chatbot Widget */}
-      <FloatingChatWidget isChaosMode={isChaosMode} currentStep={getActiveStep()} />
+      <FloatingChatWidget 
+        isChaosMode={isChaosMode} 
+        currentStep={getActiveStep()} 
+        formData={formData}
+        onFormUpdate={handleInputChange}
+      />
 
       {/* Toast Notifications */}
       <div className={styles.toastContainer}>
