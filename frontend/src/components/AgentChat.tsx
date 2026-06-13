@@ -54,8 +54,13 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Agente IA', a
   const apiUrl = import.meta.env.VITE_API_URL || '/api';
   
   const chatService = useMemo(() => {
-    return new ChatService(apiUrl, getAccessToken, dispatch);
-  }, [apiUrl, getAccessToken, dispatch]);
+    const service = new ChatService(apiUrl, getAccessToken, dispatch);
+    service.onFormUpdate = (field, value) => {
+      handleJourneyFieldChange(field as any, value);
+    };
+    service.getFormState = () => journeyFormData;
+    return service;
+  }, [apiUrl, getAccessToken, dispatch, journeyFormData]);
 
   const prevMessagesLengthRef = useRef(chat.messages.length);
   useEffect(() => {

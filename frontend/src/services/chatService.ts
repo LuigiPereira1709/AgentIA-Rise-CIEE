@@ -47,6 +47,9 @@ export class ChatService {
   // Flag indicating an intentional user cancellation of the active stream.
   private streamCancelled = false;
 
+  public onFormUpdate?: (field: string, value: string) => void;
+  public getFormState?: () => Record<string, string>;
+
   constructor(
     apiUrl: string,
     getAccessToken: () => Promise<string | null>,
@@ -135,11 +138,13 @@ export class ChatService {
     imageDataUris: string[],
     fileDataUris: Array<{ dataUri: string; fileName: string; mimeType: string }>
   ): Record<string, unknown> {
+    const formState = this.getFormState ? this.getFormState() : undefined;
     return {
       message,
       conversationId,
       imageDataUris: imageDataUris.length > 0 ? imageDataUris : undefined,
       fileDataUris: fileDataUris.length > 0 ? fileDataUris : undefined,
+      formState: formState && Object.keys(formState).length > 0 ? formState : undefined,
     };
   }
 
@@ -442,6 +447,14 @@ export class ChatService {
                   duration: event.data.duration,
                 },
               });
+              break;
+
+            case 'formUpdate':
+              if (event.data.field && event.data.value !== undefined) {
+                if (this.onFormUpdate) {
+                  this.onFormUpdate(event.data.field, event.data.value);
+                }
+              }
               break;
 
             case 'done':
