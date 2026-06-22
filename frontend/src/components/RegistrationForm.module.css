@@ -107,13 +107,17 @@
 
 .submitButton {
   margin-top: 10px;
-  background: #53a8b6 !important;
-  color: #0c0f1d !important;
+  background: linear-gradient(135deg, #1a5aa8 0%, #0f3460 100%) !important;
+  color: #ffffff !important;
   font-weight: 600 !important;
+  border: none !important;
+  transition: all 0.2s ease !important;
 }
 
 .submitButton:hover {
-  background: #74c7d5 !important;
+  background: linear-gradient(135deg, #2d70c4 0%, #154b8a 100%) !important;
+  box-shadow: 0 6px 16px rgba(26, 90, 168, 0.5) !important;
+  transform: translateY(-2px);
 }
 
 .successCard {
@@ -460,9 +464,9 @@
 }
 
 .tabButtonActive {
-  background: #53a8b6 !important;
-  color: #0c0f1d !important;
-  box-shadow: 0 4px 12px rgba(83, 168, 182, 0.25);
+  background: linear-gradient(135deg, #1a5aa8 0%, #0f3460 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(26, 90, 168, 0.4);
 }
 
 .fieldRow {
@@ -486,7 +490,7 @@
 
 .dropdownSelect {
   width: 100%;
-  height: 32px;
+  height: 40px;
   background-color: #1a1e30;
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 4px;
@@ -499,6 +503,27 @@
 }
 
 .dropdownSelect:focus {
-  border-color: #53a8b6;
+  border-color: #1a5aa8;
+}
+
+/* Override Fluent UI Input styles to match the dark theme */
+.form :global(.fui-Input) {
+  background-color: #1a1e30 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 4px !important;
+  height: 40px !important;
+  width: 100% !important;
+  box-sizing: border-box;
+  min-width: 0 !important;
+}
+
+.form :global(.fui-Input) > input {
+  color: #ffffff !important;
+  background-color: transparent !important;
+  border: none !important;
+}
+
+.form :global(.fui-Input)::after {
+  display: none !important;
 }
 
