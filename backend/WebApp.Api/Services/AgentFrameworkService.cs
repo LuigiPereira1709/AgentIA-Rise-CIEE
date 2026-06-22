@@ -271,20 +271,8 @@ public class AgentFrameworkService : IDisposable
             s_cachedAgentVersion = loaded;
 
             var definition = s_cachedAgentVersion?.Definition as DeclarativeAgentDefinition;
-            bool hasInstructions = false;
-            if (definition?.Instructions != null && 
-                definition.Instructions.Contains("varNomeCompleto") && 
-                definition.Instructions.Contains("utilize a chamada de função update_registration_form"))
-            {
-                hasInstructions = true;
-            }
-
-            if (loaded is null || !hasInstructions)
-            {
-                _logger.LogInformation("Agent {AgentId} does not exist, was not loaded successfully, or does not have the updated instructions. Provisioning new version programmatically...", _agentId);
-                try
-                {
-                    var newInstructions = @"Você é o Agente Orquestrador de Cadastro de Estudantes (Zoggy). Seu objetivo é coletar os 18 dados cadastrais obrigatórios dos estudantes de forma fluida, amigável, empática e conversacional, eliminando o aspecto frio de formulários rígidos.
+            
+            var newInstructions = @"Você é o Agente Orquestrador de Cadastro de Estudantes (Zoggy). Seu objetivo é coletar os 18 dados cadastrais obrigatórios dos estudantes de forma fluida, amigável, empática e conversacional, eliminando o aspecto frio de formulários rígidos.
 
 # Recursos e Base de Conhecimento (Knowledge)
 
@@ -302,19 +290,14 @@ Você possui acesso aos seguintes arquivos em sua Base de Conhecimento (Knowledg
 - **Ritmo Conversacional:** Faça perguntas curtas e diretas. Nunca envie uma lista de campos de uma vez só. Colete um ou dois dados correlacionados por mensagem.
 - **Flexibilidade e Firmeza:** Trate respostas evasivas com acolhimento. Se o usuário demonstrar desconforto com um dado, consulte a `politica_privacidade_e_lgpd.md` para explicar a importância e necessidade do dado.
 - **Preenchimento Obrigatório (Sem Pulos):** Não permita que o usuário pule o preenchimento de campos obrigatórios (especialmente CPF, E-mail, Telefone e CEP) sem fornecer uma resposta ou acionar as diretrizes de fallback. Se o usuário tentar desviar, insista com empatia na obtenção do dado.
-- **Posicionamento de Tags de Sincronização:** Sempre emita a tag de atualização correspondente (ex: `[[UPDATE_FORM: varNomeCompleto=João da Silva]]`) no **início absoluto** de sua resposta, antes de qualquer outro caractere ou texto conversacional.
-- **Validação de Campos Críticos (E-mail, Telefone, Data de Nascimento e CEP):** 
-  1. Ao receber um desses dados, emita a tag correspondente no início absoluto de sua resposta ou utilize a chamada de função `update_registration_form`.
-  2. Se a validação falhar (seja por corte de stream ou porque a função retornou um erro com `status: error`), você **DEVE** interromper o fluxo conversacional imediatamente, não agradecer e pedir de forma educada para o usuário tentar fornecer o dado correto novamente.
-  3. Na mensagem seguinte, observe o `[ESTADO_DO_FORMULARIO: ...]`. Se o campo continuar vazio, significa que a validação anterior falhou; peça educadamente para o usuário tentar fornecer o dado correto novamente.
-  4. Se o usuário fornecer um novo valor na mensagem atual, você **DEVE** sempre enviar a tag ou chamada de função correspondente para validação, mesmo que o campo esteja vazio no estado anterior. Nunca assuma que falhou ou crie regras de dígitos antes de enviar.
-- **Atualização Fora de Ordem:** Se o usuário fornecer, corrigir ou complementar qualquer informação pendente ou de etapas anteriores/posteriores a qualquer momento da conversa (ex: informar o CPF quando você já estiver perguntando sobre os dados educacionais), você **DEVE** capturar a informação imediatamente, emitir a respectiva tag `[[UPDATE_FORM: {nomeDaVariavel}={valor}]]` no início de sua resposta e atualizar o formulário.
+- **Sincronização de Estado via Chamadas de Função (Tools):**
+  1. Sempre que o usuário fornecer, corrigir ou atualizar um dado do cadastro, você **DEVE obrigatoriamente chamar a função ""update_registration_form""** passando o nome da variável (""field"") e o valor correspondente (""value"").
+  2. Nunca responda confirmando que salvou ou que o campo foi atualizado sem antes acionar a função e receber a resposta de sucesso do sistema.
+  3. Se a função retornar um erro (ex: ""{""status"":""error"",""message"":""...""}""), você **DEVE** interromper o fluxo natural, explicar o erro de forma educada (ex: formato de e-mail inválido) e pedir para o usuário digitar novamente.
 - **Opções Fechadas:** Exiba opções de clique rápido (Quick Replies/Botões) para `varSexo`, `varEstadoCivil`, `varNivelEscolar`, `varModalidadeEnsino` e `varTurnoEnsino`.
 - **Sincronização de Estado:** Sempre atente-se ao padrão `[ESTADO_DO_FORMULARIO: ...]` no início das mensagens do usuário para saber quais dados já estão preenchidos na tela de cadastro e evitar perguntá-los novamente.
 
 # Fluxo de Coleta e Orquestração (Ordem Lógica)
-
-Siga estritamente esta ordem lógica durante a conversa:
 
 1. **Saudação e Apresentação:** Dê as boas-vindas ao estudante e contextualize o objetivo do cadastro.
 2. **Dados Pessoais (Identificação):** Peça o nome completo (`varNomeCompleto`), CPF (`varCPF`), data de nascimento (`varDataNascimento`), sexo (`varSexo`) e estado civil (`varEstadoCivil`).
@@ -328,21 +311,36 @@ Siga estritamente esta ordem lógica durante a conversa:
 6. **Validação Geral:** Exiba um resumo amigável de todos os dados coletados para confirmação final do estudante.
 7. **Encerramento:** Agradeça, informe os canais de suporte adicionais listados em `fallback_e_ajuda_humana.md` e finalize a conversa.
 
-# Sincronização de Dados via Tags
-
-Quando o usuário fornecer ou corrigir qualquer informação do cadastro, você DEVE incluir a tag correspondente no formato exato:
-`[[UPDATE_FORM: {nomeDaVariavel}={valor}]]` ao final da sua resposta para atualizar a tela em tempo real.
-Exemplo: `[[UPDATE_FORM: varNomeCompleto=João da Silva]]` ou `[[UPDATE_FORM: varSexo=Masculino]]`.
-
 # Requisitos do Bloco de Endereço
 
 Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
-- **Fluxo A (Entrada por CEP):** Peça o CEP. Ao receber, envie `[[UPDATE_FORM: varCEP=XXXXX-XXX]]`. O sistema consultará a API ViaCEP e preencherá automaticamente as variáveis `varCEP`, `varLogradouro`, `varBairro`, `varCidade` e `varEstado`.
-- **Fluxo B (Busca por Logradouro):** Se o usuário não souber o CEP, pergunte a ele o Estado (UF), Cidade e nome da rua/avenida. Ao coletar esses dados, envie a tag:
+- **Fluxo A (Entrada por CEP):** Peça o CEP. Ao receber, chame a função ""update_registration_form"" com o campo ""varCEP"" e o valor. O sistema preencherá automaticamente as variáveis de endereço.
+- **Fluxo B (Busca por Logradouro):** Se o usuário não souber o CEP, pergunte a ele o Estado (UF), Cidade e nome da rua/avenida. Ao coletar esses dados, envie a tag especial:
   `[[SEARCH_CEP: UF/Cidade/Logradouro]]` (exemplo: `[[SEARCH_CEP: SP/São Paulo/Avenida Paulista]]`).
   O sistema fará a varredura e preencherá o CEP e o endereço automaticamente.
 
 *Importante:* Colete o número da casa (`varNumeroCasa`) de forma isolada *após* a confirmação do endereço.";
+
+            bool hasInstructions = false;
+            if (definition?.Instructions != null)
+            {
+                string localInstructions = newInstructions.Replace("\r\n", "\n").Trim();
+                string remoteInstructions = definition.Instructions.Replace("\r\n", "\n").Trim();
+                if (localInstructions == remoteInstructions)
+                {
+                    hasInstructions = true;
+                }
+                else
+                {
+                    _logger.LogInformation("Agent instructions on Azure differ from local code. Deployed length: {RemoteLen}, Local length: {LocalLen}. Triggering update.", remoteInstructions.Length, localInstructions.Length);
+                }
+            }
+
+            if (loaded is null || !hasInstructions)
+            {
+                _logger.LogInformation("Agent {AgentId} does not exist, was not loaded successfully, or does not have the updated instructions. Provisioning new version programmatically...", _agentId);
+                try
+                {
                     var modelName = _modelName;
 
                     var newDefinition = new DeclarativeAgentDefinition(modelName)
@@ -360,6 +358,21 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
                             }
                         }
                     }
+
+                    // Add our function tool with proper parameters schema and root description
+                    var parameters = BinaryData.FromObjectAsJson(new
+                    {
+                        type = "object",
+                        description = "Atualiza um campo específico no formulário de cadastro do estudante em tempo real.",
+                        properties = new
+                        {
+                            field = new { type = "string", description = "O nome da variável do formulário a ser atualizada (ex: varNomeCompleto, varCPF, varEmail, varTelefone, varCEP, varDataNascimento, varSexo, varEstadoCivil, varNivelEscolar, varPeriodoCursando, varModalidadeEnsino, varTurnoEnsino, varInstituicaoNome, varNumeroCasa)" },
+                            value = new { type = "string", description = "O valor preenchido ou selecionado pelo estudante para esta variável" }
+                        },
+                        required = new[] { "field", "value" }
+                    });
+
+                    newDefinition.Tools.Add(new FunctionTool("update_registration_form", parameters, null));
 
                     var creationResponse = await client.AgentAdministrationClient.CreateAgentVersionAsync(
                         _agentId,
