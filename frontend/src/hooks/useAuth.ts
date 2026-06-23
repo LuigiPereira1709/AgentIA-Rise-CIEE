@@ -1,6 +1,6 @@
 import { useMsal } from "@azure/msal-react";
 import { InteractionRequiredAuthError } from "@azure/msal-browser";
-import { tokenRequest } from "../config/authConfig";
+import { tokenRequest, loginRequest } from "../config/authConfig";
 import { useCallback, useMemo } from "react";
 
 /**
@@ -65,6 +65,20 @@ export const useAuth = () => {
     }
   }, [instance, accounts]);
 
+  const login = useCallback(async (): Promise<string | null> => {
+    try {
+      const response = await instance.loginPopup(loginRequest);
+      if (response && response.account) {
+        instance.setActiveAccount(response.account);
+        return response.accessToken;
+      }
+      return null;
+    } catch (error) {
+      console.error("Login popup failed:", error);
+      return null;
+    }
+  }, [instance]);
+
   // Memoize computed values
   const isAuthenticated = useMemo(
     () => accounts.length > 0,
@@ -81,7 +95,8 @@ export const useAuth = () => {
       getAccessToken,
       isAuthenticated,
       user,
+      login,
     }),
-    [getAccessToken, isAuthenticated, user]
+    [getAccessToken, isAuthenticated, user, login]
   );
 };

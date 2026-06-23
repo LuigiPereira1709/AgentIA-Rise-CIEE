@@ -8,6 +8,7 @@
   min-height: 0;
   overflow: hidden;
   position: relative;
+  background-color: var(--ciee-bg-canvas);
 }
 
 /* Messages container - scrolling area */
@@ -16,7 +17,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding: 2rem 1.5rem;
-  background: radial-gradient(circle at top, #16213e 0%, #0c0f1d 70%);
+  background: radial-gradient(circle at top, var(--ciee-bg-alt) 0%, var(--ciee-bg-canvas) 100%);
   position: relative;
   min-height: 0;
   width: 100%;
@@ -39,8 +40,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #111424;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: var(--ciee-bg-primary);
+  border-top: 1px solid var(--ciee-primary-light);
 }
 
 /* Screen reader only content */
@@ -59,9 +60,9 @@
 /* Error message styling */
 .errorMessage {
   padding: 1rem;
-  background-color: var(--colorPaletteRedBackground1);
-  color: var(--colorPaletteRedForeground1);
-  border-top: 1px solid var(--colorPaletteRedBorder1);
+  background-color: rgba(198, 40, 40, 0.05);
+  color: var(--ciee-error);
+  border-top: 1px solid rgba(198, 40, 40, 0.2);
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -73,17 +74,17 @@
 }
 
 .messagesContainer::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.2);
+  background: transparent;
   border-radius: 4px;
 }
 
 .messagesContainer::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ciee-primary-light);
   border-radius: 4px;
 }
 
 .messagesContainer::-webkit-scrollbar-thumb:hover {
-  background: rgba(168, 85, 247, 0.5);
+  background: var(--ciee-primary);
 }
 
 /* Chat input area with wave animation */
@@ -91,8 +92,9 @@
   position: relative;
   flex-shrink: 0;
   width: 100%;
-  background-color: #111424;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: var(--ciee-bg-primary);
+  border-top: 1px solid var(--ciee-primary-light);
+  box-shadow: 0 -4px 16px rgba(91, 42, 140, 0.03);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -114,23 +116,23 @@
   transform: translateX(-50%);
   padding: 6px 16px;
   border-radius: 999px;
-  border: 1px solid rgba(168, 85, 247, 0.3);
-  background-color: rgba(0, 0, 0, 0.6);
+  border: 1px solid var(--ciee-primary-light);
+  background-color: var(--ciee-bg-primary);
   backdrop-filter: blur(8px);
-  color: #c084fc;
+  color: var(--ciee-primary);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   z-index: 10;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 16px rgba(91, 42, 140, 0.1);
   transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .newMessagesPill:hover {
-  background-color: rgba(0, 0, 0, 0.8);
-  border-color: rgba(168, 85, 247, 0.6);
-  color: #d8b4fe;
-  box-shadow: 0 4px 20px rgba(168, 85, 247, 0.2);
+  background-color: var(--ciee-bg-alt);
+  border-color: var(--ciee-primary);
+  color: var(--ciee-primary-hover);
+  box-shadow: 0 4px 20px rgba(91, 42, 140, 0.15);
 }
 
 /* Built with badge - centered under input */
@@ -144,13 +146,13 @@
   gap: 4px;
   padding: 6px 16px;
   font-size: 13px;
-  color: var(--colorNeutralForeground3);
+  color: var(--ciee-text-muted);
 }
 
 .undoButton {
   background: none;
   border: none;
-  color: var(--colorBrandForeground1);
+  color: var(--ciee-primary);
   cursor: pointer;
   font-size: 13px;
   padding: 0;
@@ -158,7 +160,7 @@
 }
 
 .undoButton:hover {
-  color: var(--colorBrandForeground2);
+  color: var(--ciee-primary-hover);
 }
 
 /* ── Goose Typing Indicator ── */
@@ -181,8 +183,8 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: rgba(168, 85, 247, 0.1);
-  border: 1px solid rgba(168, 85, 247, 0.2);
+  background: var(--ciee-bg-alt);
+  border: 1px solid var(--ciee-primary-light);
   flex-shrink: 0;
   animation: pulseAvatar 1.5s ease-in-out infinite alternate;
 }
@@ -191,8 +193,8 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  background: rgba(168, 85, 247, 0.05);
-  border: 1px solid rgba(168, 85, 247, 0.1);
+  background: var(--ciee-bg-card);
+  border: 1px solid var(--ciee-primary-light);
   padding: 10px 16px;
   border-radius: 16px;
   border-bottom-left-radius: 4px;
@@ -201,7 +203,7 @@
 .dot {
   width: 6px;
   height: 6px;
-  background-color: #a855f7;
+  background-color: var(--ciee-primary);
   border-radius: 50%;
   animation: bounceDot 1.4s infinite ease-in-out both;
 }
@@ -215,6 +217,6 @@
 }
 
 @keyframes pulseAvatar {
-  0% { transform: scale(1); box-shadow: 0 0 0 rgba(168, 85, 247, 0); }
-  100% { transform: scale(1.05); box-shadow: 0 0 10px rgba(168, 85, 247, 0.3); }
+  0% { transform: scale(1); box-shadow: 0 0 0 rgba(91, 42, 140, 0); }
+  100% { transform: scale(1.05); box-shadow: 0 0 10px rgba(91, 42, 140, 0.2); }
 }

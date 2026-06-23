@@ -45,15 +45,15 @@ export const Waves: React.FC<WavesProps> = ({ paused = false }) => {
     const getWaveColors = () => {
       if (currentTheme === 'Dark') {
         return [
-          'rgba(102, 126, 234, 0.1)',
-          'rgba(118, 75, 162, 0.08)',
-          'rgba(102, 126, 234, 0.06)',
+          'rgba(122, 66, 194, 0.15)', // Roxo Elétrico
+          'rgba(244, 122, 99, 0.12)', // Coral Suave
+          'rgba(122, 66, 194, 0.1)',
         ];
       }
       return [
-        'rgba(102, 126, 234, 0.15)',
-        'rgba(118, 75, 162, 0.12)',
-        'rgba(102, 126, 234, 0.1)',
+        'rgba(91, 42, 140, 0.08)',
+        'rgba(242, 101, 74, 0.06)',
+        'rgba(91, 42, 140, 0.04)',
       ];
     };
 

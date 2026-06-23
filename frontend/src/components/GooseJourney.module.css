@@ -5,7 +5,7 @@
   top: 96px;
   width: 230px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  color: #ffffff;
+  color: var(--ciee-text-h1);
   z-index: 99;
   box-sizing: border-box;
   animation: slideIn 0.4s cubic-bezier(0.25, 1, 0.5, 1);
@@ -23,14 +23,15 @@
 .headerTitle {
   font-size: 10px;
   font-weight: 800;
-  color: #53a8b6;
+  color: var(--ciee-primary);
   letter-spacing: 1.5px;
   text-transform: uppercase;
 }
 
 .headerSub {
-  font-size: 9px;
-  color: rgba(255, 255, 255, 0.35);
+  font-size: 9.5px;
+  font-weight: 500;
+  color: var(--ciee-text-body);
 }
 
 /* ── Steps wrapper ─────────────────────────────────────────────── */
@@ -42,28 +43,30 @@
 /* ── Phase card ────────────────────────────────────────────────── */
 .phaseCard {
   position: relative;
-  background: rgba(22, 33, 62, 0.5);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--ciee-bg-primary);
+  border: 1px solid var(--ciee-primary-light);
   border-radius: 10px;
   padding: 10px 12px;
   margin-bottom: 6px;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 2px 8px rgba(91, 42, 140, 0.05);
 }
 
 .completedCard {
-  background: rgba(46, 204, 113, 0.06);
-  border-color: rgba(46, 204, 113, 0.18);
+  background: var(--ciee-bg-alt);
+  border-color: color-mix(in srgb, var(--ciee-success) 35%, transparent);
+  opacity: 0.95;
 }
 
 .activeCard {
-  background: rgba(83, 168, 182, 0.08);
-  border-color: rgba(83, 168, 182, 0.35);
-  box-shadow: 0 4px 20px rgba(83, 168, 182, 0.1);
+  background: var(--ciee-bg-card);
+  border-color: var(--ciee-primary);
+  box-shadow: 0 4px 12px rgba(91, 42, 140, 0.1);
 }
 
 .lockedCard {
-  opacity: 0.4;
+  opacity: 0.9;
+  background: var(--ciee-bg-alt);
 }
 
 /* ── Phase header row ─────────────────────────────────────────── */
@@ -83,7 +86,7 @@
 }
 
 .clickableHeader:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ciee-bg-card);
 }
 
 .phaseRight {
@@ -95,7 +98,7 @@
 .chevron {
   font-size: 16px;
   font-weight: 300;
-  color: rgba(78, 237, 170, 0.6);
+  color: var(--ciee-primary-hover);
   transform: rotate(90deg);
   transition: transform 0.25s ease, color 0.2s ease;
   line-height: 1;
@@ -104,7 +107,7 @@
 
 .chevronOpen {
   transform: rotate(-90deg);
-  color: #4eedaa;
+  color: var(--ciee-primary);
 }
 
 .phaseLeft {
@@ -116,7 +119,7 @@
 .statusCheck {
   font-size: 10px;
   font-weight: 800;
-  color: #4eedaa;
+  color: var(--ciee-success);
   flex-shrink: 0;
   width: 14px;
   text-align: center;
@@ -126,15 +129,15 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #53a8b6;
-  box-shadow: 0 0 6px #53a8b6;
+  background: var(--ciee-primary);
+  box-shadow: 0 0 4px var(--ciee-primary-light);
   flex-shrink: 0;
   animation: pulseDot 1.2s ease-in-out infinite alternate;
 }
 
 .statusLock {
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.25);
+  color: var(--ciee-text-h3);
   width: 14px;
   text-align: center;
   flex-shrink: 0;
@@ -146,22 +149,24 @@
 }
 
 .phaseTitle {
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 700;
-  color: inherit;
+  color: var(--ciee-text-h1);
   white-space: nowrap;
 }
 
 .completedCard .phaseTitle {
-  color: #4eedaa;
+  color: var(--ciee-text-h1);
+  opacity: 0.8;
 }
 
 .activeCard .phaseTitle {
-  color: #ffffff;
+  color: var(--ciee-primary);
 }
 
 .lockedCard .phaseTitle {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--ciee-text-body);
+  font-weight: 600;
 }
 
 /* ── Goose indicator ──────────────────────────────────────────── */
@@ -187,17 +192,17 @@
 }
 
 .miniLabel {
-  font-size: 8px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.4);
+  font-size: 8.5px;
+  font-weight: 800;
+  color: var(--ciee-text-h3);
   letter-spacing: 0.5px;
   text-transform: uppercase;
 }
 
 .miniInput {
   height: 24px;
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: var(--ciee-bg-alt);
+  border: 1px solid var(--ciee-primary-light);
   border-radius: 5px;
   display: flex;
   align-items: center;
@@ -207,19 +212,25 @@
 }
 
 .focusedMiniField .miniInput {
-  border-color: #53a8b6;
-  background: rgba(83, 168, 182, 0.06);
-  box-shadow: 0 0 6px rgba(83, 168, 182, 0.2);
+  border-color: var(--ciee-primary);
+  background: var(--ciee-bg-card);
+  box-shadow: 0 0 6px rgba(91, 42, 140, 0.1);
 }
 
 .filledMiniField .miniInput {
-  border-color: rgba(78, 237, 170, 0.25);
-  background: rgba(78, 237, 170, 0.04);
+  border-color: var(--ciee-primary-light);
+  background: var(--ciee-bg-alt);
+}
+
+.completedCard .miniInput {
+  border: 1px solid transparent;
+  background: transparent;
+  padding-left: 2px;
 }
 
 .miniValue {
-  font-size: 9px;
-  color: #4eedaa;
+  font-size: 10px;
+  color: var(--ciee-text-h1);
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -228,39 +239,41 @@
 }
 
 .miniPlaceholder {
-  font-size: 9px;
-  color: rgba(255, 255, 255, 0.18);
+  font-size: 9.5px;
+  color: var(--ciee-text-body);
   font-style: italic;
+  font-weight: 500;
 }
 
 .cursor {
   width: 1px;
   height: 12px;
-  background: #53a8b6;
+  background: var(--ciee-primary);
   animation: blinkCursor 1s step-end infinite;
   flex-shrink: 0;
 }
 
 .readyText {
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.7);
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--ciee-text-h1);
   text-align: center;
   padding: 4px 0;
 }
 
 /* ── Review preview (completed phase expanded by user) ─────────── */
 .reviewPreview {
-  background: rgba(0, 0, 0, 0.15);
-  border: 1px solid rgba(78, 237, 170, 0.08);
+  background: transparent;
+  border: none;
   border-radius: 6px;
-  padding: 8px;
+  padding: 8px 0;
   margin-top: 2px;
 }
 
 .reviewHint {
   font-size: 8px;
-  color: rgba(78, 237, 170, 0.5);
-  font-weight: 600;
+  color: var(--ciee-primary);
+  font-weight: 700;
   letter-spacing: 0.3px;
   text-transform: uppercase;
   display: block;
@@ -268,18 +281,18 @@
 }
 
 .editableField .miniLabel {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--ciee-text-h3);
 }
 
 .miniEditInput {
   width: 100%;
   height: 24px;
   box-sizing: border-box;
-  background: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(78, 237, 170, 0.22);
+  background: var(--ciee-bg-alt);
+  border: 1px solid var(--ciee-primary-light);
   border-radius: 5px;
-  color: #4eedaa;
-  font-size: 9px;
+  color: var(--ciee-text-h1);
+  font-size: 10px;
   font-family: inherit;
   font-weight: 600;
   padding: 0 8px;
@@ -288,27 +301,27 @@
 }
 
 .miniEditInput::placeholder {
-  color: rgba(255, 255, 255, 0.2);
-  font-weight: 400;
+  color: var(--ciee-text-body);
+  font-weight: 500;
   font-style: italic;
 }
 
 .miniEditInput:focus {
-  border-color: #4eedaa;
-  box-shadow: 0 0 6px rgba(78, 237, 170, 0.2);
-  background: rgba(78, 237, 170, 0.04);
+  border-color: var(--ciee-primary);
+  box-shadow: 0 0 6px rgba(91, 42, 140, 0.1);
+  background: var(--ciee-bg-card);
 }
 
 .miniEditInputError {
-  border-color: rgba(255, 180, 50, 0.7) !important;
-  box-shadow: 0 0 6px rgba(255, 180, 50, 0.25) !important;
-  background: rgba(255, 170, 30, 0.04) !important;
+  border-color: var(--ciee-coral) !important;
+  box-shadow: 0 0 6px rgba(242, 101, 74, 0.2) !important;
+  background: rgba(242, 101, 74, 0.05) !important;
   animation: shakeInput 0.35s ease;
 }
 
 .fieldErrorMsg {
   font-size: 8px;
-  color: rgba(255, 190, 70, 0.95);
+  color: var(--ciee-warning);
   font-weight: 600;
   padding-top: 2px;
   display: block;
@@ -335,7 +348,7 @@
   left: 22px;
   width: 1px;
   height: 7px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--ciee-primary-light);
   z-index: 1;
 }
 
@@ -345,18 +358,18 @@
   right: 22px;
   width: 1px;
   height: 7px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--ciee-primary-light);
   z-index: 1;
 }
 
 .connectorDone {
-  background: rgba(78, 237, 170, 0.3);
+  background: color-mix(in srgb, var(--ciee-success) 35%, transparent);
 }
 
 /* ── Animations ────────────────────────────────────────────────── */
 @keyframes pulseDot {
-  0%   { opacity: 1; box-shadow: 0 0 6px #53a8b6; }
-  100% { opacity: 0.6; box-shadow: 0 0 10px #53a8b6; }
+  0%   { opacity: 1; box-shadow: 0 0 4px var(--ciee-primary-light); }
+  100% { opacity: 0.8; box-shadow: 0 0 8px var(--ciee-primary); }
 }
 
 @keyframes waddleGoose {

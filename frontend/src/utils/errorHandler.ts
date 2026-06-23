@@ -43,6 +43,11 @@ export function createAppError(
       label: 'Retry',
       handler: retryHandler,
     };
+  } else if (code === 'AUTH' && retryHandler) {
+    appError.action = {
+      label: 'Sign in again',
+      handler: retryHandler,
+    };
   }
 
   return appError;

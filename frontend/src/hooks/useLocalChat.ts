@@ -15,6 +15,8 @@ export interface UseLocalChatResult {
 export interface UseLocalChatOptions {
   formData?: Record<string, string>;
   onFormUpdate?: (field: string, value: string) => void;
+  /** Override the SSE endpoint. Defaults to /api/chat/stream. */
+  apiPath?: string;
 }
 
 export function useLocalChat(options?: UseLocalChatOptions): UseLocalChatResult {
@@ -82,7 +84,8 @@ export function useLocalChat(options?: UseLocalChatOptions): UseLocalChatResult 
       abortControllerRef.current = abortController;
 
       const apiUrl = import.meta.env.VITE_API_URL || '/api';
-      const response = await fetch(`${apiUrl}/chat/stream`, {
+      const streamPath = optionsRef.current?.apiPath ?? 'chat/stream';
+      const response = await fetch(`${apiUrl}/${streamPath}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -174,6 +174,24 @@ const playAchievementSound = () => {
   }
 };
 
+const capitalizeName = (name: string): string => {
+  if (!name) return name;
+  const lowerWordsToKeep = ['de', 'da', 'do', 'dos', 'das', 'e'];
+  return name
+    .split(' ')
+    .map((word, index) => {
+      const lowerWord = word.toLowerCase();
+      if (index > 0 && lowerWordsToKeep.includes(lowerWord)) {
+        return lowerWord;
+      }
+      if (lowerWord.length > 0) {
+        return lowerWord.charAt(0).toUpperCase() + lowerWord.slice(1);
+      }
+      return '';
+    })
+    .join(' ');
+};
+
 export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat }) => {
   const [formData, setFormData] = useState({
     varNomeCompleto: '',
@@ -280,6 +298,10 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
   };
 
   const handleInputChange = (field: string, value: string) => {
+    if (field === 'submit') {
+      handleSubmit();
+      return;
+    }
     setFormData((prev) => ({ ...prev, [field]: value }));
     setFormErrors((prev) => ({ ...prev, [field]: '' }));
 
@@ -441,8 +463,8 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
     return valid;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!validateForm()) return;
 
     setIsSubmitting(true);
@@ -613,7 +635,13 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
                             nameFocusTimeRef.current = Date.now();
                           }
                         }}
-                        onBlur={() => setFocusedField(null)}
+                        onBlur={() => {
+                          setFocusedField(null);
+                          const normalized = capitalizeName(formData.varNomeCompleto);
+                          if (normalized !== formData.varNomeCompleto) {
+                            handleInputChange('varNomeCompleto', normalized);
+                          }
+                        }}
                         placeholder="Ex: João da Silva"
                         disabled={isSubmitting}
                       />

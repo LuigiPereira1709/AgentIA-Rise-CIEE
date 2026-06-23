@@ -38,13 +38,12 @@ interface ConversationSidebarProps {
 const useStyles = makeStyles({
   drawer: {
     width: '320px',
-    backgroundColor: 'rgba(12, 15, 29, 0.95) !important',
-    backdropFilter: 'blur(16px)',
-    borderRight: '1px solid rgba(255, 255, 255, 0.1) !important',
-    color: '#ffffff !important',
+    backgroundColor: 'var(--ciee-bg-alt) !important',
+    borderRight: '1px solid var(--ciee-primary-light) !important',
+    color: 'var(--ciee-text-body) !important',
   },
   headerTitle: {
-    color: '#ffffff',
+    color: 'var(--ciee-text-h1)',
     fontSize: '18px',
     fontWeight: 600,
     fontFamily: 'Outfit, sans-serif',
@@ -69,17 +68,18 @@ const useStyles = makeStyles({
     width: '100%',
     textAlign: 'left',
     gap: tokens.spacingHorizontalS,
-    color: '#d0d0df',
+    color: 'var(--ciee-text-sub)',
     transition: 'background-color 0.2s ease, color 0.2s ease',
     '&:hover': {
-      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-      color: '#ffffff',
+      backgroundColor: 'var(--ciee-bg-card)',
+      color: 'var(--ciee-primary)',
     },
   },
   conversationItemActive: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1) !important',
-    color: '#ffffff',
-    borderLeft: '3px solid #a855f7',
+    backgroundColor: 'var(--ciee-bg-primary) !important',
+    color: 'var(--ciee-primary)',
+    borderLeft: '3px solid var(--ciee-primary)',
+    boxShadow: '0 2px 8px rgba(91, 42, 140, 0.05)',
   },
   conversationContent: {
     flex: 1,
@@ -92,20 +92,25 @@ const useStyles = makeStyles({
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
+    fontWeight: 600,
   },
   conversationDate: {
     fontSize: tokens.fontSizeBase100,
-    color: 'rgba(255, 255, 255, 0.5)',
+    color: 'var(--ciee-text-muted)',
   },
   deleteButton: {
     flexShrink: 0,
     opacity: 0,
+    color: 'var(--ciee-text-muted)',
     '.conversation-item:hover &, .conversation-item:focus-within &': {
       opacity: 1,
     },
     ':focus': {
       opacity: 1,
     },
+    '&:hover': {
+      color: 'var(--ciee-coral)',
+    }
   },
   emptyState: {
     display: 'flex',
@@ -113,7 +118,7 @@ const useStyles = makeStyles({
     alignItems: 'center',
     justifyContent: 'center',
     padding: tokens.spacingVerticalXXL,
-    color: 'rgba(255, 255, 255, 0.5)',
+    color: 'var(--ciee-text-body)',
     textAlign: 'center',
   },
   spinnerContainer: {
@@ -134,7 +139,7 @@ const useStyles = makeStyles({
     alignItems: 'center',
     justifyContent: 'center',
     padding: tokens.spacingVerticalL,
-    color: 'rgba(255, 255, 255, 0.5)',
+    color: 'var(--ciee-text-body)',
     textAlign: 'center',
   },
 });
@@ -220,7 +225,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
               aria-label="Close sidebar"
               icon={<Dismiss24Regular />}
               onClick={() => onOpenChange(false)}
-              style={{ color: '#ffffff' }}
+              style={{ color: 'var(--ciee-text-muted)' }}
             />
           }
         >

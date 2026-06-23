@@ -1,9 +1,80 @@
 /* Global resets and layout - Fluent UI handles theming */
+:root {
+  /* CIEE Brand Colors */
+  --ciee-primary: #5B2A8C;      /* Roxo CIEE Principal */
+  --ciee-primary-hover: #4A2273;
+  --ciee-primary-light: #DCD0F0; /* Lilás suave para bordas e destaques sutis */
+  --ciee-link: #5B2A8C;         /* Roxo CIEE para links */
+  
+  --ciee-coral: #F2654A;        /* Coral CIEE */
+  --ciee-success: #2E7D32;      
+  --ciee-warning: #F57F17;
+  --ciee-error: #D32F2F;
+
+  /* Neutros e Fundos (Melhorando profundidade e contraste) */
+  --ciee-bg-canvas: #F0EDF5;    /* Fundo geral da aplicação - Lilás acinzentado bem claro */
+  --ciee-bg-primary: #FFFFFF;   /* Fundo de elementos em destaque (Branco puro) */
+  --ciee-bg-alt: #F8F6FA;       /* Fundo de menus e barras laterais */
+  --ciee-bg-card: #FFFFFF;      /* Cartões (igual ao primary, mas destacável com shadow) */
+
+  /* Tipografia */
+  --ciee-text-h1: #1A0B2E;      /* Títulos fortes */
+  --ciee-text-h3: #3D2060;      /* Títulos menores (Roxo escuro) */
+  --ciee-text-body: #4A4A52;    /* Texto corrido (Cinza chumbo com boa leitura) */
+  --ciee-text-sub: #5C5C66;     /* Texto secundário */
+  --ciee-text-muted: #8E8E99;   /* Textos desabilitados/dicas */
+}
+
+body.dark-mode {
+  /* Cores de Fundo (Backgrounds - Invertidos) */
+  --ciee-bg-canvas: #1A0B2E;    /* Fundo principal (Tinta Profunda) */
+  --ciee-bg-alt: #24133B;       /* Fundo alternado (Roxo Noturno) */
+  --ciee-bg-primary: #2F1B4A;   /* Cards e painéis (Roxo Eclipse) */
+  --ciee-bg-card: #2F1B4A;      /* Cartões (Roxo Eclipse) */
+
+  /* Tipografia (Invertida) */
+  --ciee-text-h1: #FFFFFF;      /* Branco Puro */
+  --ciee-text-h3: #E2DBEC;      /* Lilás Brilhante */
+  --ciee-text-body: #B3B3B3;    /* Cinza Claro Clássico */
+  --ciee-text-sub: #B3B3B3;     
+  --ciee-text-muted: #757575;   /* Cinza Opaco */
+
+  /* Botões e Destaques */
+  --ciee-primary: #7A42C2;      /* Roxo Elétrico */
+  --ciee-primary-hover: #5B2A8C;/* Roxo CIEE */
+  --ciee-primary-light: rgba(212, 194, 237, 0.22); /* Roxo Pastel translúcido para bordas com equilíbrio ideal */
+  --ciee-link: #D4C2ED;         /* Roxo Pastel brilhante para links legíveis */
+
+  /* Alertas Suaves */
+  --ciee-coral: #F47A63;        /* Coral Suave */
+  --ciee-success: #4CAF50;      /* Verde Neon Suave */
+  --ciee-warning: #FF6D00;      /* Âmbar Dark */
+  --ciee-error: #E53935;        /* Vermelho Dark */
+}
+
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
   overflow: hidden;
+  background-color: var(--ciee-bg-canvas);
+  color: var(--ciee-text-body);
+}
+
+a {
+  color: var(--ciee-link);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease, text-decoration 0.2s ease;
+}
+
+a:hover {
+  text-decoration: underline;
+  color: var(--ciee-primary-hover);
+}
+
+body.dark-mode a:hover {
+  color: #FFFFFF; /* Brighter hover in dark mode */
 }
 
 #root {
@@ -11,5 +82,3 @@ body {
   height: 100vh;
   overflow: hidden;
 }
-
-

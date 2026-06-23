@@ -82,15 +82,13 @@ export const useThemeProvider = (): ThemeContextValue => {
   });
 
   // Memoize computed values
-  const isDarkMode = useMemo(
-    () => savedTheme === 'System' ? prefersDark : savedTheme === 'Dark',
-    [savedTheme, prefersDark]
-  );
+  const isDarkMode = useMemo(() => {
+    return savedTheme === 'System' ? prefersDark : savedTheme === 'Dark';
+  }, [savedTheme, prefersDark]);
 
-  const currentTheme = useMemo(
-    () => isDarkMode ? 'Dark' as const : 'Light' as const,
-    [isDarkMode]
-  );
+  const currentTheme = useMemo(() => {
+    return isDarkMode ? 'Dark' : 'Light';
+  }, [isDarkMode]);
 
   const themeStyles = useMemo(
     () => isDarkMode ? darkTheme : lightTheme,
@@ -108,6 +106,11 @@ export const useThemeProvider = (): ThemeContextValue => {
     // Update document color scheme for browser UI
     if (typeof document !== 'undefined') {
       document.documentElement.style.colorScheme = isDarkMode ? 'dark' : 'light';
+      if (isDarkMode) {
+        document.body.classList.add('dark-mode');
+      } else {
+        document.body.classList.remove('dark-mode');
+      }
     }
   }, [isDarkMode]);
 

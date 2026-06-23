@@ -32,6 +32,9 @@ interface SettingsPanelProps {
 const useStyles = makeStyles({
   drawer: {
     width: 'min(320px, 100vw)',
+    backgroundColor: 'var(--ciee-bg-alt) !important',
+    borderLeft: '1px solid var(--ciee-primary-light) !important',
+    color: 'var(--ciee-text-body) !important',
   },
   section: {
     marginBottom: tokens.spacingVerticalXXL,
@@ -40,7 +43,7 @@ const useStyles = makeStyles({
     fontSize: tokens.fontSizeBase300,
     fontWeight: tokens.fontWeightSemibold,
     marginBottom: tokens.spacingVerticalM,
-    color: tokens.colorNeutralForeground1,
+    color: 'var(--ciee-text-h1)',
   },
   filesRow: {
     display: 'flex',
@@ -48,31 +51,31 @@ const useStyles = makeStyles({
     gap: tokens.spacingVerticalS,
   },
   filesSummary: {
-    color: tokens.colorNeutralForeground2,
+    color: 'var(--ciee-text-body)',
   },
   filesHint: {
-    color: tokens.colorNeutralForeground3,
+    color: 'var(--ciee-text-muted)',
     fontSize: tokens.fontSizeBase200,
   },
   status: {
     fontSize: tokens.fontSizeBase200,
-    color: tokens.colorNeutralForeground3,
+    color: 'var(--ciee-success)',
   },
   statusError: {
     fontSize: tokens.fontSizeBase200,
-    color: tokens.colorPaletteRedForeground1,
+    color: 'var(--ciee-error)',
   },
   destructiveButton: {
-    backgroundColor: tokens.colorPaletteRedBackground3,
-    color: tokens.colorNeutralForegroundOnBrand,
+    backgroundColor: 'var(--ciee-error)',
+    color: '#FFFFFF',
     border: 'none',
     ':hover': {
-      backgroundColor: tokens.colorPaletteRedForeground1,
-      color: tokens.colorNeutralForegroundOnBrand,
+      backgroundColor: '#B71C1C', /* Darker red */
+      color: '#FFFFFF',
     },
     ':hover:active': {
-      backgroundColor: tokens.colorPaletteRedForeground3,
-      color: tokens.colorNeutralForegroundOnBrand,
+      backgroundColor: '#C62828',
+      color: '#FFFFFF',
     },
   },
 });
@@ -165,8 +168,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onOpenChan
               aria-label="Close"
               icon={<Dismiss24Regular />}
               onClick={() => onOpenChange(false)}
+              style={{ color: 'var(--ciee-text-muted)' }}
             />
           }
+          style={{ color: 'var(--ciee-text-h1)' }}
         >
           Settings
         </DrawerHeaderTitle>

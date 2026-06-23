@@ -39,7 +39,7 @@ export const AuxiliaryChatSidebar: React.FC<AuxiliaryChatSidebarProps> = ({
   onOpen,
   onClose
 }) => {
-  const { messages, status, error, sendMessage, clearChat } = useLocalChat();
+  const { messages, status, error, sendMessage, clearChat } = useLocalChat({ apiPath: 'support/stream' });
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
