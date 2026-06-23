@@ -242,20 +242,23 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Agente IA', a
     try {
       chatService.cancelStream();
       const messages = await chatService.getConversationMessages(conversationId);
+      const conv = state.conversations.list.find(c => c.id === conversationId);
+      const fallbackTime = conv ? new Date(conv.createdAt).toISOString() : new Date().toISOString();
+
       const chatItems: IChatItem[] = messages
         .filter(msg => msg.role === 'user' || msg.role === 'assistant')
         .map((msg, index) => ({
           id: `${conversationId}-${index}`,
           role: msg.role as 'user' | 'assistant',
           content: msg.content,
-          more: { time: new Date().toISOString() },
+          more: { time: msg.createdAt ? new Date(msg.createdAt).toISOString() : fallbackTime },
         }));
 
       dispatch({ type: 'CHAT_LOAD_CONVERSATION', conversationId, messages: chatItems });
     } catch (error) {
       console.error('Failed to load conversation:', error);
     }
-  }, [chatService, dispatch]);
+  }, [chatService, dispatch, state.conversations.list]);
 
   const handleDeleteConversation = useCallback(async (conversationId: string) => {
     // Remove from UI immediately (optimistic)

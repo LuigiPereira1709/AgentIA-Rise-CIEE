@@ -131,7 +131,28 @@ builder.Services.AddAuthorization(options =>
 // Register Foundry Agent Service (v2 Agents API)
 // Uses Azure.AI.Projects SDK which works with v2 Agents API (/agents/ endpoint with human-readable IDs).
 builder.Services.AddHttpClient();
-builder.Services.AddScoped<AgentFrameworkService>();
+
+// Registration agent (primary) — reads AI_AGENT_* keys
+builder.Services.AddKeyedScoped<AgentFrameworkService>("registration", (sp, _) =>
+    new AgentFrameworkService(
+        sp.GetRequiredService<IConfiguration>(),
+        sp.GetRequiredService<ILogger<AgentFrameworkService>>(),
+        sp.GetRequiredService<IHttpClientFactory>(),
+        sp.GetService<IHttpContextAccessor>(),
+        configPrefix: "AI_AGENT"));
+
+// Support agent (secondary) — reads AI_SUPPORT_AGENT_* keys, falls back to AI_AGENT_ENDPOINT
+builder.Services.AddKeyedScoped<AgentFrameworkService>("support", (sp, _) =>
+    new AgentFrameworkService(
+        sp.GetRequiredService<IConfiguration>(),
+        sp.GetRequiredService<ILogger<AgentFrameworkService>>(),
+        sp.GetRequiredService<IHttpClientFactory>(),
+        sp.GetService<IHttpContextAccessor>(),
+        configPrefix: "AI_SUPPORT_AGENT"));
+
+// Keep the unkeyed registration for all existing endpoints that inject AgentFrameworkService directly
+builder.Services.AddScoped<AgentFrameworkService>(sp =>
+    sp.GetRequiredKeyedService<AgentFrameworkService>("registration"));
 
 var app = builder.Build();
 
@@ -261,6 +282,57 @@ app.MapPost("/api/chat/stream", async (
 })
 .RequireAuthorization(ScopePolicyName)
 .WithName("StreamChatMessage");
+
+// Support Agent streaming endpoint — uses the dedicated support agent (AI_SUPPORT_AGENT_* config)
+app.MapPost("/api/support/stream", async (
+    ChatRequest request,
+    [FromKeyedServices("support")] AgentFrameworkService supportService,
+    HttpContext httpContext,
+    IHostEnvironment environment,
+    CancellationToken cancellationToken) =>
+{
+    try
+    {
+        httpContext.Response.Headers.Append("Content-Type", "text/event-stream");
+        httpContext.Response.Headers.Append("Cache-Control", "no-cache");
+        httpContext.Response.Headers.Append("Connection", "keep-alive");
+
+        var conversationId = request.ConversationId
+            ?? await supportService.CreateConversationAsync(request.Message, cancellationToken);
+
+        await WriteConversationIdEvent(httpContext.Response, conversationId, cancellationToken);
+
+        var startTime = DateTime.UtcNow;
+
+        await foreach (var chunk in supportService.StreamMessageAsync(
+            conversationId,
+            request.Message,
+            cancellationToken: cancellationToken))
+        {
+            if (chunk.IsText && chunk.TextDelta != null)
+                await WriteChunkEvent(httpContext.Response, chunk.TextDelta, cancellationToken);
+            else if (chunk.HasAnnotations && chunk.Annotations != null)
+                await WriteAnnotationsEvent(httpContext.Response, chunk.Annotations, cancellationToken);
+        }
+
+        var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
+        var usage = supportService.GetLastUsage();
+        await WriteUsageEvent(httpContext.Response, duration,
+            usage?.InputTokens ?? 0, usage?.OutputTokens ?? 0, usage?.TotalTokens ?? 0,
+            cancellationToken);
+
+        await WriteDoneEvent(httpContext.Response, cancellationToken);
+    }
+    catch (Exception ex)
+    {
+        var logger = httpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Support stream error: {Message}", ex.Message);
+        var errorResponse = ErrorResponseFactory.CreateFromException(ex, 500, environment.IsDevelopment());
+        await WriteErrorEvent(httpContext.Response, errorResponse.Detail ?? errorResponse.Title, cancellationToken);
+    }
+})
+.RequireAuthorization(ScopePolicyName)
+.WithName("StreamSupportMessage");
 
 static async Task WriteConversationIdEvent(HttpResponse response, string conversationId, CancellationToken ct)
 {

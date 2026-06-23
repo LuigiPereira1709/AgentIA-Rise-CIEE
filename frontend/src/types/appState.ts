@@ -14,6 +14,7 @@ export interface ConversationSummary {
 export interface ConversationMessageInfo {
   role: string;
   content: string;
+  createdAt?: string;
 }
 
 /**

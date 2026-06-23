@@ -16,6 +16,8 @@
   --ciee-bg-primary: #FFFFFF;   /* Fundo de elementos em destaque (Branco puro) */
   --ciee-bg-alt: #F8F6FA;       /* Fundo de menus e barras laterais */
   --ciee-bg-card: #FFFFFF;      /* Cartões (igual ao primary, mas destacável com shadow) */
+  --ciee-bg-input: rgba(0, 0, 0, 0.12); /* Translucent and noticeably dark for inputs */
+  --ciee-bg-input-focus: rgba(0, 0, 0, 0.22); /* Very dark when focused */
 
   /* Tipografia */
   --ciee-text-h1: #1A0B2E;      /* Títulos fortes */
@@ -27,10 +29,12 @@
 
 body.dark-mode {
   /* Cores de Fundo (Backgrounds - Invertidos) */
-  --ciee-bg-canvas: #1A0B2E;    /* Fundo principal (Tinta Profunda) */
-  --ciee-bg-alt: #24133B;       /* Fundo alternado (Roxo Noturno) */
-  --ciee-bg-primary: #2F1B4A;   /* Cards e painéis (Roxo Eclipse) */
-  --ciee-bg-card: #2F1B4A;      /* Cartões (Roxo Eclipse) */
+  --ciee-bg-canvas: #11081C;    /* Fundo principal (Espaço Profundo) */
+  --ciee-bg-alt: #160B24;       /* Fundo alternado (Tinta Escura) */
+  --ciee-bg-primary: #1C0D2E;   /* Cards e painéis (Roxo Meia-noite) */
+  --ciee-bg-card: #1C0D2E;      /* Cartões */
+  --ciee-bg-input: rgba(0, 0, 0, 0.6); /* Translucent and almost black for inputs */
+  --ciee-bg-input-focus: rgba(0, 0, 0, 0.85); /* Pitch black depth when focused */
 
   /* Tipografia (Invertida) */
   --ciee-text-h1: #FFFFFF;      /* Branco Puro */

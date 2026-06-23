@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 /**
  * Hook to format timestamps in a user-friendly way.
@@ -21,6 +21,14 @@ import { useCallback } from 'react';
  * - "Oct 30, 10:30 AM" (> 24 hours)
  */
 export const useFormatTimestamp = () => {
+  // Force re-render every minute so timestamps don't get stale
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => setTick(t => t + 1), 60000);
+    return () => clearInterval(timer);
+  }, []);
+
   return useCallback((date: Date | undefined): string => {
     if (!date) {
       return '';
