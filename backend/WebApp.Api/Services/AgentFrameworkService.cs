@@ -488,8 +488,8 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
         var fileSearchQuotes = new Dictionary<string, string>();
         // Track the current response ID for MCP approval resume flow
         string? currentResponseId = null;
-        // Dictionary to track function names by item ID in current response run
-        var trackedFunctions = new Dictionary<string, string>();
+        // Dictionary to track function call info by item ID in current response run
+        var trackedFunctions = new Dictionary<string, (string CallId, string FunctionName)>();
 
         bool _inTagBuffer = false;
         var _tagBuffer = new System.Text.StringBuilder();
@@ -638,7 +638,7 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
                 {
                     if (itemAddedUpdate.Item is FunctionCallResponseItem functionCallItem)
                     {
-                        trackedFunctions[functionCallItem.Id] = functionCallItem.FunctionName;
+                        trackedFunctions[functionCallItem.Id] = (functionCallItem.CallId, functionCallItem.FunctionName);
                     }
 
                     // Detect tool-use steps and signal the frontend for progress indicators
@@ -658,9 +658,15 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
                 }
                 else if (update is StreamingResponseFunctionCallArgumentsDoneUpdate argsDone)
                 {
-                    string functionName = trackedFunctions.GetValueOrDefault(argsDone.ItemId) ?? "update_registration_form";
+                    string functionName = "update_registration_form";
+                    string callId = argsDone.ItemId;
+                    if (trackedFunctions.TryGetValue(argsDone.ItemId, out var callInfo))
+                    {
+                        functionName = callInfo.FunctionName;
+                        callId = callInfo.CallId;
+                    }
                     string argumentsJson = argsDone.FunctionArguments.ToString();
-                    _logger.LogInformation("Model requested function call: {FunctionName} with arguments: {Arguments}", functionName, argumentsJson);
+                    _logger.LogInformation("Model requested function call: {FunctionName} (callId: {CallId}) with arguments: {Arguments}", functionName, callId, argumentsJson);
 
                     string resultJson = "{\"status\":\"success\"}";
                     string? field = null;
@@ -712,7 +718,7 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
                     {
                         options.PreviousResponseId = currentResponseId;
                     }
-                    options.InputItems.Add(ResponseItem.CreateFunctionCallOutputItem(argsDone.ItemId, resultJson));
+                    options.InputItems.Add(ResponseItem.CreateFunctionCallOutputItem(callId, resultJson));
 
 
                     foreach (var chunk in functionFieldUpdates)
