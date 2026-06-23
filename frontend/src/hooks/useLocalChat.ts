@@ -24,6 +24,8 @@ export function useLocalChat(options?: UseLocalChatOptions): UseLocalChatResult 
   const [error, setError] = useState<string | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
 
   const clearChat = useCallback(() => {
     if (abortControllerRef.current) {
@@ -91,7 +93,7 @@ export function useLocalChat(options?: UseLocalChatOptions): UseLocalChatResult 
           conversationId: conversationId,
           imageDataUris: [],
           fileDataUris: [],
-          formState: options?.formData
+          formState: optionsRef.current?.formData
         }),
         signal: abortController.signal
       });
@@ -137,8 +139,8 @@ export function useLocalChat(options?: UseLocalChatOptions): UseLocalChatResult 
 
             case 'formUpdate': {
               const { field, value } = event.data;
-              if (options?.onFormUpdate) {
-                options.onFormUpdate(field, value);
+              if (optionsRef.current?.onFormUpdate) {
+                optionsRef.current.onFormUpdate(field, value);
               }
               break;
             }
