@@ -712,12 +712,8 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
                         }
                     }
 
-                    // Reset options for the follow-up request with only the function output and PreviousResponseId set
+                    // Reset options for the follow-up request with only the function output set
                     options = new CreateResponseOptions { StreamingEnabled = true };
-                    if (!string.IsNullOrEmpty(currentResponseId))
-                    {
-                        options.PreviousResponseId = currentResponseId;
-                    }
                     options.InputItems.Add(ResponseItem.CreateFunctionCallOutputItem(callId, resultJson));
 
 
