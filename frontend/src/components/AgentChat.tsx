@@ -29,7 +29,7 @@ interface AgentChatProps {
 export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Agente IA', agentDescription, agentLogo, starterPrompts, onNavigateToRegister, onBack }) => {
   const { chat, state } = useAppState();
   const { dispatch } = useAppContext();
-  const { getAccessToken } = useAuth();
+  const { getAccessToken, login } = useAuth();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAuxSidebarOpen, setIsAuxSidebarOpen] = useState(false);
   const [isJourneyOpen, setIsJourneyOpen] = useState(false);
@@ -84,8 +84,9 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Agente IA', a
       handleJourneyFieldChange(field, value);
     };
     service.getFormState = () => journeyFormData;
+    service.onLogin = login;
     return service;
-  }, [apiUrl, getAccessToken, dispatch, journeyFormData]);
+  }, [apiUrl, getAccessToken, dispatch, journeyFormData, login]);
 
   const prevMessagesLengthRef = useRef(chat.messages.length);
   useEffect(() => {
@@ -150,9 +151,7 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Agente IA', a
     dispatch({ type: 'CHAT_REGENERATE' });
   }, [chatService, dispatch]);
 
-  const handleEditMessage = useCallback((messageId: string, newText: string) => {
-    dispatch({ type: 'CHAT_EDIT_MESSAGE', messageId, newText });
-  }, [dispatch]);
+
 
   const handleFeedback = useCallback((messageId: string, rating: 'positive' | 'negative') => {
     trackFeedback(messageId, chat.currentConversationId, rating);
@@ -328,7 +327,6 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Agente IA', a
             onToggleSidebar={handleToggleSidebar}
             onExportConversation={handleExportConversation}
             onRegenerate={handleRegenerate}
-            onEditMessage={handleEditMessage}
             onCancelEdit={handleCancelEdit}
             isEditing={!!chat.editSnapshot}
             onFeedback={handleFeedback}
@@ -355,7 +353,7 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Agente IA', a
           <GooseJourney
             currentStep={journeyStep}
             formData={journeyFormData}
-            isSubmitted={false}
+            isSubmitted={(journeyFormData as any).submit === 'true'}
             focusedField={null}
             onFieldChange={handleJourneyFieldChange}
           />

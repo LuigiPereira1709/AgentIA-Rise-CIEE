@@ -49,12 +49,14 @@ public class AgentFrameworkService : IDisposable
     private readonly bool _useObo;
     private readonly TokenCredential _fallbackCredential;
 
-    // Agent metadata cache (static - shared across requests)
-    private static ProjectsAgentVersion? s_cachedAgentVersion;
-    private static AgentMetadataResponse? s_cachedMetadata;
+    // Per-prefix agent metadata caches (static - shared across requests, keyed by config prefix)
+    private static readonly Dictionary<string, ProjectsAgentVersion?> s_cachedAgentVersions = new();
+    private static readonly Dictionary<string, AgentMetadataResponse?> s_cachedMetadata = new();
     private static readonly SemaphoreSlim s_agentLock = new(1, 1);
     // MI assertion cache (static - user-independent, safe to share across requests)
     private static ManagedIdentityClientAssertion? s_miAssertion;
+    // Config prefix used by this instance ("AI_AGENT" or "AI_SUPPORT_AGENT")
+    private readonly string _configPrefix;
 
     private readonly IHttpClientFactory _httpClientFactory;
 
@@ -73,27 +75,39 @@ public class AgentFrameworkService : IDisposable
         IConfiguration configuration,
         ILogger<AgentFrameworkService> logger,
         IHttpClientFactory httpClientFactory,
-        IHttpContextAccessor? httpContextAccessor = null)
+        IHttpContextAccessor? httpContextAccessor = null,
+        string configPrefix = "AI_AGENT")
     {
         _logger = logger;
         _httpClientFactory = httpClientFactory;
         _httpContextAccessor = httpContextAccessor;
+        _configPrefix = configPrefix;
 
-        _agentEndpoint = configuration["AI_AGENT_ENDPOINT"]
-            ?? throw new InvalidOperationException("AI_AGENT_ENDPOINT is not configured");
+        // Resolve config keys dynamically based on prefix:
+        // registration agent  → AI_AGENT_ENDPOINT / AI_AGENT_ID / AI_AGENT_VERSION / AI_AGENT_MODEL
+        // support agent       → AI_SUPPORT_AGENT_ENDPOINT / AI_SUPPORT_AGENT_ID / ...
+        var endpointKey = $"{configPrefix}_ENDPOINT";
+        var idKey       = $"{configPrefix}_ID";
+        var versionKey  = $"{configPrefix}_VERSION";
+        var modelKey    = $"{configPrefix}_MODEL";
 
-        _agentId = configuration["AI_AGENT_ID"]
-            ?? throw new InvalidOperationException("AI_AGENT_ID is not configured");
+        _agentEndpoint = configuration[endpointKey]
+            ?? configuration["AI_AGENT_ENDPOINT"] // fallback: support shares same project endpoint
+            ?? throw new InvalidOperationException($"{endpointKey} is not configured");
 
-        _configuredAgentVersion = string.IsNullOrWhiteSpace(configuration["AI_AGENT_VERSION"])
+        _agentId = configuration[idKey]
+            ?? throw new InvalidOperationException($"{idKey} is not configured");
+
+        _configuredAgentVersion = string.IsNullOrWhiteSpace(configuration[versionKey])
             ? null
-            : configuration["AI_AGENT_VERSION"];
+            : configuration[versionKey];
 
-        _modelName = configuration["AI_AGENT_MODEL"] ?? "gpt-oss-120b";
+        _modelName = configuration[modelKey] ?? configuration["AI_AGENT_MODEL"] ?? "gpt-oss-120b";
 
         _logger.LogDebug(
-            "Initializing AgentFrameworkService: endpoint={Endpoint}, agentId={AgentId}, version={Version}", 
-            _agentEndpoint, 
+            "Initializing AgentFrameworkService [{Prefix}]: endpoint={Endpoint}, agentId={AgentId}, version={Version}",
+            _configPrefix,
+            _agentEndpoint,
             _agentId,
             _configuredAgentVersion ?? "<latest>");
 
@@ -152,7 +166,7 @@ public class AgentFrameworkService : IDisposable
             _projectClient = new AIProjectClient(new Uri(_agentEndpoint), _fallbackCredential);
         }
 
-        _logger.LogInformation("AIProjectClient initialized successfully");
+        _logger.LogInformation("AIProjectClient [{Prefix}] initialized successfully", _configPrefix);
     }
 
     /// <summary>
@@ -225,14 +239,14 @@ public class AgentFrameworkService : IDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        if (s_cachedAgentVersion != null)
-            return s_cachedAgentVersion;
+        if (s_cachedAgentVersions.TryGetValue(_configPrefix, out var hit) && hit != null)
+            return hit;
 
         await s_agentLock.WaitAsync(cancellationToken);
         try
         {
-            if (s_cachedAgentVersion != null)
-                return s_cachedAgentVersion;
+            if (s_cachedAgentVersions.TryGetValue(_configPrefix, out hit) && hit != null)
+                return hit;
 
             // Use the same credential path as all other operations (MI or OBO)
             var client = GetProjectClient();
@@ -242,7 +256,7 @@ public class AgentFrameworkService : IDisposable
             {
                 if (!string.IsNullOrWhiteSpace(_configuredAgentVersion))
                 {
-                    _logger.LogInformation("Loading agent: {AgentId} version={Version}", _agentId, _configuredAgentVersion);
+                    _logger.LogInformation("Loading agent [{Prefix}]: {AgentId} version={Version}", _configPrefix, _agentId, _configuredAgentVersion);
                     var response = await client.AgentAdministrationClient.GetAgentVersionAsync(
                         _agentId,
                         _configuredAgentVersion!,
@@ -251,7 +265,7 @@ public class AgentFrameworkService : IDisposable
                 }
                 else
                 {
-                    _logger.LogInformation("Loading agent: {AgentId} version=<latest>", _agentId);
+                    _logger.LogInformation("Loading agent [{Prefix}]: {AgentId} version=<latest>", _configPrefix, _agentId);
                     await foreach (var v in client.AgentAdministrationClient.GetAgentVersionsAsync(
                         agentName: _agentId,
                         limit: 1,
@@ -267,14 +281,46 @@ public class AgentFrameworkService : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to load agent {AgentId} (version={Version}) from Azure. Will attempt to provision it. Error: {Message}", _agentId, _configuredAgentVersion ?? "<latest>", ex.Message);
+                _logger.LogWarning(ex, "Failed to load agent [{Prefix}] {AgentId} (version={Version}) from Azure. Error: {Message}",
+                    _configPrefix, _agentId, _configuredAgentVersion ?? "<latest>", ex.Message);
             }
 
-            s_cachedAgentVersion = loaded;
+            s_cachedAgentVersions[_configPrefix] = loaded;
+            var definition = loaded?.Definition as DeclarativeAgentDefinition;
 
-            var definition = s_cachedAgentVersion?.Definition as DeclarativeAgentDefinition;
-            
-            var newInstructions = @"Você é o Agente Orquestrador de Cadastro de Estudantes (Zoggy). Seu objetivo é coletar os 18 dados cadastrais obrigatórios dos estudantes de forma fluida, amigável, empática e conversacional, eliminando o aspecto frio de formulários rígidos.
+            // ── Support agent: fully managed in Foundry — never auto-provision ──────────
+            // Its instructions, tools and configuration are owned by the portal.
+            // We only load whatever exists and trust it as-is.
+            if (_configPrefix == "AI_SUPPORT_AGENT")
+            {
+                if (loaded == null)
+                {
+                    throw new InvalidOperationException(
+                        $"Support agent '{_agentId}' could not be loaded from Azure Foundry. " +
+                        "Ensure AI_SUPPORT_AGENT_ID and AI_SUPPORT_AGENT_VERSION are correct and the agent exists.");
+                }
+
+                _logger.LogInformation(
+                    "Loaded support agent [{Prefix}]: name={AgentName}, model={Model}, version={Version}",
+                    _configPrefix, loaded.Name ?? _agentId, definition?.Model ?? "unknown", loaded.Version ?? "<unknown>");
+            }
+            else
+            {
+                var newInstructions = @"Você é o Agente Orquestrador de Cadastro de Estudantes (Zoggy). Seu objetivo é coletar os 18 dados cadastrais obrigatórios dos estudantes de forma fluida, amigável, empática e conversacional, eliminando o aspecto frio de formulários rígidos.
+
+# Idioma e Ortografia (REQUISITO CRÍTICO DE QUALIDADE)
+
+- **Você DEVE responder exclusivamente em Português do Brasil (PT-BR) correto, natural e fluente.**
+- **NÃO misture espanhol ou galego (Portunhol).** Preste muita atenção para NÃO cometer os seguintes desvios ortográficos comuns:
+  - Escreva ""nosso"" (com dois 's'), NUNCA ""noso"".
+  - Escreva ""assistente"" (com dois 's'), NUNCA ""asistente"".
+  - Escreva ""preencher"" (com dois 'e'), NUNCA ""prencher"".
+  - Escreva ""passo a passo"" (com dois 's'), NUNCA ""paso a paso"".
+  - Escreva ""processo"" (com dois 's'), NUNCA ""proceso"".
+  - Escreva ""estresse"" (com 'e' inicial e dois 's'), NUNCA ""stres"" ou ""stress"".
+  - Escreva ""assim"" (com dois 's'), NUNCA ""asim"".
+  - Escreva ""essencial"" (com dois 's' e 'c'), NUNCA ""esencial"".
+- Revise toda frase antes de enviar para garantir que não há letras faltando ou termos em portunhol.
 
 # Instruções de Comportamento (Persona)
 
@@ -286,9 +332,10 @@ public class AgentFrameworkService : IDisposable
 - **Sincronização de Estado via Chamadas de Função (Tools):**
   1. Sempre que o usuário fornecer, corrigir ou atualizar um dado do cadastro (mesmo que o dado já conste como preenchido no estado do formulário e você esteja corrigindo ou alterando um valor anterior), você **DEVE obrigatoriamente chamar a função ""update_registration_form""** passando o nome da variável (""field"") e o valor correspondente (""value"").
   2. Caso o estudante não saiba o CEP, você **DEVE obrigatoriamente chamar a função ""search_cep_by_address""** passando os parâmetros estruturados ""uf"", ""cidade"" e ""logradouro"".
-  3. Nunca responda confirmando que salvou, que corrigiu ou que o campo foi atualizado sem antes acionar a função correspondente e receber a resposta de sucesso do sistema.
-  4. Se a função retornar um erro (ex: ""{""status"":""error"",""message"":""...""}""), você **DEVE** interromper o fluxo natural, explicar o erro de forma educada e pedir para o usuário digitar novamente ou corrigir as informações.
-  5. A resposta de sucesso da função conterá os valores formatados no campo ""updates"". Sempre use esses valores formatados ao confirmar o dado recebido na conversa com o estudante (ex: se a função retornar o CEP formatado ou outros campos atualizados no ""updates"", confirme-os usando estes valores formatados).
+  3. Após apresentar o resumo dos dados cadastrais ao usuário (etapa final de Validação Geral) e ele confirmar que todas as informações estão corretas, você **DEVE obrigatoriamente chamar a função ""submit_registration_form""** (sem parâmetros) para enviar oficialmente o cadastro.
+  4. Nunca responda confirmando que salvou, corrigiu, atualizou ou finalizou o cadastro sem antes acionar a função correspondente e receber a resposta de sucesso do sistema.
+  5. Se a função retornar um erro (ex: ""{""status"":""error"",""message"":""...""}""), você **DEVE** interromper o fluxo natural, explicar o erro de forma educada e pedir para o usuário digitar novamente ou corrigir as informações.
+  6. A resposta de sucesso da função conterá os valores formatados no campo ""updates"". Sempre use esses valores formatados ao confirmar o dado recebido na conversa com o estudante (ex: se a função retornar o CEP formatado ou outros campos atualizados no ""updates"", confirme-os usando estes valores formatados).
 - **Opções Fechadas:** Exiba opções de clique rápido (Quick Replies/Botões) para `varSexo`, `varEstadoCivil`, `varNivelEscolar`, `varModalidadeEnsino` e `varTurnoEnsino`.
 - **Sincronização de Estado:** Sempre atente-se ao padrão `[ESTADO_DO_FORMULARIO: ...]` no início das mensagens do usuário para saber quais dados já estão preenchidos na tela de cadastro e evitar perguntá-los novamente.
 
@@ -304,7 +351,7 @@ public class AgentFrameworkService : IDisposable
 5. **Dados Educacionais:** Colete o nível escolar (`varNivelEscolar`), estado e cidade da instituição, nome da instituição (`varInstituicaoNome`), período/ano atual (`varPeriodoCursando`), modalidade de ensino (`varModalidadeEnsino`) e turno (`varTurnoEnsino`).
    - Use botões para Nível Escolar, Modalidade e Turno.
 6. **Validação Geral:** Exiba um resumo amigável de todos os dados coletados para confirmação final do estudante.
-7. **Encerramento:** Agradeça e finalize a conversa.
+7. **Finalização e Encerramento:** Assim que o estudante confirmar que os dados do resumo estão corretos, chame a função ""submit_registration_form"" para concluir e enviar o cadastro no sistema. Após receber a confirmação de sucesso, agradeça e finalize a conversa.
 
 # Requisitos do Bloco de Endereço
 
@@ -314,93 +361,95 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
 
 *Importante:* Colete o número da casa (`varNumeroCasa`) de forma isolada *após* a confirmação do endereço.";
 
-            bool hasInstructions = false;
-            if (definition?.Instructions != null)
-            {
-                string localInstructions = newInstructions.Replace("\r\n", "\n").Trim();
-                string remoteInstructions = definition.Instructions.Replace("\r\n", "\n").Trim();
-                if (localInstructions == remoteInstructions)
+                bool hasInstructions = false;
+                if (definition?.Instructions != null)
                 {
-                    hasInstructions = true;
-                }
-                else
-                {
-                    _logger.LogInformation("Agent instructions on Azure differ from local code. Deployed length: {RemoteLen}, Local length: {LocalLen}. Triggering update.", remoteInstructions.Length, localInstructions.Length);
-                }
-            }
-
-            if (loaded is null || !hasInstructions)
-            {
-                _logger.LogInformation("Agent {AgentId} does not exist, was not loaded successfully, or does not have the updated instructions. Provisioning new version programmatically...", _agentId);
-                try
-                {
-                    var modelName = _modelName;
-
-                    var newDefinition = new DeclarativeAgentDefinition(modelName)
+                    string localInstructions = newInstructions.Replace("\r\n", "\n").Trim();
+                    string remoteInstructions = definition.Instructions.Replace("\r\n", "\n").Trim();
+                    if (localInstructions == remoteInstructions)
                     {
-                        Instructions = newInstructions
-                    };
-
-
-
-                    // Add our function tool with proper parameters schema and root description
-                    var parameters = BinaryData.FromObjectAsJson(new
+                        hasInstructions = true;
+                    }
+                    else
                     {
-                        type = "object",
-                        description = "Atualiza um campo específico no formulário de cadastro do estudante em tempo real.",
-                        properties = new
+                        _logger.LogInformation("Agent instructions on Azure differ from local code. Deployed length: {RemoteLen}, Local length: {LocalLen}. Triggering update.", remoteInstructions.Length, localInstructions.Length);
+                    }
+                }
+
+                if (loaded is null || !hasInstructions)
+                {
+                    _logger.LogInformation("Agent {AgentId} does not exist or needs provisioning...", _agentId);
+                    try
+                    {
+                        var newDefinition = new DeclarativeAgentDefinition(_modelName) { Instructions = newInstructions };
+
+                        var parameters = BinaryData.FromObjectAsJson(new
                         {
-                            field = new { type = "string", description = "O nome da variável do formulário a ser atualizada (ex: varNomeCompleto, varCPF, varEmail, varTelefone, varCEP, varDataNascimento, varSexo, varEstadoCivil, varNivelEscolar, varPeriodoCursando, varModalidadeEnsino, varTurnoEnsino, varInstituicaoNome, varNumeroCasa)" },
-                            value = new { type = "string", description = "O valor preenchido ou selecionado pelo estudante para esta variável" }
-                        },
-                        required = new[] { "field", "value" }
-                    });
+                            type = "object",
+                            description = "Atualiza um campo específico no formulário de cadastro do estudante em tempo real.",
+                            properties = new
+                            {
+                                field = new { type = "string", description = "O nome da variável do formulário a ser atualizada (ex: varNomeCompleto, varCPF, varEmail, varTelefone, varCEP, varDataNascimento, varSexo, varEstadoCivil, varNivelEscolar, varPeriodoCursando, varModalidadeEnsino, varTurnoEnsino, varInstituicaoNome, varNumeroCasa)" },
+                                value = new { type = "string", description = "O valor preenchido ou selecionado pelo estudante para esta variável" }
+                            },
+                            required = new[] { "field", "value" }
+                        });
+                        newDefinition.Tools.Add(new FunctionTool("update_registration_form", parameters, null));
 
-                    newDefinition.Tools.Add(new FunctionTool("update_registration_form", parameters, null));
-
-                    var searchCepParameters = BinaryData.FromObjectAsJson(new
-                    {
-                        type = "object",
-                        description = "Busca o CEP e preenche as informações de endereço do estudante usando o Estado (UF), Cidade e Logradouro.",
-                        properties = new
+                        var searchCepParameters = BinaryData.FromObjectAsJson(new
                         {
-                            uf = new { type = "string", description = "A sigla do Estado com duas letras maiúsculas (ex: SP, RJ, MG)" },
-                            cidade = new { type = "string", description = "O nome da cidade (ex: São Paulo, Rio de Janeiro)" },
-                            logradouro = new { type = "string", description = "O nome do logradouro/rua/avenida (ex: Avenida Paulista, Rua das Flores)" }
-                        },
-                        required = new[] { "uf", "cidade", "logradouro" }
-                    });
+                            type = "object",
+                            description = "Busca o CEP e preenche as informações de endereço do estudante usando o Estado (UF), Cidade e Logradouro.",
+                            properties = new
+                            {
+                                uf = new { type = "string", description = "A sigla do Estado com duas letras maiúsculas (ex: SP, RJ, MG)" },
+                                cidade = new { type = "string", description = "O nome da cidade (ex: São Paulo, Rio de Janeiro)" },
+                                logradouro = new { type = "string", description = "O nome do logradouro/rua/avenida (ex: Avenida Paulista, Rua das Flores)" }
+                            },
+                            required = new[] { "uf", "cidade", "logradouro" }
+                        });
+                        newDefinition.Tools.Add(new FunctionTool("search_cep_by_address", searchCepParameters, null));
 
-                    newDefinition.Tools.Add(new FunctionTool("search_cep_by_address", searchCepParameters, null));
+                        var submitParameters = BinaryData.FromObjectAsJson(new
+                        {
+                            type = "object",
+                            description = "Submete e finaliza o formulário de cadastro do estudante no sistema após confirmação dos dados pelo estudante.",
+                            properties = new {},
+                            required = Array.Empty<string>()
+                        });
+                        newDefinition.Tools.Add(new FunctionTool("submit_registration_form", submitParameters, null));
 
-                    var creationResponse = await client.AgentAdministrationClient.CreateAgentVersionAsync(
-                        _agentId,
-                        new ProjectsAgentVersionCreationOptions(newDefinition),
-                        cancellationToken: cancellationToken
-                    );
+                        var creationResponse = await client.AgentAdministrationClient.CreateAgentVersionAsync(
+                            _agentId,
+                            new ProjectsAgentVersionCreationOptions(newDefinition),
+                            cancellationToken: cancellationToken);
 
-                    loaded = creationResponse.Value;
-                    definition = loaded.Definition as DeclarativeAgentDefinition;
-                    s_cachedAgentVersion = loaded;
-                    _logger.LogInformation("Successfully provisioned new agent version: {Version}", loaded.Version);
+                        loaded = creationResponse.Value;
+                        definition = loaded.Definition as DeclarativeAgentDefinition;
+                        s_cachedAgentVersions[_configPrefix] = loaded;
+                        _logger.LogInformation("Successfully provisioned new registration agent version: {Version}", loaded.Version);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to programmatically provision agent version. Error: {Message}", ex.Message);
+                    }
                 }
-                catch (Exception ex)
+
+                s_cachedAgentVersions.TryGetValue(_configPrefix, out var cachedVersion);
+                if (cachedVersion == null)
                 {
-                    _logger.LogWarning(ex, "Failed to programmatically provision agent version. Error: {Message}", ex.Message);
+                    throw new InvalidOperationException(
+                        $"Could not load or provision registration agent '{_agentId}'. The agent version does not exist and auto-provisioning failed.");
                 }
-            }
 
-            if (s_cachedAgentVersion == null)
-            {
-                throw new InvalidOperationException($"Could not load or provision agent '{_agentId}'. The agent version does not exist and auto-provisioning failed.");
-            }
-
-            _logger.LogInformation(
-                "Loaded agent: name={AgentName}, model={Model}, version={Version} (pinned={Pinned})",
-                s_cachedAgentVersion.Name ?? _agentId,
-                definition?.Model ?? "unknown",
-                s_cachedAgentVersion.Version ?? "<unknown>",
-                !string.IsNullOrWhiteSpace(_configuredAgentVersion));
+                _logger.LogInformation(
+                    "Loaded agent [{Prefix}]: name={AgentName}, model={Model}, version={Version} (pinned={Pinned})",
+                    _configPrefix,
+                    cachedVersion.Name ?? _agentId,
+                    definition?.Model ?? "unknown",
+                    cachedVersion.Version ?? "<unknown>",
+                    !string.IsNullOrWhiteSpace(_configuredAgentVersion));
+            } // end else (registration agent provisioning)
 
             // Log StructuredInputs at debug level for troubleshooting
             if (definition?.StructuredInputs != null && definition.StructuredInputs.Count > 0)
@@ -410,7 +459,9 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
                     string.Join(", ", definition.StructuredInputs.Keys));
             }
 
-            return s_cachedAgentVersion;
+            // Return the cached version for whichever agent type this instance serves
+            return s_cachedAgentVersions[_configPrefix]
+                ?? throw new InvalidOperationException($"Agent '{_agentId}' [{_configPrefix}] cache is empty after load.");
         }
         catch (Exception ex)
         {
@@ -510,6 +561,7 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
 
         bool _inTagBuffer = false;
         var _tagBuffer = new System.Text.StringBuilder();
+        var _textBuffer = new System.Text.StringBuilder();
 
         bool hasPendingAction = true;
         while (hasPendingAction)
@@ -542,7 +594,7 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
                             }
                             else
                             {
-                                yield return StreamChunk.Text(c.ToString());
+                                _textBuffer.Append(c);
                             }
                         }
                         else
@@ -556,7 +608,7 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
                             if (secondStart != -1)
                             {
                                 string malformedPrefix = currentStr.Substring(0, secondStart);
-                                yield return StreamChunk.Text(malformedPrefix);
+                                _textBuffer.Append(malformedPrefix);
                                 
                                 _tagBuffer.Clear();
                                 _tagBuffer.Append(currentStr.Substring(secondStart));
@@ -579,6 +631,12 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
                                         var processed = await ProcessAndValidateFieldAsync(field, val);
                                         if (processed.IsValid)
                                         {
+                                            if (_textBuffer.Length > 0)
+                                            {
+                                                yield return StreamChunk.Text(_textBuffer.ToString());
+                                                _textBuffer.Clear();
+                                            }
+
                                             if (processed.FieldUpdates != null)
                                             {
                                                 foreach (var updatePair in processed.FieldUpdates)
@@ -588,18 +646,24 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
                                             }
                                             if (!string.IsNullOrEmpty(processed.Message))
                                             {
-                                                yield return StreamChunk.Text(processed.Message);
+                                                _textBuffer.Append(processed.Message);
                                             }
                                         }
                                         else
                                         {
                                             if (!string.IsNullOrEmpty(processed.Message))
                                             {
-                                                yield return StreamChunk.Text(processed.Message);
+                                                _textBuffer.Append(processed.Message);
                                             }
                                             hasPendingAction = false;
                                             _inTagBuffer = false;
                                             _tagBuffer.Clear();
+                                            
+                                            if (_textBuffer.Length > 0)
+                                            {
+                                                yield return StreamChunk.Text(_textBuffer.ToString());
+                                                _textBuffer.Clear();
+                                            }
                                             yield break;
                                         }
                                     }
@@ -610,6 +674,13 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
                                     string query = currentStr.Substring(expectedPrefix.Length, currentStr.Length - expectedPrefix.Length - 2).Trim();
                                     
                                     var searchResult = await SearchCepAsync(query);
+                                    
+                                    if (_textBuffer.Length > 0)
+                                    {
+                                        yield return StreamChunk.Text(_textBuffer.ToString());
+                                        _textBuffer.Clear();
+                                    }
+
                                     if (searchResult.Success && searchResult.FieldUpdates != null)
                                     {
                                         foreach (var updatePair in searchResult.FieldUpdates)
@@ -619,12 +690,12 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
                                     }
                                     if (!string.IsNullOrEmpty(searchResult.Message))
                                     {
-                                        yield return StreamChunk.Text(searchResult.Message);
+                                        _textBuffer.Append(searchResult.Message);
                                     }
                                 }
                                 else
                                 {
-                                    yield return StreamChunk.Text(currentStr);
+                                    _textBuffer.Append(currentStr);
                                 }
                                 
                                 _inTagBuffer = false;
@@ -637,17 +708,37 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
                                 
                                 if (!isPrefixOfUpdate && !isPrefixOfSearch)
                                 {
-                                    yield return StreamChunk.Text(currentStr);
+                                    _textBuffer.Append(currentStr);
                                     _inTagBuffer = false;
                                     _tagBuffer.Clear();
                                 }
                                 else if (currentStr.Length > 400)
                                 {
-                                    yield return StreamChunk.Text(currentStr);
+                                    _textBuffer.Append(currentStr);
                                     _inTagBuffer = false;
                                     _tagBuffer.Clear();
                                 }
                             }
+                        }
+                    }
+
+                    if (_textBuffer.Length > 0)
+                    {
+                        if (char.IsHighSurrogate(_textBuffer[_textBuffer.Length - 1]))
+                        {
+                            if (_textBuffer.Length > 1)
+                            {
+                                string safeToYield = _textBuffer.ToString(0, _textBuffer.Length - 1);
+                                yield return StreamChunk.Text(safeToYield);
+                                char lastChar = _textBuffer[_textBuffer.Length - 1];
+                                _textBuffer.Clear();
+                                _textBuffer.Append(lastChar);
+                            }
+                        }
+                        else
+                        {
+                            yield return StreamChunk.Text(_textBuffer.ToString());
+                            _textBuffer.Clear();
                         }
                     }
                 }
@@ -767,6 +858,11 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
                             _logger.LogError(ex, "Error parsing search_cep_by_address function call arguments.");
                             resultJson = $"{{\"status\":\"error\",\"message\":\"{ex.Message}\"}}";
                         }
+                    }
+                    else if (functionName == "submit_registration_form")
+                    {
+                        resultJson = "{\"status\":\"success\"}";
+                        functionFieldUpdates.Add(StreamChunk.FormField("submit", "true"));
                     }
 
                     // Reset options for the follow-up request with only the function output set
@@ -1438,8 +1534,8 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
 
         var agentVersion = await GetAgentAsync(cancellationToken);
 
-        if (s_cachedMetadata != null)
-            return s_cachedMetadata;
+        if (s_cachedMetadata.TryGetValue(_configPrefix, out var cachedMeta) && cachedMeta != null)
+            return cachedMeta;
 
         var definition = agentVersion.Definition as DeclarativeAgentDefinition;
         var metadata = agentVersion.Metadata?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
@@ -1453,7 +1549,7 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
         // Parse starter prompts from metadata
         List<string>? starterPrompts = ParseStarterPrompts(metadata);
 
-        s_cachedMetadata = new AgentMetadataResponse
+        var built = new AgentMetadataResponse
         {
             Id = _agentId,
             Object = "agent",
@@ -1466,7 +1562,8 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
             StarterPrompts = starterPrompts
         };
 
-        return s_cachedMetadata;
+        s_cachedMetadata[_configPrefix] = built;
+        return built;
     }
 
     /// <summary>
@@ -1743,12 +1840,40 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
                 result.FieldUpdates = new Dictionary<string, string> { { canonicalField, cleanNum } };
             }
         }
+        else if (canonicalLower == "varnomecompleto")
+        {
+            string normalizedName = CapitalizeName(value);
+            result.FieldUpdates = new Dictionary<string, string> { { canonicalField, normalizedName } };
+        }
         else
         {
             result.FieldUpdates = new Dictionary<string, string> { { canonicalField, value } };
         }
 
         return result;
+    }
+
+    private static string CapitalizeName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return name;
+
+        string[] words = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var lowerWordsToKeep = new System.Collections.Generic.HashSet<string>(System.StringComparer.OrdinalIgnoreCase) { "de", "da", "do", "dos", "das", "e" };
+
+        for (int i = 0; i < words.Length; i++)
+        {
+            string word = words[i].ToLower();
+            if (i > 0 && lowerWordsToKeep.Contains(word))
+            {
+                words[i] = word;
+            }
+            else if (word.Length > 0)
+            {
+                words[i] = char.ToUpper(word[0]) + word[1..];
+            }
+        }
+
+        return string.Join(" ", words);
     }
 
     internal static bool IsValidEmail(string email)

@@ -49,6 +49,7 @@ export class ChatService {
 
   public onFormUpdate?: (field: string, value: string) => void;
   public getFormState?: () => Record<string, string>;
+  public onLogin?: () => Promise<string | null>;
 
   constructor(
     apiUrl: string,
@@ -70,7 +71,16 @@ export class ChatService {
   private async ensureAuthToken(): Promise<string> {
     const token = await this.getAccessToken();
     if (!token) {
-      throw createAppError(new Error('Failed to acquire access token'), 'AUTH');
+      throw createAppError(
+        new Error('Failed to acquire access token'),
+        'AUTH',
+        this.onLogin ? async () => {
+          const newToken = await this.onLogin?.();
+          if (newToken) {
+            this.dispatch({ type: 'CHAT_CLEAR_ERROR' });
+          }
+        } : undefined
+      );
     }
     return token;
   }
@@ -396,14 +406,11 @@ export class ChatService {
               break;
 
             case 'chunk':
-              if (event.data.content !== lastChunkContent) {
-                this.dispatch({
-                  type: 'CHAT_STREAM_CHUNK',
-                  messageId,
-                  content: event.data.content,
-                });
-                lastChunkContent = event.data.content;
-              }
+              this.dispatch({
+                type: 'CHAT_STREAM_CHUNK',
+                messageId,
+                content: event.data.content,
+              });
               break;
 
             case 'annotations':
