@@ -53,6 +53,47 @@ export const GooseHeadIcon: React.FC<{ isChaos?: boolean }> = ({ isChaos = false
   );
 };
 
+export const GooseBodyIcon: React.FC = () => {
+  return (
+    <svg 
+      viewBox="15 10 75 70" 
+      width="24" 
+      height="24" 
+      style={{ overflow: 'visible' }}
+    >
+      <g>
+        {/* Body */}
+        <ellipse cx="38" cy="52" rx="20" ry="14" fill="#ffffff" stroke="#0c0f1d" strokeWidth="2" />
+        {/* Wing hint */}
+        <path d="M 22 54 Q 28 60 38 58" fill="none" stroke="#e0e0e0" strokeWidth="1.5" />
+        
+        {/* Neck */}
+        <path d="M 48 42 C 55 32 54 24 54 18" stroke="#ffffff" strokeWidth="10" strokeLinecap="round" fill="none" />
+        
+        {/* Legs */}
+        <line x1="32" y1="64" x2="30" y2="72" stroke="#ff9f1c" strokeWidth="2.5" strokeLinecap="round" />
+        <line x1="42" y1="65" x2="44" y2="73" stroke="#ff9f1c" strokeWidth="2.5" strokeLinecap="round" />
+        {/* Feet */}
+        <line x1="30" y1="72" x2="24" y2="72" stroke="#ff9f1c" strokeWidth="2" strokeLinecap="round" />
+        <line x1="44" y1="73" x2="50" y2="73" stroke="#ff9f1c" strokeWidth="2" strokeLinecap="round" />
+
+        {/* Head */}
+        <circle cx="54" cy="16" r="14" fill="#ffffff" stroke="#0c0f1d" strokeWidth="2" />
+        
+        {/* Cheek / Blush */}
+        <circle cx="53" cy="21" r="3.5" fill="rgba(255, 90, 95, 0.4)" />
+
+        {/* Eye */}
+        <circle cx="58" cy="12" r="2.5" fill="#000000" />
+
+        {/* Beak */}
+        <path d="M 64 18.5 Q 70 19 84 18.5 Q 70 23 64 21 Z" fill="#ff9f1c" stroke="#0c0f1d" strokeWidth="1.8" />
+        <path d="M 64 16 Q 80 16 84 18.5 Q 70 19 64 18.5 Z" fill="#ff9f1c" stroke="#0c0f1d" strokeWidth="1.8" />
+      </g>
+    </svg>
+  );
+};
+
 const triggerFeatherExplosion = (x: number, y: number) => {
   let container = document.getElementById('particle-container');
   if (!container) {

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
+import { GooseBodyIcon } from './RegistrationForm';
 import styles from './GooseJourney.module.css';
 
 interface GooseJourneyProps {
@@ -197,7 +198,9 @@ export const GooseJourney: React.FC<GooseJourneyProps> = ({
                     <span className={`${styles.chevron} ${isExpanded ? styles.chevronOpen : ''}`}>›</span>
                   )}
                   {isActive && (
-                    <span className={styles.gooseIndicator}>🪿</span>
+                    <span className={styles.gooseIndicator}>
+                      <GooseBodyIcon />
+                    </span>
                   )}
                 </div>
               </div>
