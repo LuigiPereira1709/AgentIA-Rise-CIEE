@@ -64,7 +64,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = (props) => {
   const isBusy = disabled || status === 'sending';
 
   const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    // Small timeout ensures DOM is fully reflowed before scrolling
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }, 50);
   }, []);
 
   const handleShowShortcuts = useCallback(() => setIsShortcutsOpen(true), []);
@@ -85,13 +88,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = (props) => {
   }, []);
 
   useEffect(() => {
-    if (isNearBottom) {
+    if (isNearBottom || status === 'sending' || status === 'streaming') {
       scrollToBottom();
       setHasNewMessages(false);
-    } else if (messages.length > 0) {
+    } else if (deferredMessages.length > 0) {
       setHasNewMessages(true);
     }
-  }, [messages, isNearBottom, scrollToBottom]);
+  }, [deferredMessages, status, isNearBottom, scrollToBottom]);
 
   useEffect(() => {
     if (isStreaming) {
