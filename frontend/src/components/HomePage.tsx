@@ -52,7 +52,6 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         </div>
 
         {/* Header text */}
-        <h1 className={styles.title}>Foundry Agent</h1>
         <p className={styles.subtitle}>
           Selecione uma das opções abaixo para continuar
         </p>
