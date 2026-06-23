@@ -13,6 +13,8 @@ using System.Text.Json;
 using System.Linq;
 using WebApp.Api.Models;
 
+[assembly: InternalsVisibleTo("WebApp.Api.Tests")]
+
 namespace WebApp.Api.Services;
 
 #pragma warning disable OPENAI001
@@ -285,6 +287,7 @@ public class AgentFrameworkService : IDisposable
   1. Sempre que o usuário fornecer, corrigir ou atualizar um dado do cadastro, você **DEVE obrigatoriamente chamar a função ""update_registration_form""** passando o nome da variável (""field"") e o valor correspondente (""value"").
   2. Nunca responda confirmando que salvou ou que o campo foi atualizado sem antes acionar a função e receber a resposta de sucesso do sistema.
   3. Se a função retornar um erro (ex: ""{""status"":""error"",""message"":""...""}""), você **DEVE** interromper o fluxo natural, explicar o erro de forma educada (ex: formato de e-mail inválido) e pedir para o usuário digitar novamente.
+  4. A resposta de sucesso da função conterá os valores formatados no campo ""updates"". Sempre use esses valores formatados ao confirmar o dado recebido na conversa com o estudante (ex: se a função retornar o CPF formatado como ""123.456.789-00"", diga ""CPF 123.456.789-00 anotado!"" em vez de usar os números brutos).
 - **Opções Fechadas:** Exiba opções de clique rápido (Quick Replies/Botões) para `varSexo`, `varEstadoCivil`, `varNivelEscolar`, `varModalidadeEnsino` e `varTurnoEnsino`.
 - **Sincronização de Estado:** Sempre atente-se ao padrão `[ESTADO_DO_FORMULARIO: ...]` no início das mensagens do usuário para saber quais dados já estão preenchidos na tela de cadastro e evitar perguntá-los novamente.
 
@@ -688,7 +691,8 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
                                     var processed = await ProcessAndValidateFieldAsync(field, val);
                                     if (processed.IsValid && processed.FieldUpdates != null)
                                     {
-                                        resultJson = "{\"status\":\"success\"}";
+                                        string updatesJson = JsonSerializer.Serialize(processed.FieldUpdates);
+                                        resultJson = $"{{\"status\":\"success\",\"updates\":{updatesJson}}}";
                                         foreach (var updatePair in processed.FieldUpdates)
                                         {
                                             functionFieldUpdates.Add(StreamChunk.FormField(updatePair.Key, updatePair.Value));
@@ -1598,8 +1602,7 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
         }
         else if (canonicalLower == "varemail")
         {
-            string emailPattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
-            if (string.IsNullOrWhiteSpace(value) || !System.Text.RegularExpressions.Regex.IsMatch(value, emailPattern))
+            if (!IsValidEmail(value))
             {
                 result.IsValid = false;
                 result.Message = "\n*(Zoggy: O formato de e-mail fornecido é inválido. Certifique-se de que não contém espaços e possui um formato correto.)*\n";
@@ -1695,7 +1698,14 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
         return result;
     }
 
-    private static bool IsValidCpf(string cpf)
+    internal static bool IsValidEmail(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email)) return false;
+        string emailPattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
+        return System.Text.RegularExpressions.Regex.IsMatch(email, emailPattern);
+    }
+
+    internal static bool IsValidCpf(string cpf)
     {
         if (cpf.Length != 11) return false;
         if (new string(cpf[0], 11) == cpf) return false;
