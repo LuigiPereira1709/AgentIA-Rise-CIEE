@@ -16,8 +16,8 @@
   --ciee-bg-primary: #FFFFFF;   /* Fundo de elementos em destaque (Branco puro) */
   --ciee-bg-alt: #F8F6FA;       /* Fundo de menus e barras laterais */
   --ciee-bg-card: #FFFFFF;      /* Cartões (igual ao primary, mas destacável com shadow) */
-  --ciee-bg-input: rgba(0, 0, 0, 0.12); /* Translucent and noticeably dark for inputs */
-  --ciee-bg-input-focus: rgba(0, 0, 0, 0.22); /* Very dark when focused */
+  --ciee-bg-input: rgba(255, 255, 255, 0.55); /* Branco translúcido para efeito frosted glass */
+  --ciee-bg-input-focus: rgba(255, 255, 255, 0.95); /* Quase sólido ao focar */
 
   /* Tipografia */
   --ciee-text-h1: #1A0B2E;      /* Títulos fortes */
