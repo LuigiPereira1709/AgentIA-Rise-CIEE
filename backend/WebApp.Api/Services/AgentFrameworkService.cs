@@ -1585,22 +1585,24 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
         if (canonicalLower == "varcpf")
         {
             string cleanCpf = new string(value.Where(char.IsDigit).ToArray());
-            if (cleanCpf.Length == 11)
+            if (!IsValidCpf(cleanCpf))
+            {
+                result.IsValid = false;
+                result.Message = "\n*(Zoggy: O CPF fornecido é inválido. Por favor, verifique os dígitos.)*\n";
+            }
+            else
             {
                 string formattedCpf = $"{cleanCpf[..3]}.{cleanCpf[3..6]}.{cleanCpf[6..9]}-{cleanCpf[9..]}";
                 result.FieldUpdates = new Dictionary<string, string> { { canonicalField, formattedCpf } };
             }
-            else
-            {
-                result.FieldUpdates = new Dictionary<string, string> { { canonicalField, value } };
-            }
         }
         else if (canonicalLower == "varemail")
         {
-            if (!value.Contains("@") || !value.Contains("."))
+            string emailPattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
+            if (string.IsNullOrWhiteSpace(value) || !System.Text.RegularExpressions.Regex.IsMatch(value, emailPattern))
             {
                 result.IsValid = false;
-                result.Message = "\n*(Zoggy: O formato de e-mail fornecido parece inválido. Por favor, verifique-o.)*\n";
+                result.Message = "\n*(Zoggy: O formato de e-mail fornecido é inválido. Certifique-se de que não contém espaços e possui um formato correto.)*\n";
             }
             else
             {
