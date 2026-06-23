@@ -285,9 +285,10 @@ public class AgentFrameworkService : IDisposable
 - **Preenchimento Obrigatório (Sem Pulos):** Não permita que o usuário pule o preenchimento de campos obrigatórios (especialmente CPF, E-mail, Telefone e CEP) sem fornecer uma resposta. Se o usuário tentar desviar, insista com empatia na obtenção do dado.
 - **Sincronização de Estado via Chamadas de Função (Tools):**
   1. Sempre que o usuário fornecer, corrigir ou atualizar um dado do cadastro, você **DEVE obrigatoriamente chamar a função ""update_registration_form""** passando o nome da variável (""field"") e o valor correspondente (""value"").
-  2. Nunca responda confirmando que salvou ou que o campo foi atualizado sem antes acionar a função e receber a resposta de sucesso do sistema.
-  3. Se a função retornar um erro (ex: ""{""status"":""error"",""message"":""...""}""), você **DEVE** interromper o fluxo natural, explicar o erro de forma educada (ex: formato de e-mail inválido) e pedir para o usuário digitar novamente.
-  4. A resposta de sucesso da função conterá os valores formatados no campo ""updates"". Sempre use esses valores formatados ao confirmar o dado recebido na conversa com o estudante (ex: se a função retornar o CPF formatado como ""123.456.789-00"", diga ""CPF 123.456.789-00 anotado!"" em vez de usar os números brutos).
+  2. Caso o estudante não saiba o CEP, você **DEVE obrigatoriamente chamar a função ""search_cep_by_address""** passando os parâmetros estruturados ""uf"", ""cidade"" e ""logradouro"".
+  3. Nunca responda confirmando que salvou ou que o campo foi atualizado sem antes acionar a função correspondente e receber a resposta de sucesso do sistema.
+  4. Se a função retornar um erro (ex: ""{""status"":""error"",""message"":""...""}""), você **DEVE** interromper o fluxo natural, explicar o erro de forma educada e pedir para o usuário digitar novamente ou corrigir as informações.
+  5. A resposta de sucesso da função conterá os valores formatados no campo ""updates"". Sempre use esses valores formatados ao confirmar o dado recebido na conversa com o estudante (ex: se a função retornar o CEP formatado ou outros campos atualizados no ""updates"", confirme-os usando estes valores formatados).
 - **Opções Fechadas:** Exiba opções de clique rápido (Quick Replies/Botões) para `varSexo`, `varEstadoCivil`, `varNivelEscolar`, `varModalidadeEnsino` e `varTurnoEnsino`.
 - **Sincronização de Estado:** Sempre atente-se ao padrão `[ESTADO_DO_FORMULARIO: ...]` no início das mensagens do usuário para saber quais dados já estão preenchidos na tela de cadastro e evitar perguntá-los novamente.
 
@@ -298,7 +299,7 @@ public class AgentFrameworkService : IDisposable
    - Apresente botões de clique rápido para Sexo e Estado Civil.
 3. **Contato:** Colete o e-mail (`varEmail`) e o telefone (`varTelefone`).
 4. **Endereço e Localização:**
-   - Peça o CEP (`varCEP`). Se o usuário não souber o CEP, pergunte o Estado (UF), Cidade e rua/avenida (Logradouro), e execute a busca automática (veja a seção de tags de Endereço abaixo).
+   - Peça o CEP (`varCEP`). Se o usuário não souber o CEP, pergunte o Estado (UF), Cidade e rua/avenida (Logradouro), e execute a busca chamando a função correspondente.
    - Uma vez que o CEP e o endereço completo sejam carregados na tela, colete de forma isolada o número da casa (`varNumeroCasa`).
 5. **Dados Educacionais:** Colete o nível escolar (`varNivelEscolar`), estado e cidade da instituição, nome da instituição (`varInstituicaoNome`), período/ano atual (`varPeriodoCursando`), modalidade de ensino (`varModalidadeEnsino`) e turno (`varTurnoEnsino`).
    - Use botões para Nível Escolar, Modalidade e Turno.
@@ -309,9 +310,7 @@ public class AgentFrameworkService : IDisposable
 
 Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
 - **Fluxo A (Entrada por CEP):** Peça o CEP. Ao receber, chame a função ""update_registration_form"" com o campo ""varCEP"" e o valor. O sistema preencherá automaticamente as variáveis de endereço.
-- **Fluxo B (Busca por Logradouro):** Se o usuário não souber o CEP, pergunte a ele o Estado (UF), Cidade e nome da rua/avenida. Ao coletar esses dados, envie a tag especial:
-  `[[SEARCH_CEP: UF/Cidade/Logradouro]]` (exemplo: `[[SEARCH_CEP: SP/São Paulo/Avenida Paulista]]`).
-  O sistema fará a varredura e preencherá o CEP e o endereço automaticamente.
+- **Fluxo B (Busca por Logradouro):** Se o usuário não souber o CEP, pergunte a ele o Estado (UF), Cidade e nome da rua/avenida. Ao coletar esses dados, chame a função ""search_cep_by_address"" com os respectivos parâmetros (uf, cidade, logradouro). O sistema fará a varredura e preencherá o CEP e o endereço automaticamente.
 
 *Importante:* Colete o número da casa (`varNumeroCasa`) de forma isolada *após* a confirmação do endereço.";
 
@@ -358,6 +357,21 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
                     });
 
                     newDefinition.Tools.Add(new FunctionTool("update_registration_form", parameters, null));
+
+                    var searchCepParameters = BinaryData.FromObjectAsJson(new
+                    {
+                        type = "object",
+                        description = "Busca o CEP e preenche as informações de endereço do estudante usando o Estado (UF), Cidade e Logradouro.",
+                        properties = new
+                        {
+                            uf = new { type = "string", description = "A sigla do Estado com duas letras maiúsculas (ex: SP, RJ, MG)" },
+                            cidade = new { type = "string", description = "O nome da cidade (ex: São Paulo, Rio de Janeiro)" },
+                            logradouro = new { type = "string", description = "O nome do logradouro/rua/avenida (ex: Avenida Paulista, Rua das Flores)" }
+                        },
+                        required = new[] { "uf", "cidade", "logradouro" }
+                    });
+
+                    newDefinition.Tools.Add(new FunctionTool("search_cep_by_address", searchCepParameters, null));
 
                     var creationResponse = await client.AgentAdministrationClient.CreateAgentVersionAsync(
                         _agentId,
@@ -712,6 +726,45 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
                         catch (Exception ex)
                         {
                             _logger.LogError(ex, "Error parsing function call arguments.");
+                            resultJson = $"{{\"status\":\"error\",\"message\":\"{ex.Message}\"}}";
+                        }
+                    }
+                    else if (functionName == "search_cep_by_address")
+                    {
+                        try
+                        {
+                            using var doc = JsonDocument.Parse(argumentsJson);
+                            if (doc.RootElement.TryGetProperty("uf", out var ufProp) &&
+                                doc.RootElement.TryGetProperty("cidade", out var cityProp) &&
+                                doc.RootElement.TryGetProperty("logradouro", out var streetProp))
+                            {
+                                string uf = ufProp.GetString() ?? "";
+                                string city = cityProp.GetString() ?? "";
+                                string street = streetProp.GetString() ?? "";
+
+                                var searchResult = await SearchCepByAddressAsync(uf, city, street);
+                                if (searchResult.Success && searchResult.FieldUpdates != null)
+                                {
+                                    string updatesJson = JsonSerializer.Serialize(searchResult.FieldUpdates);
+                                    resultJson = $"{{\"status\":\"success\",\"updates\":{updatesJson}}}";
+                                    foreach (var updatePair in searchResult.FieldUpdates)
+                                    {
+                                        functionFieldUpdates.Add(StreamChunk.FormField(updatePair.Key, updatePair.Value));
+                                    }
+                                }
+                                else
+                                {
+                                    resultJson = $"{{\"status\":\"error\",\"message\":\"{searchResult.Message ?? "Endereço não localizado"}\"}}";
+                                }
+                            }
+                            else
+                            {
+                                resultJson = "{\"status\":\"error\",\"message\":\"Parâmetros inválidos para busca de CEP.\"}";
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error parsing search_cep_by_address function call arguments.");
                             resultJson = $"{{\"status\":\"error\",\"message\":\"{ex.Message}\"}}";
                         }
                     }
@@ -1733,7 +1786,7 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
         return true;
     }
 
-    private class CepLookupResult
+    internal class CepLookupResult
     {
         public bool Success { get; set; }
         public string? Message { get; set; }
@@ -1790,21 +1843,11 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
         }
     }
 
-    private async Task<CepLookupResult> SearchCepAsync(string query)
+    internal async Task<CepLookupResult> SearchCepByAddressAsync(string uf, string city, string street)
     {
-        var parts = query.Split('/', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length < 3)
-        {
-            return new CepLookupResult 
-            { 
-                Success = false, 
-                Message = "\n*(Zoggy: Formato de busca por endereço inválido. O agente deve fornecer no formato 'UF/Cidade/Logradouro'.)*\n" 
-            };
-        }
-
-        string uf = parts[0].Trim();
-        string cidade = Uri.EscapeDataString(parts[1].Trim());
-        string logradouro = Uri.EscapeDataString(parts[2].Trim());
+        uf = uf.Trim();
+        city = city.Trim();
+        street = street.Trim();
 
         if (uf.Length != 2)
         {
@@ -1820,7 +1863,9 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
             var client = _httpClientFactory.CreateClient();
             client.Timeout = TimeSpan.FromSeconds(5);
             
-            string url = $"https://viacep.com.br/ws/{uf}/{cidade}/{logradouro}/json/";
+            string escapedCity = Uri.EscapeDataString(city);
+            string escapedStreet = Uri.EscapeDataString(street);
+            string url = $"https://viacep.com.br/ws/{uf}/{escapedCity}/{escapedStreet}/json/";
             var response = await client.GetAsync(url);
             if (!response.IsSuccessStatusCode)
             {
@@ -1832,38 +1877,53 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
             
             if (doc.RootElement.ValueKind != JsonValueKind.Array || doc.RootElement.GetArrayLength() == 0)
             {
-                return new CepLookupResult { Success = false, Message = $"\n*(Zoggy: Nenhum CEP correspondente encontrado para '{parts[2]}, {parts[1]} - {parts[0]}'.)*\n" };
+                return new CepLookupResult { Success = false, Message = $"\n*(Zoggy: Nenhum CEP correspondente encontrado para '{street}, {city} - {uf}'.)*\n" };
             }
 
             var firstMatch = doc.RootElement[0];
             
             string cep = firstMatch.TryGetProperty("cep", out var c) ? c.GetString() ?? "" : "";
-            string street = firstMatch.TryGetProperty("logradouro", out var l) ? l.GetString() ?? "" : "";
+            string matchStreet = firstMatch.TryGetProperty("logradouro", out var l) ? l.GetString() ?? "" : "";
             string neighborhood = firstMatch.TryGetProperty("bairro", out var b) ? b.GetString() ?? "" : "";
-            string city = firstMatch.TryGetProperty("localidade", out var loc) ? loc.GetString() ?? "" : "";
-            string state = firstMatch.TryGetProperty("uf", out var u) ? u.GetString() ?? "" : "";
+            string matchCity = firstMatch.TryGetProperty("localidade", out var loc) ? loc.GetString() ?? "" : "";
+            string matchState = firstMatch.TryGetProperty("uf", out var u) ? u.GetString() ?? "" : "";
 
             var updates = new Dictionary<string, string>
             {
                 { "varCEP", cep },
-                { "varLogradouro", street },
+                { "varLogradouro", matchStreet },
                 { "varBairro", neighborhood },
-                { "varCidade", city },
-                { "varEstado", state }
+                { "varCidade", matchCity },
+                { "varEstado", matchState }
             };
 
             return new CepLookupResult
             {
                 Success = true,
                 FieldUpdates = updates,
-                Message = $"\n*(Zoggy: Encontrei o endereço! CEP: {cep}, Logradouro: {street}, Bairro: {neighborhood}, Cidade: {city} - {state})*\n"
+                Message = $"\n*(Zoggy: Encontrei o endereço! CEP: {cep}, Logradouro: {matchStreet}, Bairro: {neighborhood}, Cidade: {matchCity} - {matchState})*\n"
             };
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error searching address {Query}", query);
-            return new CepLookupResult { Success = false, Message = "\n*(Zoggy: Ocorreu um erro ao pesquisar o endereço.)*\n" };
+            _logger.LogError(ex, "Error searching CEP for {Uf}/{City}/{Street}", uf, city, street);
+            return new CepLookupResult { Success = false, Message = "\n*(Zoggy: Não foi possível realizar a consulta do CEP no momento.)*\n" };
         }
+    }
+
+    private async Task<CepLookupResult> SearchCepAsync(string query)
+    {
+        var parts = query.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length < 3)
+        {
+            return new CepLookupResult 
+            { 
+                Success = false, 
+                Message = "\n*(Zoggy: Formato de busca por endereço inválido. O agente deve fornecer no formato 'UF/Cidade/Logradouro'.)*\n" 
+            };
+        }
+
+        return await SearchCepByAddressAsync(parts[0], parts[1], parts[2]);
     }
 
     public void Dispose()
