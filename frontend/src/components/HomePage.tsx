@@ -51,14 +51,17 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
           <div className={styles.glowRing} />
         </div>
 
-        {/* Header text */}
-        <p className={styles.subtitle}>
-          Selecione uma das opções abaixo para continuar
+        <h1 className={styles.welcomeTitle}>
+          Seja bem-vindo(a)<br/>ao CIEE!
+        </h1>
+
+        <p className={styles.description}>
+          Para iniciar seu processo cadastral de forma simples e conversacional, o nosso assistente virtual guiará você passo a passo na coleta dos dados necessários com total segurança e em conformidade com a LGPD.
         </p>
 
         {/* Navigation buttons */}
         <nav className={styles.navGrid} aria-label="Navegação principal">
-          <button
+          {/* <button
             id="btn-registration"
             className={`${styles.navBtn} ${styles.btnRegistration}`}
             onClick={() => onNavigate('registration')}
@@ -72,26 +75,24 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
               <span className={styles.btnDesc}>Registre suas informações no sistema</span>
             </span>
             <span className={styles.btnArrow}>›</span>
-          </button>
+          </button> */}
 
           <button
             id="btn-chat"
             className={`${styles.navBtn} ${styles.btnChat}`}
             onClick={() => onNavigate('chat')}
-            aria-label="Ir para o chatbot"
+            aria-label="Iniciar Cadastro"
           >
             <span className={`${styles.iconBadge} ${styles.iconBadgeChat}`}>
               💬
             </span>
             <span className={styles.btnTextGroup}>
-              <span className={styles.btnLabel}>Chatbot</span>
-              <span className={styles.btnDesc}>Converse com o agente de IA</span>
+              <span className={styles.btnLabel}>Iniciar Cadastro</span>
+              <span className={styles.btnDesc}>Faça seu cadastro com a ajuda do nosso assistente</span>
             </span>
             <span className={styles.btnArrow}>›</span>
           </button>
         </nav>
-
-        <p className={styles.footerNote}>HONK</p>
       </div>
     </div>
   );
