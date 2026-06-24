@@ -102,6 +102,22 @@
   margin-right: 8px;
 }
 
+/* AI Warning Icon styling */
+.aiWarningIcon {
+  font-size: 14px;
+  color: var(--colorNeutralForeground3);
+  margin-left: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+  transition: color 0.2s ease;
+}
+
+.aiWarningIcon:hover {
+  color: var(--colorNeutralForeground1);
+}
+
 /* Citation list container */
 .citationList {
   display: flex;

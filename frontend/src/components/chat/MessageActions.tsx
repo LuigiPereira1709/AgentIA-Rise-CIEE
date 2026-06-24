@@ -49,15 +49,7 @@ function MessageActionsComponent({ content, onRegenerate, onFeedback }: MessageA
         </button>
       </Tooltip>
 
-      <Tooltip content="Regenerate" relationship="label" withArrow>
-        <button
-          className={styles.actionButton}
-          onClick={onRegenerate}
-          aria-label="Regenerate response"
-        >
-          <ArrowClockwiseRegular fontSize={16} />
-        </button>
-      </Tooltip>
+
 
       <Tooltip content="Good response" relationship="label" withArrow>
         <button

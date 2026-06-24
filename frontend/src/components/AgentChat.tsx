@@ -26,7 +26,7 @@ interface AgentChatProps {
   onBack?: () => void;
 }
 
-export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Agente IA', agentDescription, agentLogo, starterPrompts, onNavigateToRegister, onBack }) => {
+export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Assistente CIEE', agentDescription, agentLogo, starterPrompts, onNavigateToRegister, onBack }) => {
   const { chat, state } = useAppState();
   const { dispatch } = useAppContext();
   const { getAccessToken, login } = useAuth();
@@ -301,7 +301,7 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Agente IA', a
 
           <div className={styles.navbarCenter}>
             <span className={styles.navbarAgentName}>
-              {agentName || 'Agente IA'}
+              {agentName || 'Assistente CIEE'}
             </span>
             <span className={styles.navbarOnlineDot} />
           </div>

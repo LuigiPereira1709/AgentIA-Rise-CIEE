@@ -1,7 +1,7 @@
 import { Suspense, memo, useMemo, useCallback } from 'react';
 import { Spinner, Tooltip, Text } from '@fluentui/react-components';
 import { CopilotMessage } from '@fluentui-copilot/react-copilot-chat';
-import { DocumentRegular, GlobeRegular, FolderRegular, OpenRegular, ArrowSyncRegular } from '@fluentui/react-icons';
+import { DocumentRegular, GlobeRegular, FolderRegular, OpenRegular, ArrowSyncRegular, Info16Regular } from '@fluentui/react-icons';
 import { Markdown } from '../core/Markdown';
 import { AgentIcon } from '../core/AgentIcon';
 import { UsageInfo } from './UsageInfo';
@@ -178,7 +178,7 @@ function AssistantMessageComponent({
       name={agentName}
       loadingState="none"
       className={styles.copilotMessage}
-      disclaimer={<span>AI-generated content may be incorrect</span>}
+      disclaimer={null}
       footnote={
         <div className={styles.footnoteContainer}>
           {hasAnnotations && !isStreaming && (
@@ -189,12 +189,9 @@ function AssistantMessageComponent({
           <div className={styles.metadataRow}>
             <div className={styles.metadataLeft}>
               {timestamp && <span className={styles.timestamp}>{timestamp}</span>}
-              {message.more?.usage && (
-                <UsageInfo 
-                  info={message.more.usage} 
-                  duration={message.duration} 
-                />
-              )}
+              <Tooltip content="O conteúdo gerado por IA pode conter erros." relationship="label">
+                <span className={styles.aiWarningIcon}><Info16Regular /></span>
+              </Tooltip>
             </div>
             {!isStreaming && message.content && onRegenerate && (
               <MessageActions
