@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import { AgentIcon } from '../core/AgentIcon';
-import { GooseHeadIcon } from '../RegistrationForm';
 import styles from './StarterMessages.module.css';
 
 interface IStarterMessageProps {
@@ -15,7 +14,7 @@ interface IStarterMessageProps {
 const defaultStarterPrompts = [
   "Como funciona o sistema de cadastro?",
   "Quais são suas capacidades?",
-  "Me conte uma curiosidade sobre gansos!",
+  "Me conte uma curiosidade sobre corujas!",
 ];
 
 
@@ -39,9 +38,9 @@ export const StarterMessages = ({
 
         {/* Saudação */}
         <h2 className={styles.welcome} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: '6px' }}>
-          {agentName === 'Assistente CIEE' ? (
+          {agentName === 'Lumi' || agentName === 'Assistente CIEE' ? (
             <>
-              Olá! Sou Assistente
+              Olá! Sou Lumi, Assistente
               <div style={{ display: 'flex', alignItems: 'center' }}>
                 <AgentIcon size="large" logoUrl={agentLogo} />
               </div>

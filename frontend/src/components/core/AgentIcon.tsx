@@ -1,5 +1,6 @@
 import { Avatar } from '@fluentui/react-components';
 import { CieeLogo } from '../HomePage';
+import { GooseHeadIcon } from '../RegistrationForm';
 
 interface AgentIconProps {
   alt?: string;
@@ -40,8 +41,8 @@ export function AgentIcon({
             flexShrink: 0
           }}
         >
-          <div style={{ transform: `scale(${size === 'small' ? 0.28 : size === 'medium' ? 0.38 : 0.48})`, transformOrigin: 'center' }}>
-            <CieeLogo />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', transform: `scale(${size === 'small' ? 0.8 : size === 'medium' ? 1.0 : 1.2})`, transformOrigin: 'center' }}>
+            <GooseHeadIcon />
           </div>
         </div>
       );

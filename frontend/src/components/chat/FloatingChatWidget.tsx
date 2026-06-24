@@ -158,7 +158,7 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
         className={`${styles.gooseFab} ${isChaosMode ? styles.chaosFab : ''} ${isOpen ? styles.fabOpen : ''}`}
         onClick={() => setIsOpen(!isOpen)}
         aria-label={isOpen ? 'Fechar assistente' : 'Abrir assistente'}
-        title={isOpen ? 'Fechar assistente' : 'Fala com o Ganso!'}
+        title={isOpen ? 'Fechar assistente' : 'Fala com a Coruja!'}
       >
         {isOpen
           ? <Dismiss24Regular style={{ color: '#ffffff', width: 22, height: 22 }} />
@@ -186,7 +186,7 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
                   {isChaosMode ? 'Assistente em Pânico! 😱' : 'Assistente Virtual'}
                 </h4>
                 <span className={styles.subtitleText}>
-                  {isChaosMode ? 'O ganso dominou o sistema!' : '● Online — Tire suas dúvidas'}
+                  {isChaosMode ? 'A coruja dominou o sistema!' : '● Online — Tire suas dúvidas'}
                 </span>
               </div>
             </div>

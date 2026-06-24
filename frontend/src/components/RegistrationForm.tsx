@@ -20,35 +20,46 @@ import styles from './RegistrationForm.module.css';
 export const GooseHeadIcon: React.FC<{ isChaos?: boolean }> = ({ isChaos = false }) => {
   return (
     <svg 
-      viewBox="22 20 66 48" 
-      width="24" 
-      height="18" 
+      viewBox="10 0 60 55" 
+      width="28" 
+      height="28" 
       style={{ overflow: 'visible' }}
     >
-      {/* Head */}
-      <circle 
-        cx="46" 
-        cy="44" 
-        r="18" 
-        fill="#ffffff" 
-        stroke="#0c0f1d" 
-        strokeWidth="2.5" 
-      />
-      {/* Cheek / Blush */}
-      <circle cx="38" cy="50" r="3.5" fill="rgba(255, 90, 95, 0.4)" />
+      {/* Left Ear */}
+      <path d="M 22 16 C 16 8 18 3 28 12 Z" fill="#1b4f8f" stroke="#0c0f1d" strokeWidth="2" strokeLinejoin="round" />
+      {/* Right Ear */}
+      <path d="M 58 16 C 64 8 62 3 52 12 Z" fill="#1b4f8f" stroke="#0c0f1d" strokeWidth="2" strokeLinejoin="round" />
+
+      {/* Head Base */}
+      <ellipse cx="40" cy="30" rx="22" ry="18" fill="#1b4f8f" stroke="#0c0f1d" strokeWidth="2" />
       
-      {/* Eye */}
+      {/* Eye Spectacles (Orange Outline) */}
+      <circle cx="31" cy="30" r="10" fill="#ff9f1c" stroke="#0c0f1d" strokeWidth="2" />
+      <circle cx="49" cy="30" r="10" fill="#ff9f1c" stroke="#0c0f1d" strokeWidth="2" />
+      
+      {/* Eyes (White part) */}
+      <circle cx="31" cy="30" r="7" fill="#ffffff" stroke="#0c0f1d" strokeWidth="1.5" />
+      <circle cx="49" cy="30" r="7" fill="#ffffff" stroke="#0c0f1d" strokeWidth="1.5" />
+      
       {isChaos ? (
-        <path d="M 42 38 L 50 44" stroke="#000000" strokeWidth="2.5" strokeLinecap="round" />
+        <>
+          <path d="M 24 23 L 38 37 M 38 23 L 24 37" stroke="#0c0f1d" strokeWidth="2.5" strokeLinecap="round" />
+          <path d="M 42 23 L 56 37 M 56 23 L 42 37" stroke="#0c0f1d" strokeWidth="2.5" strokeLinecap="round" />
+        </>
       ) : (
-        <circle cx="48" cy="40" r="2.5" fill="#000000" />
+        <>
+          {/* Pupils */}
+          <circle cx="31" cy="30" r="4" fill="#000000" />
+          <circle cx="49" cy="30" r="4" fill="#000000" />
+          
+          {/* Eye Highlights */}
+          <circle cx="32.5" cy="28.5" r="1.5" fill="#ffffff" />
+          <circle cx="50.5" cy="28.5" r="1.5" fill="#ffffff" />
+        </>
       )}
 
       {/* Beak */}
-      {/* Bottom Beak */}
-      <path d="M 60 46 Q 74 48 81 48 Q 68 48 60 46 Z" fill="#ff9f1c" stroke="#0c0f1d" strokeWidth="2" />
-      {/* Top Beak */}
-      <path d="M 60 38 Q 78 40 85 44 Q 70 48 60 46 Z" fill="#ff9f1c" stroke="#0c0f1d" strokeWidth="2" />
+      <path d="M 37 36 Q 40 33 43 36 L 40 43 Z" fill="#ff9f1c" stroke="#0c0f1d" strokeWidth="1.5" strokeLinejoin="round" />
     </svg>
   );
 };
@@ -56,39 +67,51 @@ export const GooseHeadIcon: React.FC<{ isChaos?: boolean }> = ({ isChaos = false
 export const GooseBodyIcon: React.FC = () => {
   return (
     <svg 
-      viewBox="15 10 75 70" 
+      viewBox="0 0 80 80" 
       width="24" 
       height="24" 
       style={{ overflow: 'visible' }}
     >
       <g>
-        {/* Body */}
-        <ellipse cx="38" cy="52" rx="20" ry="14" fill="#ffffff" stroke="#0c0f1d" strokeWidth="2" />
-        {/* Wing hint */}
-        <path d="M 22 54 Q 28 60 38 58" fill="none" stroke="#e0e0e0" strokeWidth="1.5" />
-        
-        {/* Neck */}
-        <path d="M 48 42 C 55 32 54 24 54 18" stroke="#ffffff" strokeWidth="10" strokeLinecap="round" fill="none" />
-        
-        {/* Legs */}
-        <line x1="32" y1="64" x2="30" y2="72" stroke="#ff9f1c" strokeWidth="2.5" strokeLinecap="round" />
-        <line x1="42" y1="65" x2="44" y2="73" stroke="#ff9f1c" strokeWidth="2.5" strokeLinecap="round" />
-        {/* Feet */}
-        <line x1="30" y1="72" x2="24" y2="72" stroke="#ff9f1c" strokeWidth="2" strokeLinecap="round" />
-        <line x1="44" y1="73" x2="50" y2="73" stroke="#ff9f1c" strokeWidth="2" strokeLinecap="round" />
+        {/* Legs/Claws */}
+        <path d="M 32 66 L 30 74 M 32 66 L 34 74" stroke="#ff9f1c" strokeWidth="2.5" strokeLinecap="round" />
+        <path d="M 48 66 L 46 74 M 48 66 L 50 74" stroke="#ff9f1c" strokeWidth="2.5" strokeLinecap="round" />
 
-        {/* Head */}
-        <circle cx="54" cy="16" r="14" fill="#ffffff" stroke="#0c0f1d" strokeWidth="2" />
-        
-        {/* Cheek / Blush */}
-        <circle cx="53" cy="21" r="3.5" fill="rgba(255, 90, 95, 0.4)" />
+        {/* Wings */}
+        <path d="M 22 40 Q 8 55 18 68 Q 26 55 24 40 Z" fill="#103a6e" stroke="#0c0f1d" strokeWidth="2" strokeLinejoin="round" />
+        <path d="M 58 40 Q 72 55 62 68 Q 54 55 56 40 Z" fill="#103a6e" stroke="#0c0f1d" strokeWidth="2" strokeLinejoin="round" />
 
-        {/* Eye */}
-        <circle cx="58" cy="12" r="2.5" fill="#000000" />
+        {/* Owl Body Base */}
+        <ellipse cx="40" cy="46" rx="20" ry="22" fill="#1b4f8f" stroke="#0c0f1d" strokeWidth="2" />
+        {/* Owl Belly */}
+        <ellipse cx="40" cy="50" rx="14" ry="16" fill="#ffffff" stroke="#0c0f1d" strokeWidth="1.5" />
+
+        {/* Left Ear */}
+        <path d="M 22 16 C 16 8 18 3 28 12 Z" fill="#1b4f8f" stroke="#0c0f1d" strokeWidth="2" strokeLinejoin="round" />
+        {/* Right Ear */}
+        <path d="M 58 16 C 64 8 62 3 52 12 Z" fill="#1b4f8f" stroke="#0c0f1d" strokeWidth="2" strokeLinejoin="round" />
+
+        {/* Head Base */}
+        <ellipse cx="40" cy="30" rx="22" ry="18" fill="#1b4f8f" stroke="#0c0f1d" strokeWidth="2" />
+        
+        {/* Eye Spectacles (Orange Outline) */}
+        <circle cx="31" cy="30" r="10" fill="#ff9f1c" stroke="#0c0f1d" strokeWidth="2" />
+        <circle cx="49" cy="30" r="10" fill="#ff9f1c" stroke="#0c0f1d" strokeWidth="2" />
+        
+        {/* Eyes (White part) */}
+        <circle cx="31" cy="30" r="7" fill="#ffffff" stroke="#0c0f1d" strokeWidth="1.5" />
+        <circle cx="49" cy="30" r="7" fill="#ffffff" stroke="#0c0f1d" strokeWidth="1.5" />
+        
+        {/* Pupils */}
+        <circle cx="31" cy="30" r="4" fill="#000000" />
+        <circle cx="49" cy="30" r="4" fill="#000000" />
+        
+        {/* Eye Highlights */}
+        <circle cx="32.5" cy="28.5" r="1.5" fill="#ffffff" />
+        <circle cx="50.5" cy="28.5" r="1.5" fill="#ffffff" />
 
         {/* Beak */}
-        <path d="M 64 18.5 Q 70 19 84 18.5 Q 70 23 64 21 Z" fill="#ff9f1c" stroke="#0c0f1d" strokeWidth="1.8" />
-        <path d="M 64 16 Q 80 16 84 18.5 Q 70 19 64 18.5 Z" fill="#ff9f1c" stroke="#0c0f1d" strokeWidth="1.8" />
+        <path d="M 37 36 Q 40 33 43 36 L 40 43 Z" fill="#ff9f1c" stroke="#0c0f1d" strokeWidth="1.5" strokeLinejoin="round" />
       </g>
     </svg>
   );
@@ -158,14 +181,14 @@ const ACHIEVEMENTS: Record<string, Achievement> = {
   },
   duck_friend: {
     id: 'duck_friend',
-    title: '🦆 Amigo dos Animais',
-    description: 'Fez carinho ou irritou o ganso 5 vezes.',
-    icon: '🦆'
+    title: '🦉 Amigo dos Animais',
+    description: 'Fez carinho ou irritou a coruja 5 vezes.',
+    icon: '🦉'
   },
   heist_victim: {
     id: 'heist_victim',
-    title: '💖 Domador de Gansos',
-    description: 'Acalmou o ganso fazendo carinho até a travessura zerar.',
+    title: '💖 Domador de Corujas',
+    description: 'Acalmou a coruja fazendo carinho até a travessura zerar.',
     icon: '💖'
   },
   curious: {
@@ -177,7 +200,7 @@ const ACHIEVEMENTS: Record<string, Achievement> = {
   chaos_agent: {
     id: 'chaos_agent',
     title: '😈 Agente do Caos',
-    description: 'Deixou o ganso atingir 100% de travessura e ativar o Modo Caos.',
+    description: 'Deixou a coruja atingir 100% de travessura e ativar o Modo Caos.',
     icon: '😈'
   }
 };
@@ -564,12 +587,12 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
           </Text>
         </div>
 
-        {/* Centralized Goose Mischief Meter & Controls */}
+        {/* Centralized Owl Mischief Meter & Controls */}
         <div className={styles.navMischiefMeter}>
           <div className={styles.navMischiefHeader}>
             <span className={styles.navMischiefTitle}>
               <GooseHeadIcon isChaos={isChaosMode} />
-              {isChaosMode ? "Ganso no MODO CAOS!" : "Travessura do Ganso"}
+              {isChaosMode ? "Coruja no MODO CAOS!" : "Travessura da Coruja"}
             </span>
             <div className={styles.mischiefControls}>
               <span className={styles.mischiefPercent}>{mischiefLevel}%</span>
@@ -588,7 +611,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
             type="button"
             className={styles.soundToggleButton}
             onClick={() => setIsMuted(!isMuted)}
-            title={isMuted ? "Ativar som do ganso" : "Silenciar ganso"}
+            title={isMuted ? "Ativar som da coruja" : "Silenciar coruja"}
           >
             {isMuted ? "🔇" : "🔊"}
           </button>
@@ -608,7 +631,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
         />
 
         <div className={styles.formWrapper}>
-          {/* Goose Mascot (Desktop Goose style) */}
+          {/* Owl Mascot */}
           <GooseMascot 
             onHonk={handleGooseHonk} 
             focusedField={focusedField}

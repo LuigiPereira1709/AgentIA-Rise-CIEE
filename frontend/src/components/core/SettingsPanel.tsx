@@ -192,7 +192,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onOpenChan
               label="Efeitos Sonoros (Mascote e Chat)"
             />
             <Text className={styles.filesHint}>
-              Habilita ou desabilita os sons de digitação, envio de mensagens e interação do Ganso.
+              Habilita ou desabilita os sons de digitação, envio de mensagens e interação da Coruja.
             </Text>
           </div>
         </div>

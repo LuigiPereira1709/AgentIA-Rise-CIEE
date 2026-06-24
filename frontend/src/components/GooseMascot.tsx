@@ -11,42 +11,42 @@ interface GooseMascotProps {
 }
 
 const GANSO_PHRASES = [
-  "HONK! Menos conversa, mais pão!",
-  "Quack! Você tem certeza que esse e-mail existe?",
-  "Bip bop... quero dizer, HONK! 🤖",
-  "Peace was never an option. 🔪",
+  "UHU! Menos conversa, mais estudo!",
+  "Uhu! Você tem certeza que esse e-mail existe?",
+  "Bip bop... quero dizer, UHU! 🤖",
+  "O estágio é a chave do sucesso! 🗝️",
   "Se você não preencher, eu vou puxar o cabo da internet!",
-  "Formulário legal, seria uma pena se alguém... comesse ele. 🍞",
+  "Currículo legal, seria uma pena se alguém... comesse ele. 📄",
   "Estou de olho nesse seu cursor aí... 👀",
-  "Honk! Cadastrando mais um humano para o nosso banco de dados ganso.",
-  "Diga-me o seu cargo e eu direi se você é digno de me dar migalhas.",
-  "PAZ NUNCA FOI UMA OPÇÃO.\n\nAssinado: O Ganso. 🔪",
-  "Gostei do seu formulário.\nVou levar o botão de enviar comigo! 😈",
-  "Tarefas de hoje:\n1. Roubar chaves\n2. Jogar o rastelo no lago\n3. Cancelar esse cadastro",
-  "SISTEMA.ERR:\nQuantidade insuficiente de pão detectada no sistema.",
-  "A gravidade na Terra é de 9.8m/s²,\nmas a paciência do ganso é de 0."
+  "Uhu! Cadastrando mais um estagiário para o nosso banco de talentos.",
+  "Diga-me o seu curso e eu direi se você é digno de uma vaga.",
+  "Estou observando sua produtividade.\n\nAssinado: A Coruja. 🦉",
+  "Gostei do seu currículo.\nVou levar o botão de enviar comigo! 😈",
+  "Tarefas de hoje:\n1. Roubar canetas\n2. Voar pelo escritório\n3. Cancelar esse cadastro",
+  "SISTEMA.ERR:\nQuantidade insuficiente de café detectada no sistema. ☕",
+  "A gravidade na Terra é de 9.8m/s²,\nmas a paciência da coruja é de 0."
 ];
 
 const FIELD_HINTS = {
   name: [
     "Como se chama o seu avatar humano? 👤",
-    "Preencha o nome completo sem apelidos de pato! 🦆",
-    "Nome lindo! Quase tão bonito quanto 'Ganso'!"
+    "Preencha o nome completo sem apelidos! 🦉",
+    "Nome lindo! Quase tão bonito quanto 'Coruja'!"
   ],
   email: [
-    "Preciso do seu e-mail corporativo. Sem spam! 📧",
-    "Não tente inventar, eu vou de olho nesse e-mail! 🔍",
-    "Um e-mail para te mandar novidades sobre pão."
+    "Preciso do seu e-mail. Sem spam! 📧",
+    "Não tente inventar, eu estou de olho nesse e-mail! 🔍",
+    "Um e-mail para te mandar novidades sobre vagas."
   ],
   organization: [
-    "Onde você trabalha? Patrocinam seu trigo? 🌾",
-    "Qual empresa te paga para preencher formulários? 🏢",
-    "Escreva o nome da sua organização ou bando."
+    "Onde você quer estagiar? 🏢",
+    "Qual empresa te chama a atenção? 💼",
+    "Escreva o nome da sua organização de interesse."
   ],
   role: [
-    "Você faz o quê? Eu sou Especialista em Anarquia. 💼",
-    "Qual o seu cargo oficial na firma? 👔",
-    "Escreva sua profissão. Engenheiro de Honks?"
+    "Você estuda o quê? Eu sou Especialista em Integração. 🎓",
+    "Qual a sua área de atuação? 👔",
+    "Escreva seu curso. Engenharia de Voo Noturno?"
   ]
 };
 
@@ -422,7 +422,7 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
     // Trigger honk animation
     setIsHonking(true);
     setEyeState('angry');
-    setSpeechBubble("HONK!!! 💢");
+    setSpeechBubble("UHU!!! 💢");
     if (!isMuted) {
       playHonkSound();
     }
@@ -796,10 +796,10 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
 
     const strugglePhrases = [
       "ME SOLTA! 😡",
-      "QUACK! ME DEIXA! 💢",
-      "AIAI, MEU PESCOÇO! 🤕",
-      "HONK! NÃO ME TOCAS! 🪶",
-      "ISSO É ASSÉDIO DE GANSO! 🚨"
+      "UHU! ME DEIXA! 💢",
+      "AIAI, MINHAS PENAS! 🤕",
+      "UHU! NÃO ME TOCAS! 🦉",
+      "ISSO É ASSÉDIO DE CORUJA! 🚨"
     ];
     setSpeechBubble(strugglePhrases[Math.floor(Math.random() * strugglePhrases.length)]);
   };
@@ -828,10 +828,10 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
 
     const strugglePhrases = [
       "ME SOLTA! 😡",
-      "QUACK! ME DEIXA! 💢",
-      "AIAI, MEU PESCOÇO! 🤕",
-      "HONK! NÃO ME TOCAS! 🪶",
-      "ISSO É ASSÉDIO DE GANSO! 🚨"
+      "UHU! ME DEIXA! 💢",
+      "AIAI, MINHAS PENAS! 🤕",
+      "UHU! NÃO ME TOCAS! 🦉",
+      "ISSO É ASSÉDIO DE CORUJA! 🚨"
     ];
     setSpeechBubble(strugglePhrases[Math.floor(Math.random() * strugglePhrases.length)]);
   };
@@ -860,46 +860,6 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
   // Select eye element path based on eyeState (override to angry/X eye during drag)
   const effectiveEyeState = isDragging ? 'angry' : eyeState;
 
-  let eyeElement = <circle cx="58" cy="12" r="2.5" fill="#000000" />;
-  if (effectiveEyeState === 'angry') {
-    eyeElement = (
-      <path 
-        d="M 54 8 L 62 14 M 62 8 L 54 14" 
-        stroke="#000000" 
-        strokeWidth="2" 
-        strokeLinecap="round" 
-      />
-    );
-  } else if (effectiveEyeState === 'wink') {
-    eyeElement = (
-      <path 
-        d="M 54 14 Q 58 9 62 14" 
-        stroke="#000000" 
-        strokeWidth="2" 
-        fill="none" 
-        strokeLinecap="round" 
-      />
-    );
-  } else if (effectiveEyeState === 'closed') {
-    eyeElement = (
-      <line 
-        x1="54" 
-        y1="12" 
-        x2="62" 
-        y2="12" 
-        stroke="#000000" 
-        strokeWidth="2" 
-        strokeLinecap="round" 
-      />
-    );
-  }
-
-  // Beak paths:
-  const topBeakD = "M 64 16 Q 80 16 84 18.5 Q 70 19 64 18.5 Z";
-  const bottomBeakD = (isHonking || isDragging)
-    ? "M 64 18.5 Q 74 27 82 24 Q 70 24 64 21 Z" 
-    : "M 64 18.5 Q 70 19 84 18.5 Q 70 23 64 21 Z";
-
   return (
     <div ref={containerRef} className={containerClass} style={inlineStyle}>
       {/* Speech Bubble */}
@@ -912,13 +872,13 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
 
 
 
-      {/* CSS/SVG Goose */}
+      {/* CSS/SVG Coruja */}
       <div 
         className={characterClass} 
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
         onMouseMove={handlePettingMove}
-        title={isChaosMode ? "FAÇA CARINHO PARA ACALMAR O GANSO!" : "Clique e arraste o ganso!"}
+        title={isChaosMode ? "FAÇA CARINHO PARA ACALMAR A CORUJA!" : "Clique e arraste a coruja!"}
       >
         <svg 
           viewBox="0 0 80 80" 
@@ -926,62 +886,88 @@ export const GooseMascot: React.FC<GooseMascotProps> = ({
           style={{ overflow: 'visible' }}
         >
           <g>
-            {/* Body */}
-            <ellipse cx="38" cy="52" rx="20" ry="14" fill="#ffffff" stroke="#0c0f1d" strokeWidth="2" />
-            {/* Wing hint */}
-            <path d="M 22 54 Q 28 60 38 58" fill="none" stroke="#e0e0e0" strokeWidth="1.5" />
-            
-            {/* Neck */}
-            <path d="M 48 42 C 55 32 54 24 54 18" stroke="#ffffff" strokeWidth="10" strokeLinecap="round" fill="none" />
-            
-            {/* Legs */}
-            <line x1="32" y1="64" x2="30" y2="72" stroke="#ff9f1c" strokeWidth="2.5" strokeLinecap="round" />
-            <line x1="42" y1="65" x2="44" y2="73" stroke="#ff9f1c" strokeWidth="2.5" strokeLinecap="round" />
-            {/* Feet */}
-            <line x1="30" y1="72" x2="24" y2="72" stroke="#ff9f1c" strokeWidth="2" strokeLinecap="round" />
-            <line x1="44" y1="73" x2="50" y2="73" stroke="#ff9f1c" strokeWidth="2" strokeLinecap="round" />
+            {/* Owl Body */}
+            <ellipse cx="40" cy="45" rx="22" ry="25" fill="#0054a6" stroke="#0c0f1d" strokeWidth="2" />
+            {/* Owl Belly */}
+            <ellipse cx="40" cy="50" rx="14" ry="16" fill="#ffffff" stroke="#0c0f1d" strokeWidth="1.5" />
 
-            {/* Head */}
-            <circle cx="54" cy="16" r="14" fill="#ffffff" stroke="#0c0f1d" strokeWidth="2" />
-            
-            {/* Cheek / Blush */}
-            <circle cx="53" cy="21" r="3.5" fill="rgba(255, 90, 95, 0.4)" />
+            {/* Left Ear */}
+            <path d="M 22 16 C 16 8 18 3 28 12 Z" fill="#1b4f8f" stroke="#0c0f1d" strokeWidth="2" strokeLinejoin="round" />
+            {/* Right Ear */}
+            <path d="M 58 16 C 64 8 62 3 52 12 Z" fill="#1b4f8f" stroke="#0c0f1d" strokeWidth="2" strokeLinejoin="round" />
 
-            {/* Eye */}
-            {eyeElement}
+            {/* Head Base */}
+            <ellipse cx="40" cy="30" rx="22" ry="18" fill="#1b4f8f" stroke="#0c0f1d" strokeWidth="2" />
+            
+            {/* Eye Spectacles (Orange Outline) */}
+            <circle cx="31" cy="30" r="10" fill="#ff9f1c" stroke="#0c0f1d" strokeWidth="2" />
+            <circle cx="49" cy="30" r="10" fill="#ff9f1c" stroke="#0c0f1d" strokeWidth="2" />
+            
+            {/* Eyes (White part) */}
+            <circle cx="31" cy="30" r="7" fill="#ffffff" stroke="#0c0f1d" strokeWidth="1.5" />
+            <circle cx="49" cy="30" r="7" fill="#ffffff" stroke="#0c0f1d" strokeWidth="1.5" />
+            
+            {effectiveEyeState === 'angry' ? (
+              <>
+                <path d="M 24 23 L 38 37 M 38 23 L 24 37" stroke="#0c0f1d" strokeWidth="2.5" strokeLinecap="round" />
+                <path d="M 42 23 L 56 37 M 56 23 L 42 37" stroke="#0c0f1d" strokeWidth="2.5" strokeLinecap="round" />
+              </>
+            ) : effectiveEyeState === 'closed' ? (
+              <>
+                <line x1="26" y1="30" x2="36" y2="30" stroke="#0c0f1d" strokeWidth="2.5" strokeLinecap="round" />
+                <line x1="44" y1="30" x2="54" y2="30" stroke="#0c0f1d" strokeWidth="2.5" strokeLinecap="round" />
+              </>
+            ) : effectiveEyeState === 'wink' ? (
+              <>
+                {/* Left eye winking (closed) */}
+                <line x1="26" y1="30" x2="36" y2="30" stroke="#0c0f1d" strokeWidth="2.5" strokeLinecap="round" />
+                {/* Right eye normal */}
+                <circle cx="49" cy="30" r="4" fill="#000000" />
+                <circle cx="50.5" cy="28.5" r="1.5" fill="#ffffff" />
+              </>
+            ) : (
+              <>
+                {/* Pupils */}
+                <circle cx="31" cy="30" r="4" fill="#000000" />
+                <circle cx="49" cy="30" r="4" fill="#000000" />
+                
+                {/* Eye Highlights */}
+                <circle cx="32.5" cy="28.5" r="1.5" fill="#ffffff" />
+                <circle cx="50.5" cy="28.5" r="1.5" fill="#ffffff" />
+              </>
+            )}
 
             {/* Beak */}
-            <path d={bottomBeakD} fill="#ff9f1c" stroke="#0c0f1d" strokeWidth="1.8" />
-            <path d={topBeakD} fill="#ff9f1c" stroke="#0c0f1d" strokeWidth="1.8" />
+            {isHonking || isDragging ? (
+              <>
+                <path d="M 36 36 L 44 36 L 40 40 Z" fill="#ff9f1c" stroke="#0c0f1d" strokeWidth="1.5" />
+                <path d="M 37 42 L 43 42 L 40 46 Z" fill="#ff9f1c" stroke="#0c0f1d" strokeWidth="1.5" />
+              </>
+            ) : (
+              <path d="M 37 36 Q 40 33 43 36 L 40 43 Z" fill="#ff9f1c" stroke="#0c0f1d" strokeWidth="1.5" strokeLinejoin="round" />
+            )}
 
             {/* Chaos Accessories */}
             {isChaosMode && (
               <g>
-                {/* Temple/Arm */}
-                <path d="M 50 8 Q 43 5 36 10" stroke="#0c0f1d" strokeWidth="2" fill="none" />
-                {/* Lens */}
-                <polygon points="46,5 64,5 61,15 49,15" fill="#000000" stroke="#0c0f1d" strokeWidth="2" />
-                {/* Lens reflection */}
-                <line x1="50" y1="8" x2="56" y2="12" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" />
+                <path d="M 50 16 Q 43 13 36 18" stroke="#0c0f1d" strokeWidth="2" fill="none" />
+                <polygon points="46,13 64,13 61,23 49,23" fill="#000000" stroke="#0c0f1d" strokeWidth="2" />
+                <line x1="50" y1="16" x2="56" y2="20" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" />
               </g>
             )}
 
             {isChaosMode && (
-              <g transform="translate(74, 18) rotate(20) scale(1.2)">
-                {/* Knife Handle (hilt) */}
+              <g transform="translate(68, 48) rotate(20) scale(1.2)">
                 <rect x="-8" y="-2" width="8" height="4" rx="1" fill="#704214" stroke="#0c0f1d" strokeWidth="1" />
-                {/* Guard */}
                 <rect x="0" y="-4" width="2" height="8" rx="0.5" fill="#b0b0b0" stroke="#0c0f1d" strokeWidth="1" />
-                {/* Blade */}
                 <path d="M 2 -2 L 18 -2 C 18 -2, 21 1, 16 2 L 2 2 Z" fill="#d0d0d0" stroke="#0c0f1d" strokeWidth="1.2" />
-                {/* Blade cutting edge reflection */}
                 <path d="M 3 1 L 16 1" stroke="#ffffff" strokeWidth="0.8" />
               </g>
             )}
 
             {/* Fake Cursor in the Beak */}
             {(heistState === 'holding' || heistState === 'retreating') && (
-              <g transform="translate(82, 19) rotate(-35) scale(1.3)">
+              <g transform="translate(45, 40) rotate(-35) scale(1.3)">
                 <path 
                   d="M 0 0 L 8 8 L 5 9 L 7 14 L 5 15 L 3 10 L 0 12 Z" 
                   fill="#ffffff" 

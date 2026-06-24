@@ -75,10 +75,10 @@ export const AuxiliaryChatSidebar: React.FC<AuxiliaryChatSidebarProps> = ({
 
   return (
     <div className={`${styles.sidebar} ${isOpen ? styles.open : ''}`}>
-      
+
       {/* ── Pull Tab (visible when closed) ── */}
-      <button 
-        className={`${styles.pullTab} ${isOpen ? styles.pullTabHidden : ''}`} 
+      <button
+        className={`${styles.pullTab} ${isOpen ? styles.pullTabHidden : ''}`}
         onClick={onOpen}
         aria-label="Abrir Suporte"
         title="Suporte / Ajuda"
@@ -91,7 +91,7 @@ export const AuxiliaryChatSidebar: React.FC<AuxiliaryChatSidebarProps> = ({
           <div className={styles.avatarGlow}>
             <GooseHeadIcon />
           </div>
-          <span className={styles.headerTitle}>Ganso Assistente</span>
+          <span className={styles.headerTitle}>Lumi Assistente</span>
         </div>
         <div className={styles.headerActions}>
           {messages.length > 0 && (
@@ -165,7 +165,7 @@ export const AuxiliaryChatSidebar: React.FC<AuxiliaryChatSidebarProps> = ({
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Peça ajuda ao Ganso..."
+          placeholder="Peça ajuda à Coruja..."
           rows={2}
           className={styles.textarea}
           disabled={isBusy}
