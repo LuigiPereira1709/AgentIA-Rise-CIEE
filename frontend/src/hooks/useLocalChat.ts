@@ -75,22 +75,26 @@ export function useLocalChat(options?: UseLocalChatOptions): UseLocalChatResult 
     setMessages((prev) => [...prev, initialAssistantMessage]);
 
     try {
-      const token = await getAccessToken();
-      if (!token) {
-        throw new Error('Authentication token not found. Please log in.');
-      }
+      const token = await getAccessToken().catch((err) => {
+        console.warn('Failed to retrieve access token:', err);
+        return null;
+      });
 
       const abortController = new AbortController();
       abortControllerRef.current = abortController;
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
 
       const apiUrl = import.meta.env.VITE_API_URL || '/api';
       const streamPath = optionsRef.current?.apiPath ?? 'chat/stream';
       const response = await fetch(`${apiUrl}/${streamPath}`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
+        headers,
         body: JSON.stringify({
           message: text,
           conversationId: conversationId,

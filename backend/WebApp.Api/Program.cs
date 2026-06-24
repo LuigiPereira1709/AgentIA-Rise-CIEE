@@ -280,7 +280,6 @@ app.MapPost("/api/chat/stream", async (
             cancellationToken);
     }
 })
-.RequireAuthorization(ScopePolicyName)
 .WithName("StreamChatMessage");
 
 // Support Agent streaming endpoint — uses the dedicated support agent (AI_SUPPORT_AGENT_* config)
@@ -331,7 +330,6 @@ app.MapPost("/api/support/stream", async (
         await WriteErrorEvent(httpContext.Response, errorResponse.Detail ?? errorResponse.Title, cancellationToken);
     }
 })
-.RequireAuthorization(ScopePolicyName)
 .WithName("StreamSupportMessage");
 
 static async Task WriteConversationIdEvent(HttpResponse response, string conversationId, CancellationToken ct)
@@ -461,7 +459,6 @@ app.MapGet("/api/agent", async (
         );
     }
 })
-.RequireAuthorization(ScopePolicyName)
 .WithName("GetAgentMetadata");
 
 // Get agent info (for debugging)
@@ -494,7 +491,6 @@ app.MapGet("/api/agent/info", async (
         );
     }
 })
-.RequireAuthorization(ScopePolicyName)
 .WithName("GetAgentInfo");
 
 // List conversations
@@ -527,7 +523,6 @@ app.MapGet("/api/conversations", async (
         );
     }
 })
-.RequireAuthorization(ScopePolicyName)
 .WithName("ListConversations");
 
 // Get conversation messages
@@ -553,7 +548,6 @@ app.MapGet("/api/conversations/{conversationId}/messages", async (
         );
     }
 })
-.RequireAuthorization(ScopePolicyName)
 .WithName("GetConversationMessages");
 
 // Delete conversation
@@ -587,7 +581,6 @@ app.MapDelete("/api/conversations/{conversationId}", async (
         );
     }
 })
-.RequireAuthorization(ScopePolicyName)
 .WithName("DeleteConversation");
 
 // File download endpoint for code interpreter outputs
@@ -626,7 +619,6 @@ app.MapGet("/api/files/{fileId}", async (
         );
     }
 })
-.RequireAuthorization(ScopePolicyName)
 .WithName("DownloadFile");
 
 // Uploaded-files cleanup endpoints — inspect & delete image files previously uploaded by
@@ -654,7 +646,6 @@ app.MapGet("/api/files/uploaded", async (
         );
     }
 })
-.RequireAuthorization(ScopePolicyName)
 .WithName("ListUploadedFiles");
 
 app.MapPost("/api/files/cleanup", async (
@@ -678,7 +669,6 @@ app.MapPost("/api/files/cleanup", async (
         );
     }
 })
-.RequireAuthorization(ScopePolicyName)
 .WithName("CleanupUploadedFiles");
 
 // Fallback route for SPA - serve index.html for any non-API routes

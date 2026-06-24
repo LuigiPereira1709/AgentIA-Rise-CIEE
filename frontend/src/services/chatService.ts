@@ -68,21 +68,14 @@ export class ChatService {
    * @returns Access token string
    * @throws {Error} If token acquisition fails
    */
-  private async ensureAuthToken(): Promise<string> {
-    const token = await this.getAccessToken();
-    if (!token) {
-      throw createAppError(
-        new Error('Failed to acquire access token'),
-        'AUTH',
-        this.onLogin ? async () => {
-          const newToken = await this.onLogin?.();
-          if (newToken) {
-            this.dispatch({ type: 'CHAT_CLEAR_ERROR' });
-          }
-        } : undefined
-      );
+  private async ensureAuthToken(): Promise<string | null> {
+    try {
+      const token = await this.getAccessToken();
+      return token;
+    } catch (error) {
+      console.warn('Silent token acquisition failed:', error);
+      return null;
     }
-    return token;
   }
 
   /**
@@ -171,16 +164,20 @@ export class ChatService {
    */
   private async initiateStream(
     url: string,
-    token: string,
+    token: string | null,
     body: Record<string, unknown>,
     signal: AbortSignal
   ): Promise<Response> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const res = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
+      headers,
       body: JSON.stringify(body),
       signal,
     });
@@ -216,18 +213,11 @@ export class ChatService {
       this.dispatch({ type: 'CHAT_CANCEL_STREAM' });
     }
 
-    let token: string;
+    let token: string | null = null;
     try {
       token = await this.ensureAuthToken();
     } catch (error) {
-      if (isTokenExpiredError(error)) {
-        this.dispatch({ type: 'AUTH_TOKEN_EXPIRED' });
-      }
-      const appError: AppError = isAppError(error)
-        ? error
-        : createAppError(error, 'AUTH');
-      this.dispatch({ type: 'CHAT_ERROR', error: appError });
-      throw error;
+      console.warn('Authentication token acquisition encountered an error:', error);
     }
 
     const { content, imageDataUris, fileDataUris, attachments } = await this.prepareMessagePayload(
@@ -608,8 +598,12 @@ export class ChatService {
   async downloadFile(fileId: string, fileName?: string, containerId?: string): Promise<void> {
     const token = await this.ensureAuthToken();
     const params = containerId ? `?containerId=${encodeURIComponent(containerId)}` : '';
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
     const response = await fetch(`${this.apiUrl}/files/${encodeURIComponent(fileId)}${params}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers,
     });
     if (!response.ok) throw new Error(`File download failed: ${response.status}`);
     const blob = await response.blob();
@@ -629,10 +623,12 @@ export class ChatService {
    */
   async listConversations(limit: number = 20): Promise<{ conversations: ConversationSummary[]; hasMore: boolean }> {
     const token = await this.ensureAuthToken();
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
     const response = await fetch(`${this.apiUrl}/conversations?limit=${limit}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers,
     });
 
     if (!response.ok) {
@@ -649,10 +645,12 @@ export class ChatService {
    */
   async getConversationMessages(conversationId: string): Promise<ConversationMessageInfo[]> {
     const token = await this.ensureAuthToken();
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
     const response = await fetch(`${this.apiUrl}/conversations/${conversationId}/messages`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers,
     });
 
     if (!response.ok) {
@@ -668,11 +666,13 @@ export class ChatService {
    */
   async deleteConversation(conversationId: string): Promise<void> {
     const token = await this.ensureAuthToken();
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
     const response = await fetch(`${this.apiUrl}/conversations/${conversationId}`, {
       method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers,
     });
 
     if (!response.ok) {
@@ -686,8 +686,12 @@ export class ChatService {
    */
   async getUploadedFilesInfo(): Promise<{ count: number; totalBytes: number }> {
     const token = await this.ensureAuthToken();
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
     const response = await fetch(`${this.apiUrl}/files/uploaded`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers,
     });
     if (!response.ok) {
       throw createAppError(new Error(`Failed to list uploaded files: ${response.status}`), 'API');
@@ -700,9 +704,13 @@ export class ChatService {
    */
   async cleanupUploadedFiles(): Promise<{ deleted: number; failed: number }> {
     const token = await this.ensureAuthToken();
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
     const response = await fetch(`${this.apiUrl}/files/cleanup`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
+      headers,
     });
     if (!response.ok) {
       throw createAppError(new Error(`Failed to clean up uploaded files: ${response.status}`), 'API');

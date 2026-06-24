@@ -30,6 +30,7 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       port: 5173,
+      allowedHosts: ["unregularized-keaton-statable.ngrok-free.dev"],
       proxy: {
         "/api": {
           target: "http://localhost:8080",
