@@ -357,6 +357,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           onChange={(_, data) => setInputText(data.value)}
           onSubmit={handleSubmit}
           placeholderValue={placeholder}
+          isSending={isStreaming}
+          onStop={handleCancelStream}
         >
           <ImperativeControlPlugin ref={controlRef} />
         </ChatInputFluent>
@@ -380,29 +382,20 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               aria-label="Anexar arquivos"
               title="Anexar arquivos"
             />
-            <Button
-              appearance="subtle"
-              icon={<Stop24Regular />}
-              onClick={isEditing ? onCancelEdit : handleCancelStream}
-              disabled={!isStreaming && !isEditing}
-              aria-label={isEditing ? "Cancelar edição" : "Cancelar resposta"}
-              title={isEditing ? "Cancelar edição" : "Cancelar resposta"}
-              className={styles.cancelButton}
-            />
+            {isEditing && (
+              <Button
+                appearance="subtle"
+                icon={<Stop24Regular />}
+                onClick={onCancelEdit}
+                aria-label="Cancelar edição"
+                title="Cancelar edição"
+                className={styles.cancelButton}
+              />
+            )}
             <VoiceInput
               onTranscript={handleVoiceTranscript}
               disabled={disabled}
             />
-            {onNewChat && (
-              <Button
-                appearance="subtle"
-                icon={<ChatAdd24Regular />}
-                onClick={onNewChat}
-                disabled={disabled || !hasMessages}
-                aria-label="Nova conversa"
-                title="Nova conversa"
-              />
-            )}
             {onShowShortcuts && (
               <Button
                 appearance="subtle"
@@ -423,11 +416,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               </MenuTrigger>
               <MenuPopover>
                 <MenuList>
-                  {onToggleSidebar && (
-                    <MenuItem icon={<History24Regular />} onClick={onToggleSidebar} disabled={disabled}>
-                      Histórico de conversas
-                    </MenuItem>
-                  )}
                   {onExportConversation && (
                     <MenuItem icon={<ArrowDownload24Regular />} onClick={onExportConversation} disabled={disabled || !hasMessages}>
                       Exportar como Markdown

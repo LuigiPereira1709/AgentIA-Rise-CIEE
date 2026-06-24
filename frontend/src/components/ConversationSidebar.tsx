@@ -222,14 +222,14 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
           action={
             <Button
               appearance="subtle"
-              aria-label="Close sidebar"
+              aria-label="Close menu"
               icon={<Dismiss24Regular />}
               onClick={() => onOpenChange(false)}
               style={{ color: 'var(--ciee-text-muted)' }}
             />
           }
         >
-          Conversas
+          Menu
         </DrawerHeaderTitle>
       </DrawerHeader>
 
@@ -239,11 +239,11 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
           icon={<ChatAdd24Regular />}
           className={styles.newChatButton}
           onClick={() => {
-            onNewChat();
+            onNewChat(); // Restarts the registration chat flow
             onOpenChange(false);
           }}
         >
-          Nova Conversa
+          Recomeçar Cadastro
         </Button>
 
         {onBack && (
@@ -255,118 +255,8 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
               onOpenChange(false);
             }}
           >
-            Voltar ao Menu
+            Sair e Voltar ao Início
           </Button>
-        )}
-
-        {onNavigateToRegister && (
-          <Button
-            appearance="subtle"
-            style={{ width: '100%', marginBottom: '16px' }}
-            onClick={() => {
-              onNavigateToRegister();
-              onOpenChange(false);
-            }}
-          >
-            Solicitar Cadastro
-          </Button>
-        )}
-
-        {conversations.length > 0 && (
-          <Input
-            className={styles.searchBox}
-            placeholder="Search conversations..."
-            value={searchQuery}
-            onChange={handleSearchChange}
-            contentBefore={<Search24Regular />}
-            contentAfter={
-              searchQuery ? (
-                <Button
-                  appearance="transparent"
-                  icon={<DismissCircle24Regular />}
-                  size="small"
-                  aria-label="Clear search"
-                  onClick={handleClearSearch}
-                />
-              ) : undefined
-            }
-            aria-label="Search conversations"
-          />
-        )}
-
-        {isLoading && conversations.length === 0 ? (
-          <div className={styles.spinnerContainer}>
-            <Spinner size="small" label="Loading conversations..." />
-          </div>
-        ) : conversations.length === 0 ? (
-          <div className={styles.emptyState}>
-            <Text>No conversations yet</Text>
-            <Text size={200}>Start a new chat to begin</Text>
-          </div>
-        ) : filteredConversations.length === 0 ? (
-          <div className={styles.noResults}>
-            <Text>No conversations match</Text>
-            <Text size={200}>Try a different search term</Text>
-          </div>
-        ) : (
-          <>
-            <div className={styles.conversationList} role="list">
-              {filteredConversations.map((conversation) => (
-                <div
-                  key={conversation.id}
-                  className={`conversation-item ${styles.conversationItem} ${
-                    conversation.id === currentConversationId
-                      ? styles.conversationItemActive
-                      : ''
-                  }`}
-                  role="listitem"
-                  onClick={() => {
-                    onSelectConversation(conversation.id);
-                    onOpenChange(false);
-                  }}
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      onSelectConversation(conversation.id);
-                      onOpenChange(false);
-                    }
-                  }}
-                >
-                  <div className={styles.conversationContent}>
-                    <Text
-                      weight="semibold"
-                      size={300}
-                      className={styles.conversationTitle}
-                    >
-                      {conversation.title || 'Untitled'}
-                    </Text>
-                    <Text className={styles.conversationDate}>
-                      {formatDate(conversation.createdAt)}
-                    </Text>
-                  </div>
-                  <Button
-                    appearance="subtle"
-                    icon={<Delete24Regular />}
-                    size="small"
-                    className={styles.deleteButton}
-                    aria-label={`Delete conversation: ${conversation.title || 'Untitled'}`}
-                    onClick={(e) => handleDelete(e, conversation.id)}
-                  />
-                </div>
-              ))}
-            </div>
-            {hasMore && (
-              <Button
-                appearance="subtle"
-                className={styles.loadMoreButton}
-                onClick={onLoadMore}
-                disabled={isLoading}
-              >
-                {isLoading ? 'Loading...' : 'Load more conversations'}
-              </Button>
-            )}
-          </>
         )}
       </DrawerBody>
     </Drawer>

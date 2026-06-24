@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { Avatar } from '@fluentui/react-components';
-import { Navigation24Regular, Map24Regular } from '@fluentui/react-icons';
+import { Avatar, Popover, PopoverTrigger, PopoverSurface, Button, Text } from '@fluentui/react-components';
+import { Navigation24Regular, Map24Regular, ChatAdd24Regular, ArrowLeft24Regular } from '@fluentui/react-icons';
 import { ChatInterface } from './ChatInterface';
 import { ConversationSidebar } from './ConversationSidebar';
 import { SettingsPanel } from './core/SettingsPanel';
@@ -281,14 +281,42 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Assistente CI
       {/* ── Top navbar ── */}
       <header className={styles.chatNavbar}>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <button
-            id="btn-open-sidebar"
-            className={styles.backToMenuBtn}
-            onClick={handleToggleSidebar}
-            aria-label="Abrir Menu"
-          >
-            <Navigation24Regular />
-          </button>
+          <Popover positioning="below-start" withArrow>
+            <PopoverTrigger disableButtonEnhancement>
+              <button
+                id="btn-open-menu"
+                className={styles.backToMenuBtn}
+                aria-label="Abrir Menu"
+              >
+                <Navigation24Regular />
+              </button>
+            </PopoverTrigger>
+            <PopoverSurface style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '20px', minWidth: '240px' }}>
+              <Text weight="semibold" size={400} style={{ marginBottom: '8px' }}>Opções do Cadastro</Text>
+              
+              <Button
+                appearance="primary"
+                icon={<ChatAdd24Regular />}
+                size="large"
+                style={{ width: '100%', justifyContent: 'flex-start' }}
+                onClick={handleNewChat}
+              >
+                Recomeçar Cadastro
+              </Button>
+              
+              {onBack && (
+                <Button
+                  appearance="outline"
+                  icon={<ArrowLeft24Regular />}
+                  size="large"
+                  style={{ width: '100%', justifyContent: 'flex-start' }}
+                  onClick={onBack}
+                >
+                  Voltar ao Início
+                </Button>
+              )}
+            </PopoverSurface>
+          </Popover>
           
           <button
             className={styles.backToMenuBtn}
@@ -312,9 +340,6 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Assistente CI
             <span className={styles.navbarOnlineDot} />
           </div>
 
-          <div className={styles.navbarRight}>
-            <Avatar name="Usuário" size={28} />
-          </div>
         </header>
 
       <div className={styles.bodyWrapper}>
@@ -369,21 +394,6 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Assistente CI
         )}
       </div>
 
-      <ConversationSidebar
-        isOpen={state.conversations.sidebarOpen}
-        onOpenChange={handleSidebarOpenChange}
-        conversations={state.conversations.list}
-        isLoading={state.conversations.isLoading}
-        hasMore={state.conversations.hasMore}
-        currentConversationId={chat.currentConversationId}
-        onSelectConversation={handleSelectConversation}
-        onNewChat={handleNewChat}
-        onDeleteConversation={handleDeleteConversation}
-        onLoadMore={handleLoadMoreConversations}
-        onNavigateToRegister={onNavigateToRegister}
-        onBack={onBack}
-      />
-      
       {/* Modals & Panels */}
       <SettingsPanel
         isOpen={isSettingsOpen}
