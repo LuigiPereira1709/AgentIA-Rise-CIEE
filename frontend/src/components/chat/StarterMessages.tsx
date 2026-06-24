@@ -35,23 +35,21 @@ export const StarterMessages = ({
     <div className={styles.zeroprompt}>
       <div className={styles.content}>
 
-        {/* Avatar / logo do agente com ganso de fallback */}
-        <div className={styles.avatarArea}>
-          {agentLogo ? (
-            <AgentIcon alt={agentName ?? 'Agente'} size="large" logoUrl={agentLogo} />
-          ) : (
-            <div className={styles.gooseWrapper}>
-              <div style={{ transform: 'scale(2.5)', transformOrigin: 'center', marginTop: '20px' }}>
-                <GooseHeadIcon />
-              </div>
-              <div className={styles.gooseGlow} />
-            </div>
-          )}
-        </div>
+        {/* Logo superior removido para evitar redundância com o texto */}
 
         {/* Saudação */}
-        <h2 className={styles.welcome}>
-          {agentName ? `Olá! Sou ${agentName} 👋` : 'Olá! Como posso ajudar? 👋'}
+        <h2 className={styles.welcome} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: '6px' }}>
+          {agentName === 'Assistente CIEE' ? (
+            <>
+              Olá! Sou Assistente
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <AgentIcon size="large" logoUrl={agentLogo} />
+              </div>
+              👋
+            </>
+          ) : (
+            agentName ? `Olá! Sou ${agentName} 👋` : 'Olá! Como posso ajudar? 👋'
+          )}
         </h2>
 
         {agentDescription ? (

@@ -52,7 +52,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         </div>
 
         <h1 className={styles.welcomeTitle}>
-          Seja bem-vindo(a)<br/>ao CIEE!
+          Seja bem-vindo(a)!
         </h1>
 
         <p className={styles.description}>

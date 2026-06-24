@@ -4,6 +4,7 @@ import { Navigation24Regular, Map24Regular } from '@fluentui/react-icons';
 import { ChatInterface } from './ChatInterface';
 import { ConversationSidebar } from './ConversationSidebar';
 import { SettingsPanel } from './core/SettingsPanel';
+import { AgentIcon } from './core/AgentIcon';
 import { AuxiliaryChatSidebar } from './chat/AuxiliaryChatSidebar';
 import { GooseJourney } from './GooseJourney';
 import { useAppState } from '../hooks/useAppState';
@@ -300,9 +301,14 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Assistente CI
         </div>
 
           <div className={styles.navbarCenter}>
-            <span className={styles.navbarAgentName}>
-              {agentName || 'Assistente CIEE'}
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span className={styles.navbarAgentName} style={{ marginTop: '4px' }}>
+                Assistente
+              </span>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <AgentIcon size="small" logoUrl={agentLogo} />
+              </div>
+            </div>
             <span className={styles.navbarOnlineDot} />
           </div>
 

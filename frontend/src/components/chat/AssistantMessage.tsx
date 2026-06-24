@@ -174,7 +174,7 @@ function AssistantMessageComponent({
   return (
     <CopilotMessage
       id={`msg-${message.id}`}
-      avatar={<AgentIcon logoUrl={agentLogo} />}
+      avatar={<AgentIcon logoUrl={agentLogo} withBackground={true} />}
       name={agentName}
       loadingState="none"
       className={styles.copilotMessage}

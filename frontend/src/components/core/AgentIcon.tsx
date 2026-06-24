@@ -5,12 +5,14 @@ interface AgentIconProps {
   alt?: string;
   size?: 'small' | 'medium' | 'large';
   logoUrl?: string;
+  withBackground?: boolean;
 }
 
 export function AgentIcon({ 
   alt = "AI Assistant", 
   size = 'medium',
-  logoUrl
+  logoUrl,
+  withBackground = false
 }: AgentIconProps) {
   const sizeMap: Record<string, number> = {
     small: 32,
@@ -20,23 +22,44 @@ export function AgentIcon({
 
   if (!logoUrl) {
     const s = sizeMap[size];
+    
+    if (withBackground) {
+      return (
+        <div 
+          aria-label={alt}
+          style={{
+            width: s,
+            height: s,
+            borderRadius: '50%',
+            background: '#ffffff',
+            border: '1px solid var(--ciee-primary-light)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)',
+            flexShrink: 0
+          }}
+        >
+          <div style={{ transform: `scale(${size === 'small' ? 0.28 : size === 'medium' ? 0.38 : 0.48})`, transformOrigin: 'center' }}>
+            <CieeLogo />
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div 
         aria-label={alt}
         style={{
-          width: s,
-          height: s,
-          borderRadius: '50%',
-          background: '#ffffff',
-          border: '1px solid var(--ciee-primary-light)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          boxShadow: '0 2px 10px rgba(0, 0, 0, 0.5)',
-          flexShrink: 0
+          flexShrink: 0,
+          width: size === 'small' ? 40 : size === 'medium' ? 50 : 66,
+          height: size === 'small' ? 18 : size === 'medium' ? 24 : 30,
         }}
       >
-        <div style={{ transform: `scale(${size === 'small' ? 0.3 : size === 'medium' ? 0.4 : 0.5})`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ transform: `scale(${size === 'small' ? 0.38 : size === 'medium' ? 0.48 : 0.6})`, transformOrigin: 'center' }}>
           <CieeLogo />
         </div>
       </div>
