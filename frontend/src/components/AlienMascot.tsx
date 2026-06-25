@@ -56,7 +56,7 @@ export const AlienMascot: React.FC = () => {
         <Card className={styles.speechBubble} appearance="filled">
           <div className={styles.bubbleHeader}>
             <Text weight="semibold" className={styles.alienName}>
-              Zoggy
+              Lumi
             </Text>
             <Button
               appearance="subtle"

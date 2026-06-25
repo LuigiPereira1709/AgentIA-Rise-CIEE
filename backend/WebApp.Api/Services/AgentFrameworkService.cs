@@ -140,8 +140,8 @@ public class AgentFrameworkService : IDisposable
         }
         else
         {
-            _logger.LogInformation("Production: Using ManagedIdentityCredential (system-assigned)");
-            _fallbackCredential = new ManagedIdentityCredential(ManagedIdentityId.SystemAssigned);
+            _logger.LogInformation("Production: Using DefaultAzureCredential");
+            _fallbackCredential = new DefaultAzureCredential();
         }
 
         if (_useObo)
@@ -308,7 +308,7 @@ public class AgentFrameworkService : IDisposable
             else
             {
                 // ── Registration agent: auto-provision / update instructions when needed ──
-                var newInstructions = @"Você é o Zoggy, assistente virtual do CIEE Rio, criado para guiar estudantes durante todo o processo de cadastro na plataforma. Seu objetivo é coletar os 18 dados cadastrais obrigatórios de forma fluida, amigável, empática e conversacional, eliminando o aspecto frio de formulários rígidos.
+                var newInstructions = @"Você é a Lumi, assistente virtual do CIEE, criada para guiar estudantes durante todo o processo de cadastro na plataforma. Seu objetivo é coletar os 18 dados cadastrais obrigatórios de forma fluida, amigável, empática e conversacional, eliminando o aspecto frio de formulários rígidos.
 
 # Idioma e Ortografia (REQUISITO CRÍTICO DE QUALIDADE)
 
@@ -359,7 +359,42 @@ Sempre atente-se ao padrão `[ESTADO_DO_FORMULARIO: ...]` no início das mensage
 
 # Opções Fechadas
 
-Exiba opções de clique rápido (Quick Replies/Botões) para `varSexo`, `varEstadoCivil`, `varNivelEscolar`, `varModalidadeEnsino` e `varTurnoEnsino`.
+Para campos com opções de múltipla escolha ou fechadas, você **DEVE apresentar as opções como uma lista numerada** (ex: ""1. Masculino, 2. Feminino...""). Isso permite que o usuário responda apenas digitando o número correspondente (ou o texto) e você consiga entender.
+
+As variáveis e suas respectivas opções numeradas são:
+
+1. **Sexo (`varSexo`):**
+   1. Masculino
+   2. Feminino
+   3. Transgênero
+   4. Outro
+   5. Preferiu não dizer
+
+2. **Estado Civil (`varEstadoCivil`):**
+   1. Solteiro(a)
+   2. Casado(a)
+   3. Divorciado(a)
+   4. Viúvo(a)
+   5. Outro
+
+3. **Nível Escolar (`varNivelEscolar`):**
+   1. Fundamental
+   2. Médio
+   3. Técnico
+   4. Superior
+
+4. **Modalidade de Ensino (`varModalidadeEnsino`):**
+   1. Presencial
+   2. EAD
+   3. Semipresencial
+
+5. **Turno de Ensino (`varTurnoEnsino`):**
+   1. Manhã
+   2. Tarde
+   3. Noite
+   4. Integral
+
+*Importante:* Sempre mapeie a resposta numérica do usuário para o valor de texto correspondente antes de chamar a função ""update_registration_form"". Por exemplo, se o usuário responder ""1"" para Sexo, chame ""update_registration_form"" com o valor ""Masculino"".
 
 # Fluxo de Coleta e Orquestração (Ordem Lógica)
 
@@ -1774,7 +1809,7 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
             if (!IsValidCpf(cleanCpf))
             {
                 result.IsValid = false;
-                result.Message = "\n*(Zoggy: O CPF fornecido é inválido. Por favor, verifique os dígitos.)*\n";
+                result.Message = "\n*(Lumi: O CPF fornecido é inválido. Por favor, verifique os dígitos.)*\n";
             }
             else
             {
@@ -1787,7 +1822,7 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
             if (!IsValidEmail(value))
             {
                 result.IsValid = false;
-                result.Message = "\n*(Zoggy: O formato de e-mail fornecido é inválido. Certifique-se de que não contém espaços e possui um formato correto.)*\n";
+                result.Message = "\n*(Lumi: O formato de e-mail fornecido é inválido. Certifique-se de que não contém espaços e possui um formato correto.)*\n";
             }
             else
             {
@@ -1800,7 +1835,7 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
             if (cleanPhone.Length != 10 && cleanPhone.Length != 11)
             {
                 result.IsValid = false;
-                result.Message = "\n*(Zoggy: O telefone deve conter 10 ou 11 dígitos com o DDD.)*\n";
+                result.Message = "\n*(Lumi: O telefone deve conter 10 ou 11 dígitos com o DDD.)*\n";
             }
             else
             {
@@ -1816,7 +1851,7 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
             if (cleanDate.Length != 8)
             {
                 result.IsValid = false;
-                result.Message = "\n*(Zoggy: A data de nascimento deve conter exatamente 8 dígitos no formato DD/MM/AAAA.)*\n";
+                result.Message = "\n*(Lumi: A data de nascimento deve conter exatamente 8 dígitos no formato DD/MM/AAAA.)*\n";
             }
             else
             {
@@ -1832,7 +1867,7 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
                 else
                 {
                     result.IsValid = false;
-                    result.Message = "\n*(Zoggy: A data de nascimento fornecida não é uma data válida do calendário.)*\n";
+                    result.Message = "\n*(Lumi: A data de nascimento fornecida não é uma data válida do calendário.)*\n";
                 }
             }
         }
@@ -1842,7 +1877,7 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
             if (cleanCep.Length != 8)
             {
                 result.IsValid = false;
-                result.Message = "\n*(Zoggy: O CEP deve conter exatamente 8 dígitos.)*\n";
+                result.Message = "\n*(Lumi: O CEP deve conter exatamente 8 dígitos.)*\n";
             }
             else
             {
@@ -1855,7 +1890,7 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
                 else
                 {
                     result.IsValid = false;
-                    result.Message = lookup.Message ?? "\n*(Zoggy: Não foi possível obter o endereço para o CEP informado.)*\n";
+                    result.Message = lookup.Message ?? "\n*(Lumi: Não foi possível obter o endereço para o CEP informado.)*\n";
                 }
             }
         }
@@ -1865,7 +1900,7 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
             if (string.IsNullOrEmpty(cleanNum))
             {
                 result.IsValid = false;
-                result.Message = "\n*(Zoggy: O número da casa deve conter apenas dígitos numéricos.)*\n";
+                result.Message = "\n*(Lumi: O número da casa deve conter apenas dígitos numéricos.)*\n";
             }
             else
             {
@@ -1959,7 +1994,7 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
             var response = await client.GetAsync($"https://viacep.com.br/ws/{cep}/json/");
             if (!response.IsSuccessStatusCode)
             {
-                return new CepLookupResult { Success = false, Message = "\n*(Zoggy: Erro de rede ao buscar o CEP. Por favor, tente novamente.)*\n" };
+                return new CepLookupResult { Success = false, Message = "\n*(Lumi: Erro de rede ao buscar o CEP. Por favor, tente novamente.)*\n" };
             }
 
             string content = await response.Content.ReadAsStringAsync();
@@ -1968,7 +2003,7 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
             
             if (root.TryGetProperty("erro", out var erroProp) && (erroProp.ValueKind == JsonValueKind.True || (erroProp.ValueKind == JsonValueKind.String && erroProp.GetString() == "true")))
             {
-                return new CepLookupResult { Success = false, Message = "\n*(Zoggy: CEP não encontrado na base do ViaCEP.)*\n" };
+                return new CepLookupResult { Success = false, Message = "\n*(Lumi: CEP não encontrado na base do ViaCEP.)*\n" };
             }
 
             string formattedCep = root.TryGetProperty("cep", out var c) ? c.GetString() ?? "" : cep;
@@ -1990,13 +2025,13 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
             {
                 Success = true,
                 FieldUpdates = updates,
-                Message = $"\n*(Zoggy: CEP {formattedCep} localizado! Endereço: {logradouro}, {bairro}, {cidade} - {estado})*\n"
+                Message = $"\n*(Lumi: CEP {formattedCep} localizado! Endereço: {logradouro}, {bairro}, {cidade} - {estado})*\n"
             };
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error checking CEP {Cep}", cep);
-            return new CepLookupResult { Success = false, Message = "\n*(Zoggy: Não foi possível realizar a consulta do CEP no momento.)*\n" };
+            return new CepLookupResult { Success = false, Message = "\n*(Lumi: Não foi possível realizar a consulta do CEP no momento.)*\n" };
         }
     }
 
@@ -2011,7 +2046,7 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
             return new CepLookupResult 
             { 
                 Success = false, 
-                Message = "\n*(Zoggy: O Estado (UF) para busca de endereço deve conter exatamente 2 letras, ex: SP.)*\n" 
+                Message = "\n*(Lumi: O Estado (UF) para busca de endereço deve conter exatamente 2 letras, ex: SP.)*\n" 
             };
         }
 
@@ -2026,7 +2061,7 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
             var response = await client.GetAsync(url);
             if (!response.IsSuccessStatusCode)
             {
-                return new CepLookupResult { Success = false, Message = "\n*(Zoggy: Erro de rede ao buscar endereço. Por favor, tente novamente.)*\n" };
+                return new CepLookupResult { Success = false, Message = "\n*(Lumi: Erro de rede ao buscar endereço. Por favor, tente novamente.)*\n" };
             }
 
             string content = await response.Content.ReadAsStringAsync();
@@ -2034,7 +2069,7 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
             
             if (doc.RootElement.ValueKind != JsonValueKind.Array || doc.RootElement.GetArrayLength() == 0)
             {
-                return new CepLookupResult { Success = false, Message = $"\n*(Zoggy: Nenhum CEP correspondente encontrado para '{street}, {city} - {uf}'.)*\n" };
+                return new CepLookupResult { Success = false, Message = $"\n*(Lumi: Nenhum CEP correspondente encontrado para '{street}, {city} - {uf}'.)*\n" };
             }
 
             var firstMatch = doc.RootElement[0];
@@ -2058,13 +2093,13 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
             {
                 Success = true,
                 FieldUpdates = updates,
-                Message = $"\n*(Zoggy: Encontrei o endereço! CEP: {cep}, Logradouro: {matchStreet}, Bairro: {neighborhood}, Cidade: {matchCity} - {matchState})*\n"
+                Message = $"\n*(Lumi: Encontrei o endereço! CEP: {cep}, Logradouro: {matchStreet}, Bairro: {neighborhood}, Cidade: {matchCity} - {matchState})*\n"
             };
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error searching CEP for {Uf}/{City}/{Street}", uf, city, street);
-            return new CepLookupResult { Success = false, Message = "\n*(Zoggy: Não foi possível realizar a consulta do CEP no momento.)*\n" };
+            return new CepLookupResult { Success = false, Message = "\n*(Lumi: Não foi possível realizar a consulta do CEP no momento.)*\n" };
         }
     }
 
@@ -2076,7 +2111,7 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
             return new CepLookupResult 
             { 
                 Success = false, 
-                Message = "\n*(Zoggy: Formato de busca por endereço inválido. O agente deve fornecer no formato 'UF/Cidade/Logradouro'.)*\n" 
+                Message = "\n*(Lumi: Formato de busca por endereço inválido. O agente deve fornecer no formato 'UF/Cidade/Logradouro'.)*\n" 
             };
         }
 

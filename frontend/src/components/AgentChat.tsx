@@ -100,14 +100,24 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Lumi', agentD
     prevMessagesLengthRef.current = chat.messages.length;
   }, [chat.messages]);
 
-  const handleSendMessage = async (text: string, files?: File[]) => {
+  // Auto-start registration chat if empty
+  useEffect(() => {
+    if (chat.messages.length === 0 && chat.status === 'idle' && !chat.currentConversationId) {
+      const timer = setTimeout(() => {
+        chatService.sendMessage('Olá! Quero iniciar meu cadastro de estudante.', null);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [chat.messages.length, chat.status, chat.currentConversationId, chatService]);
+
+  const handleSendMessage = useCallback(async (text: string, files?: File[]) => {
     playMessageSentSound();
     if (chat.status === 'streaming' || chat.status === 'sending') {
       dispatch({ type: 'CHAT_QUEUE_MESSAGE', text, files });
       return;
     }
     await chatService.sendMessage(text, chat.currentConversationId, files);
-  };
+  }, [chat.status, chat.currentConversationId, chatService, dispatch]);
 
   // Drain the queue when the stream completes
   const pendingRef = useRef(chat.pendingMessages);

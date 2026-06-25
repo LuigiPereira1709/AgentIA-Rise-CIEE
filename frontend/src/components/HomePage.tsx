@@ -52,11 +52,11 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         </div>
 
         <h1 className={styles.welcomeTitle}>
-          Seja bem-vindo(a)!
+          Seja bem-vindo(a) ao CIEE!
         </h1>
 
         <p className={styles.description}>
-          Para iniciar seu processo cadastral de forma simples e conversacional, o nosso assistente virtual guiará você passo a passo na coleta dos dados necessários com total segurança e em conformidade com a LGPD.
+          Para iniciar seu processo cadastral de forma simples e conversacional, clique no botão abaixo. Nosso assistente virtual guiará você passo a passo na coleta dos dados necessários com total segurança e em conformidade com a LGPD.
         </p>
 
         {/* Navigation buttons */}
