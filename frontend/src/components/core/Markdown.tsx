@@ -25,6 +25,8 @@ interface MarkdownProps {
   onDownloadFile?: (fileId: string, fileName: string, containerId?: string) => void;
   /** Callback when an option choice button is clicked */
   onChoiceClick?: (choice: string) => void;
+  /** Flag to disable choice button interactions once used or outdated */
+  choicesDisabled?: boolean;
 }
 
 interface CodeBlockProps
@@ -260,12 +262,14 @@ function ContentWithCitations({
   onCitationClick,
   onDownloadFile,
   onChoiceClick,
+  choicesDisabled,
 }: { 
   content: string; 
   annotations?: IAnnotation[];
   onCitationClick?: (index: number, annotation?: IAnnotation) => void;
   onDownloadFile?: (fileId: string, fileName: string, containerId?: string) => void;
   onChoiceClick?: (choice: string) => void;
+  choicesDisabled?: boolean;
 }) {
   const parsed = useMemo(
     () => parseContentWithCitations(content, annotations),
@@ -310,7 +314,8 @@ function ContentWithCitations({
                       key={`opt-${index}`}
                       type="button"
                       className={styles.optionButton}
-                      onClick={() => onChoiceClick(textContent)}
+                      disabled={choicesDisabled}
+                      onClick={() => !choicesDisabled && onChoiceClick(textContent)}
                     >
                       <span className={styles.optionNumber}>{index + 1}</span>
                       <span className={styles.optionText}>{liChildren}</span>
@@ -328,7 +333,7 @@ function ContentWithCitations({
     }
 
     return customComponents;
-  }, [annotations, onDownloadFile, onChoiceClick]);
+  }, [annotations, onDownloadFile, onChoiceClick, choicesDisabled]);
 
   // If no citations, render plain markdown
   if (parsed.citations.length === 0) {
@@ -397,7 +402,7 @@ function ContentWithCitations({
   );
 }
 
-export function Markdown({ content, annotations, onCitationClick, onDownloadFile, onChoiceClick }: MarkdownProps) {
+export function Markdown({ content, annotations, onCitationClick, onDownloadFile, onChoiceClick, choicesDisabled }: MarkdownProps) {
   return (
     <div className={styles.markdown}>
       <ContentWithCitations 
@@ -406,6 +411,7 @@ export function Markdown({ content, annotations, onCitationClick, onDownloadFile
         onCitationClick={onCitationClick}
         onDownloadFile={onDownloadFile}
         onChoiceClick={onChoiceClick}
+        choicesDisabled={choicesDisabled}
       />
     </div>
   );

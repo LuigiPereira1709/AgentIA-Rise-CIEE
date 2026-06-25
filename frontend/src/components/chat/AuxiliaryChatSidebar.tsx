@@ -133,7 +133,7 @@ export const AuxiliaryChatSidebar: React.FC<AuxiliaryChatSidebarProps> = ({
             </div>
           </div>
         ) : (
-          messages.map((msg) => (
+          messages.map((msg, index) => (
             <div
               key={msg.id}
               className={`${styles.messageWrapper} ${msg.role === 'user' ? styles.userWrapper : styles.assistantWrapper}`}
@@ -146,7 +146,11 @@ export const AuxiliaryChatSidebar: React.FC<AuxiliaryChatSidebarProps> = ({
               <div className={`${styles.messageBubble} ${msg.role === 'user' ? styles.userBubble : styles.assistantBubble}`}>
                 {msg.role === 'user'
                   ? <span className={styles.userText}>{msg.content}</span>
-                  : <Markdown content={msg.content || '...'} onChoiceClick={sendMessage} />
+                  : <Markdown 
+                      content={msg.content || '...'} 
+                      onChoiceClick={sendMessage} 
+                      choicesDisabled={index !== messages.length - 1 || isBusy}
+                    />
                 }
                 <span className={styles.timestamp}>{formatTime(new Date(msg.more?.time ?? Date.now()))}</span>
               </div>

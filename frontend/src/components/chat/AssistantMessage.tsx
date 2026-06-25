@@ -33,6 +33,7 @@ interface AssistantMessageProps {
   onFeedback?: (messageId: string, rating: 'positive' | 'negative') => void;
   onDownloadFile?: (fileId: string, fileName: string, containerId?: string) => void;
   onChoiceClick?: (choice: string) => void;
+  choicesDisabled?: boolean;
 }
 
 function AssistantMessageComponent({ 
@@ -44,6 +45,7 @@ function AssistantMessageComponent({
   onFeedback,
   onDownloadFile,
   onChoiceClick,
+  choicesDisabled,
 }: AssistantMessageProps) {
   const formatTimestamp = useFormatTimestamp();
   const timestamp = message.more?.time ? formatTimestamp(new Date(message.more.time)) : '';
@@ -235,6 +237,7 @@ function AssistantMessageComponent({
               onCitationClick={handleCitationClick}
               onDownloadFile={onDownloadFile}
               onChoiceClick={onChoiceClick}
+              choicesDisabled={choicesDisabled}
             />
           </Suspense>
           {isStreaming && message.activeToolUse && (

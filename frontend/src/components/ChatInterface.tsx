@@ -261,6 +261,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = (props) => {
                     onFeedback={onFeedback}
                     onDownloadFile={onDownloadFile}
                     onChoiceClick={onSendMessage}
+                    choicesDisabled={index !== deferredMessages.length - 1 || isBusy || isStreaming}
                   />
                 );
               })
