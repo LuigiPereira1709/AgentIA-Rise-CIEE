@@ -9,7 +9,7 @@ import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import copy from 'copy-to-clipboard';
 import { Button } from '@fluentui/react-components';
 import { CopyRegular, CheckmarkRegular } from '@fluentui/react-icons';
-import { memo, useState, useMemo } from 'react';
+import React, { memo, useState, useMemo } from 'react';
 import { CitationMarker } from '../chat/CitationMarker';
 import { parseContentWithCitations } from '../../utils/citationParser';
 import type { IAnnotation } from '../../types/chat';
@@ -23,6 +23,8 @@ interface MarkdownProps {
   onCitationClick?: (index: number, annotation?: IAnnotation) => void;
   /** Callback to download a file by ID (for sandbox: links) */
   onDownloadFile?: (fileId: string, fileName: string, containerId?: string) => void;
+  /** Callback when an option choice button is clicked */
+  onChoiceClick?: (choice: string) => void;
 }
 
 interface CodeBlockProps
@@ -252,34 +254,81 @@ const baseComponents = {
   h6: Heading6,
 };
 
-/**
- * Renders content with inline citation markers.
- * Parses [N] markers and replaces them with CitationMarker components.
- */
 function ContentWithCitations({ 
   content, 
   annotations,
   onCitationClick,
   onDownloadFile,
+  onChoiceClick,
 }: { 
   content: string; 
   annotations?: IAnnotation[];
   onCitationClick?: (index: number, annotation?: IAnnotation) => void;
   onDownloadFile?: (fileId: string, fileName: string, containerId?: string) => void;
+  onChoiceClick?: (choice: string) => void;
 }) {
   const parsed = useMemo(
     () => parseContentWithCitations(content, annotations),
     [content, annotations]
   );
-
-  // Build components with download support for sandbox: URLs
+ 
+  // Build components with download support for sandbox: URLs and interactive choices
   const components = useMemo(() => {
+    const customComponents = { ...baseComponents };
+
     if (onDownloadFile && annotations?.length) {
       const downloadable = createDownloadableComponents(annotations, onDownloadFile);
-      return { ...baseComponents, ...downloadable };
+      Object.assign(customComponents, downloadable);
     }
-    return baseComponents;
-  }, [annotations, onDownloadFile]);
+
+    if (onChoiceClick) {
+      customComponents.ol = ({ children }) => {
+        const arrayChildren = React.Children.toArray(children);
+        const validItems = arrayChildren.filter(child => React.isValidElement(child));
+
+        // Detect if this is an options choice list (e.g. sex, civil status, school level)
+        // by verifying all valid children are short enough.
+        const isChoiceList = validItems.length > 0 && validItems.every(child => {
+          if (React.isValidElement(child)) {
+            const props = child.props as any;
+            const text = getTextContent(props?.children).trim();
+            return text.length > 0 && text.length < 60;
+          }
+          return false;
+        });
+
+        if (isChoiceList) {
+          return (
+            <div className={styles.optionsContainer}>
+              {validItems.map((child, index) => {
+                if (React.isValidElement(child)) {
+                  const props = child.props as any;
+                  const liChildren = props?.children;
+                  const textContent = getTextContent(liChildren);
+                  return (
+                    <button
+                      key={`opt-${index}`}
+                      type="button"
+                      className={styles.optionButton}
+                      onClick={() => onChoiceClick(textContent)}
+                    >
+                      <span className={styles.optionNumber}>{index + 1}</span>
+                      <span className={styles.optionText}>{liChildren}</span>
+                    </button>
+                  );
+                }
+                return child;
+              })}
+            </div>
+          );
+        }
+
+        return <ol className={styles.list}>{children}</ol>;
+      };
+    }
+
+    return customComponents;
+  }, [annotations, onDownloadFile, onChoiceClick]);
 
   // If no citations, render plain markdown
   if (parsed.citations.length === 0) {
@@ -348,7 +397,7 @@ function ContentWithCitations({
   );
 }
 
-export function Markdown({ content, annotations, onCitationClick, onDownloadFile }: MarkdownProps) {
+export function Markdown({ content, annotations, onCitationClick, onDownloadFile, onChoiceClick }: MarkdownProps) {
   return (
     <div className={styles.markdown}>
       <ContentWithCitations 
@@ -356,7 +405,23 @@ export function Markdown({ content, annotations, onCitationClick, onDownloadFile
         annotations={annotations}
         onCitationClick={onCitationClick}
         onDownloadFile={onDownloadFile}
+        onChoiceClick={onChoiceClick}
       />
     </div>
   );
+}
+
+/** Recursively extracts plain text content from React nodes */
+function getTextContent(node: React.ReactNode): string {
+  if (!node) return '';
+  if (typeof node === 'string' || typeof node === 'number') {
+    return String(node);
+  }
+  if (Array.isArray(node)) {
+    return node.map(getTextContent).join('');
+  }
+  if (React.isValidElement(node) && node.props) {
+    return getTextContent((node.props as any).children);
+  }
+  return '';
 }

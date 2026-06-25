@@ -8,6 +8,8 @@ dist/
 *.dll
 *.exe
 *.pdb
+publish/
+*/*/wwwroot/*
 
 # IDE
 .vs/

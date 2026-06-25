@@ -230,7 +230,7 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
                   <div className={`${styles.messageBubble} ${msg.role === 'user' ? styles.userBubble : styles.assistantBubble}`}>
                     {msg.role === 'user'
                       ? <span className={styles.userText}>{msg.content}</span>
-                      : <Markdown content={msg.content || '...'} />
+                      : <Markdown content={msg.content || '...'} onChoiceClick={sendMessage} />
                     }
                     <span className={styles.timestamp}>{formatTime(new Date(msg.more?.time ?? Date.now()))}</span>
                   </div>

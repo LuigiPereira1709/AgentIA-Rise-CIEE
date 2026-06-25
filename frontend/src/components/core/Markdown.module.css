@@ -195,3 +195,68 @@
   border-radius: 6px;
   margin: 8px 0;
 }
+
+/* Custom grid container for options lists */
+.optionsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0 16px;
+  padding: 0;
+  width: 100%;
+}
+
+/* Custom interactive option button card */
+.optionButton {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--ciee-primary-light, #e0e0e0);
+  background-color: var(--ciee-bg-canvas, #ffffff);
+  cursor: pointer;
+  text-align: left;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.optionButton:hover {
+  transform: translateY(-1px);
+  border-color: var(--ciee-primary, #024089);
+  background-color: var(--ciee-bg-primary, #f5f9ff);
+  box-shadow: 0 4px 8px rgba(2, 64, 137, 0.08);
+}
+
+.optionButton:active {
+  transform: translateY(0);
+}
+
+/* Option number circle */
+.optionNumber {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: var(--ciee-primary-light, #f0f0f0);
+  color: var(--ciee-primary, #024089);
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.optionButton:hover .optionNumber {
+  background-color: var(--ciee-primary, #024089);
+  color: #ffffff;
+}
+
+/* Option text wrapper */
+.optionText {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ciee-text-h1, #333333);
+}

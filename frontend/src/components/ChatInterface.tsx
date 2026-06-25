@@ -260,6 +260,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = (props) => {
                     onRegenerate={onRegenerate}
                     onFeedback={onFeedback}
                     onDownloadFile={onDownloadFile}
+                    onChoiceClick={onSendMessage}
                   />
                 );
               })
