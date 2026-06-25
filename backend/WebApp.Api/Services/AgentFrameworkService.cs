@@ -598,6 +598,40 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
                 throw new ArgumentException("Message cannot be null or whitespace", nameof(message));
             }
 
+            // --- SELF-HEALING LOGIC ---
+            // If there's an active run/response in progress, cancel it to avoid concurrent run / missing tool output errors.
+            try
+            {
+                var agentRef = new AgentReference(_agentId, resolvedVersion);
+                await foreach (ResponseResult resp in responsesClient.GetProjectResponsesAsync(
+                    agent: agentRef,
+                    conversationId: conversationId,
+                    limit: 5,
+                    order: null,
+                    after: null,
+                    before: null,
+                    cancellationToken: cancellationToken))
+                {
+                    if (resp.Status == ResponseStatus.InProgress)
+                    {
+                        _logger.LogWarning("Found active response {ResponseId} in progress. Cancelling it to avoid conflicts.", resp.Id);
+                        try
+                        {
+                            await responsesClient.CancelResponseAsync(resp.Id, cancellationToken);
+                            _logger.LogInformation("Cancelled response {ResponseId} successfully.", resp.Id);
+                        }
+                        catch (Exception cancelEx)
+                        {
+                            _logger.LogError(cancelEx, "Failed to cancel response {ResponseId}.", resp.Id);
+                        }
+                    }
+                }
+            }
+            catch (Exception listEx)
+            {
+                _logger.LogWarning(listEx, "Failed to list responses for self-healing check on conversation {ConversationId}.", conversationId);
+            }
+
             // Append formState context as a prefix of the message if available
             string processedMessage = message;
             if (formState != null && formState.Count > 0)
