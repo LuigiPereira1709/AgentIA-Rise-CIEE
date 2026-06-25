@@ -403,6 +403,15 @@ function ContentWithCitations({
 }
 
 export function Markdown({ content, annotations, onCitationClick, onDownloadFile, onChoiceClick, choicesDisabled }: MarkdownProps) {
+  const [hasClicked, setHasClicked] = useState(false);
+
+  const handleChoiceClick = (choice: string) => {
+    setHasClicked(true);
+    if (onChoiceClick) {
+      onChoiceClick(choice);
+    }
+  };
+
   return (
     <div className={styles.markdown}>
       <ContentWithCitations 
@@ -410,8 +419,8 @@ export function Markdown({ content, annotations, onCitationClick, onDownloadFile
         annotations={annotations}
         onCitationClick={onCitationClick}
         onDownloadFile={onDownloadFile}
-        onChoiceClick={onChoiceClick}
-        choicesDisabled={choicesDisabled}
+        onChoiceClick={onChoiceClick ? handleChoiceClick : undefined}
+        choicesDisabled={choicesDisabled || hasClicked}
       />
     </div>
   );
