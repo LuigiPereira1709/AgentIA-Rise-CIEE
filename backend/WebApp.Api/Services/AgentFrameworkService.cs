@@ -1840,7 +1840,14 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
         if (canonicalLower == "varcpf")
         {
             string cleanCpf = new string(value.Where(char.IsDigit).ToArray());
-            if (!IsValidCpf(cleanCpf))
+
+            // --- CPFs de teste (bypass de validação) ---
+            // Estes números passam direto sem validação de dígito verificador.
+            // Remover antes de ir para produção real.
+            string[] testCpfs = { "12345678890" };
+            bool isTestCpf = Array.Exists(testCpfs, t => t == cleanCpf);
+
+            if (!isTestCpf && !IsValidCpf(cleanCpf))
             {
                 result.IsValid = false;
                 result.Message = "\n*(Lumi: O CPF fornecido é inválido. Por favor, verifique os dígitos.)*\n";
