@@ -576,6 +576,9 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
                 new AgentReference(_agentId, resolvedVersion),
                 conversationId);
 
+        // processedMessage is declared here (outer scope) so the self-healing retry can access it.
+        string processedMessage = message ?? string.Empty;
+
         // If continuing from MCP approval, add approval response items
         // Don't set PreviousResponseId — the API rejects it with conversation binding,
         // and the conversation already tracks the pending MCP state
@@ -598,15 +601,15 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
                 throw new ArgumentException("Message cannot be null or whitespace", nameof(message));
             }
 
-            // --- SELF-HEALING LOGIC ---
-            // If there's an active run/response in progress, cancel it to avoid concurrent run / missing tool output errors.
+            // --- SELF-HEALING: Pre-request cleanup ---
+            // Cancel any responses still InProgress to avoid concurrent-run conflicts.
             try
             {
                 var agentRef = new AgentReference(_agentId, resolvedVersion);
                 await foreach (ResponseResult resp in responsesClient.GetProjectResponsesAsync(
                     agent: agentRef,
                     conversationId: conversationId,
-                    limit: 5,
+                    limit: 10,
                     order: null,
                     after: null,
                     before: null,
@@ -614,26 +617,19 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
                 {
                     if (resp.Status == ResponseStatus.InProgress)
                     {
-                        _logger.LogWarning("Found active response {ResponseId} in progress. Cancelling it to avoid conflicts.", resp.Id);
-                        try
-                        {
-                            await responsesClient.CancelResponseAsync(resp.Id, cancellationToken);
-                            _logger.LogInformation("Cancelled response {ResponseId} successfully.", resp.Id);
-                        }
-                        catch (Exception cancelEx)
-                        {
-                            _logger.LogError(cancelEx, "Failed to cancel response {ResponseId}.", resp.Id);
-                        }
+                        _logger.LogWarning("[Self-Healing] Found InProgress response {ResponseId}. Cancelling.", resp.Id);
+                        try { await responsesClient.CancelResponseAsync(resp.Id, cancellationToken); }
+                        catch (Exception ex) { _logger.LogError(ex, "[Self-Healing] Failed to cancel {ResponseId}.", resp.Id); }
                     }
                 }
             }
-            catch (Exception listEx)
+            catch (Exception ex)
             {
-                _logger.LogWarning(listEx, "Failed to list responses for self-healing check on conversation {ConversationId}.", conversationId);
+                _logger.LogWarning(ex, "[Self-Healing] Pre-request cleanup failed for conversation {ConversationId}.", conversationId);
             }
 
             // Append formState context as a prefix of the message if available
-            string processedMessage = message;
+            processedMessage = message;
             if (formState != null && formState.Count > 0)
             {
                 var formJson = System.Text.Json.JsonSerializer.Serialize(formState);
@@ -644,6 +640,7 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
             ResponseItem userMessage = await BuildUserMessageAsync(processedMessage, imageDataUris, fileDataUris, cancellationToken);
             options.InputItems.Add(userMessage);
         }
+
 
         // Dictionary to collect file search results for quote extraction
         var fileSearchQuotes = new Dictionary<string, string>();
@@ -657,387 +654,474 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
         var _textBuffer = new System.Text.StringBuilder();
 
         bool hasPendingAction = true;
+        bool _selfHealingRetried = false; // guard: only retry once per user message
         while (hasPendingAction)
         {
             hasPendingAction = false;
 
-            await foreach (StreamingResponseUpdate update
-                in responsesClient.CreateResponseStreamingAsync(
-                    options: options,
-                    cancellationToken: cancellationToken))
+            // C# forbids `yield return` inside a try/catch block.
+            // We collect all chunks produced during this streaming pass into a buffer,
+            // then yield them all after the try/catch completes.
+            var chunkBuffer = new List<StreamChunk>();
+            bool abortedDueToValidation = false;
+
+            try
             {
-                // Capture response ID from created event (needed for MCP approval resume)
-                if (update is StreamingResponseCreatedUpdate createdUpdate)
+                await foreach (StreamingResponseUpdate update
+                    in responsesClient.CreateResponseStreamingAsync(
+                        options: options,
+                        cancellationToken: cancellationToken))
                 {
-                    currentResponseId = createdUpdate.Response.Id;
-                    _logger.LogDebug("Response created: {ResponseId}", currentResponseId);
-                    continue;
-                }
-
-                if (update is StreamingResponseOutputTextDeltaUpdate deltaUpdate)
-                {
-                    foreach (char c in deltaUpdate.Delta)
+                    // Capture response ID from created event (needed for MCP approval resume)
+                    if (update is StreamingResponseCreatedUpdate createdUpdate)
                     {
-                        if (!_inTagBuffer)
+                        currentResponseId = createdUpdate.Response.Id;
+                        _logger.LogDebug("Response created: {ResponseId}", currentResponseId);
+                        continue;
+                    }
+
+                    if (update is StreamingResponseOutputTextDeltaUpdate deltaUpdate)
+                    {
+                        foreach (char c in deltaUpdate.Delta)
                         {
-                            if (c == '[')
+                            if (!_inTagBuffer)
                             {
-                                _inTagBuffer = true;
-                                _tagBuffer.Append(c);
-                            }
-                            else
-                            {
-                                _textBuffer.Append(c);
-                            }
-                        }
-                        else
-                        {
-                            _tagBuffer.Append(c);
-                            string currentStr = _tagBuffer.ToString();
-                            
-                            // Self-healing: if a new tag start "[[" is detected inside the buffer,
-                            // flush everything before it to the user and restart buffering from "[["
-                            int secondStart = currentStr.IndexOf("[[", 2);
-                            if (secondStart != -1)
-                            {
-                                string malformedPrefix = currentStr.Substring(0, secondStart);
-                                _textBuffer.Append(malformedPrefix);
-                                
-                                _tagBuffer.Clear();
-                                _tagBuffer.Append(currentStr.Substring(secondStart));
-                                currentStr = _tagBuffer.ToString();
-                            }
-
-                            // Look for any of our tags closing with "]]"
-                            if (currentStr.EndsWith("]]"))
-                            {
-                                if (currentStr.StartsWith("[[UPDATE_FORM:"))
+                                if (c == '[')
                                 {
-                                    string expectedPrefix = "[[UPDATE_FORM:";
-                                    string content = currentStr.Substring(expectedPrefix.Length, currentStr.Length - expectedPrefix.Length - 2);
-                                    var parts = content.Split('=', 2);
-                                    if (parts.Length == 2)
-                                    {
-                                        string field = parts[0].Trim();
-                                        string val = parts[1].Trim();
-                                        
-                                        var processed = await ProcessAndValidateFieldAsync(field, val);
-                                        if (processed.IsValid)
-                                        {
-                                            if (_textBuffer.Length > 0)
-                                            {
-                                                yield return StreamChunk.Text(_textBuffer.ToString());
-                                                _textBuffer.Clear();
-                                            }
-
-                                            if (processed.FieldUpdates != null)
-                                            {
-                                                foreach (var updatePair in processed.FieldUpdates)
-                                                {
-                                                    yield return StreamChunk.FormField(updatePair.Key, updatePair.Value);
-                                                }
-                                            }
-                                            if (!string.IsNullOrEmpty(processed.Message))
-                                            {
-                                                _textBuffer.Append(processed.Message);
-                                            }
-                                        }
-                                        else
-                                        {
-                                            if (!string.IsNullOrEmpty(processed.Message))
-                                            {
-                                                _textBuffer.Append(processed.Message);
-                                            }
-                                            hasPendingAction = false;
-                                            _inTagBuffer = false;
-                                            _tagBuffer.Clear();
-                                            
-                                            if (_textBuffer.Length > 0)
-                                            {
-                                                yield return StreamChunk.Text(_textBuffer.ToString());
-                                                _textBuffer.Clear();
-                                            }
-                                            yield break;
-                                        }
-                                    }
-                                }
-                                else if (currentStr.StartsWith("[[SEARCH_CEP:"))
-                                {
-                                    string expectedPrefix = "[[SEARCH_CEP:";
-                                    string query = currentStr.Substring(expectedPrefix.Length, currentStr.Length - expectedPrefix.Length - 2).Trim();
-                                    
-                                    var searchResult = await SearchCepAsync(query);
-                                    
-                                    if (_textBuffer.Length > 0)
-                                    {
-                                        yield return StreamChunk.Text(_textBuffer.ToString());
-                                        _textBuffer.Clear();
-                                    }
-
-                                    if (searchResult.Success && searchResult.FieldUpdates != null)
-                                    {
-                                        foreach (var updatePair in searchResult.FieldUpdates)
-                                        {
-                                            yield return StreamChunk.FormField(updatePair.Key, updatePair.Value);
-                                        }
-                                    }
-                                    if (!string.IsNullOrEmpty(searchResult.Message))
-                                    {
-                                        _textBuffer.Append(searchResult.Message);
-                                    }
+                                    _inTagBuffer = true;
+                                    _tagBuffer.Append(c);
                                 }
                                 else
                                 {
-                                    _textBuffer.Append(currentStr);
+                                    _textBuffer.Append(c);
                                 }
-                                
-                                _inTagBuffer = false;
-                                _tagBuffer.Clear();
                             }
                             else
                             {
-                                bool isPrefixOfUpdate = "[[UPDATE_FORM:".StartsWith(currentStr) || currentStr.StartsWith("[[UPDATE_FORM:");
-                                bool isPrefixOfSearch = "[[SEARCH_CEP:".StartsWith(currentStr) || currentStr.StartsWith("[[SEARCH_CEP:");
+                                _tagBuffer.Append(c);
+                                string currentStr = _tagBuffer.ToString();
                                 
-                                if (!isPrefixOfUpdate && !isPrefixOfSearch)
+                                // Self-healing: if a new tag start "[[" is detected inside the buffer,
+                                // flush everything before it to the user and restart buffering from "[["
+                                int secondStart = currentStr.IndexOf("[[", 2);
+                                if (secondStart != -1)
                                 {
-                                    _textBuffer.Append(currentStr);
-                                    _inTagBuffer = false;
+                                    string malformedPrefix = currentStr.Substring(0, secondStart);
+                                    _textBuffer.Append(malformedPrefix);
+                                    
                                     _tagBuffer.Clear();
+                                    _tagBuffer.Append(currentStr.Substring(secondStart));
+                                    currentStr = _tagBuffer.ToString();
                                 }
-                                else if (currentStr.Length > 400)
+
+                                // Look for any of our tags closing with "]]"
+                                if (currentStr.EndsWith("]]"))
                                 {
-                                    _textBuffer.Append(currentStr);
-                                    _inTagBuffer = false;
-                                    _tagBuffer.Clear();
-                                }
-                            }
-                        }
-                    }
-
-                    if (_textBuffer.Length > 0)
-                    {
-                        if (char.IsHighSurrogate(_textBuffer[_textBuffer.Length - 1]))
-                        {
-                            if (_textBuffer.Length > 1)
-                            {
-                                string safeToYield = _textBuffer.ToString(0, _textBuffer.Length - 1);
-                                yield return StreamChunk.Text(safeToYield);
-                                char lastChar = _textBuffer[_textBuffer.Length - 1];
-                                _textBuffer.Clear();
-                                _textBuffer.Append(lastChar);
-                            }
-                        }
-                        else
-                        {
-                            yield return StreamChunk.Text(_textBuffer.ToString());
-                            _textBuffer.Clear();
-                        }
-                    }
-                }
-                else if (update is StreamingResponseOutputItemAddedUpdate itemAddedUpdate)
-                {
-                    if (itemAddedUpdate.Item is FunctionCallResponseItem functionCallItem)
-                    {
-                        trackedFunctions[functionCallItem.Id] = (functionCallItem.CallId, functionCallItem.FunctionName);
-                    }
-
-                    // Detect tool-use steps and signal the frontend for progress indicators
-                    string? toolName = itemAddedUpdate.Item switch
-                    {
-                        FileSearchCallResponseItem => "file_search",
-                        CodeInterpreterCallResponseItem => "code_interpreter",
-                        _ when itemAddedUpdate.Item?.GetType().Name.Contains("ToolCall") == true => "function_call",
-                        _ => null
-                    };
-
-                    if (toolName != null)
-                    {
-                        _logger.LogDebug("Tool use detected: {ToolName}", toolName);
-                        yield return StreamChunk.ToolUse(toolName);
-                    }
-                }
-                else if (update is StreamingResponseFunctionCallArgumentsDoneUpdate argsDone)
-                {
-                    string functionName = "update_registration_form";
-                    string callId = argsDone.ItemId;
-                    if (trackedFunctions.TryGetValue(argsDone.ItemId, out var callInfo))
-                    {
-                        functionName = callInfo.FunctionName;
-                        callId = callInfo.CallId;
-                    }
-                    string argumentsJson = argsDone.FunctionArguments.ToString();
-                    _logger.LogInformation("Model requested function call: {FunctionName} (callId: {CallId}) with arguments: {Arguments}", functionName, callId, argumentsJson);
-
-                    string resultJson = "{\"status\":\"success\"}";
-                    string? field = null;
-                    string? val = null;
-                    var functionFieldUpdates = new List<StreamChunk>();
-
-                    if (functionName == "update_registration_form")
-                    {
-                        try
-                        {
-                            using var doc = JsonDocument.Parse(argumentsJson);
-                            if (doc.RootElement.TryGetProperty("field", out var fieldProp) && doc.RootElement.TryGetProperty("value", out var valueProp))
-                            {
-                                field = fieldProp.GetString();
-                                val = valueProp.GetString();
-
-                                if (field != null && val != null)
-                                {
-                                    var processed = await ProcessAndValidateFieldAsync(field, val);
-                                    if (processed.IsValid && processed.FieldUpdates != null)
+                                    if (currentStr.StartsWith("[[UPDATE_FORM:"))
                                     {
-                                        string updatesJson = JsonSerializer.Serialize(processed.FieldUpdates);
-                                        resultJson = $"{{\"status\":\"success\",\"updates\":{updatesJson}}}";
-                                        foreach (var updatePair in processed.FieldUpdates)
+                                        string expectedPrefix = "[[UPDATE_FORM:";
+                                        string content = currentStr.Substring(expectedPrefix.Length, currentStr.Length - expectedPrefix.Length - 2);
+                                        var parts = content.Split('=', 2);
+                                        if (parts.Length == 2)
                                         {
-                                            functionFieldUpdates.Add(StreamChunk.FormField(updatePair.Key, updatePair.Value));
+                                            string field = parts[0].Trim();
+                                            string val = parts[1].Trim();
+                                            
+                                            var processed = await ProcessAndValidateFieldAsync(field, val);
+                                            if (processed.IsValid)
+                                            {
+                                                if (_textBuffer.Length > 0)
+                                                {
+                                                    chunkBuffer.Add(StreamChunk.Text(_textBuffer.ToString()));
+                                                    _textBuffer.Clear();
+                                                }
+
+                                                if (processed.FieldUpdates != null)
+                                                {
+                                                    foreach (var updatePair in processed.FieldUpdates)
+                                                    {
+                                                        chunkBuffer.Add(StreamChunk.FormField(updatePair.Key, updatePair.Value));
+                                                    }
+                                                }
+                                                if (!string.IsNullOrEmpty(processed.Message))
+                                                {
+                                                    _textBuffer.Append(processed.Message);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                if (!string.IsNullOrEmpty(processed.Message))
+                                                {
+                                                    _textBuffer.Append(processed.Message);
+                                                }
+                                                _inTagBuffer = false;
+                                                _tagBuffer.Clear();
+                                                
+                                                if (_textBuffer.Length > 0)
+                                                {
+                                                    chunkBuffer.Add(StreamChunk.Text(_textBuffer.ToString()));
+                                                    _textBuffer.Clear();
+                                                }
+                                                abortedDueToValidation = true;
+                                                break; // Stop processing this stream pass
+                                            }
                                         }
-                                        field = null;
-                                        val = null;
+                                    }
+                                    else if (currentStr.StartsWith("[[SEARCH_CEP:"))
+                                    {
+                                        string expectedPrefix = "[[SEARCH_CEP:";
+                                        string query = currentStr.Substring(expectedPrefix.Length, currentStr.Length - expectedPrefix.Length - 2).Trim();
+                                        
+                                        var searchResult = await SearchCepAsync(query);
+                                        
+                                        if (_textBuffer.Length > 0)
+                                        {
+                                            chunkBuffer.Add(StreamChunk.Text(_textBuffer.ToString()));
+                                            _textBuffer.Clear();
+                                        }
+
+                                        if (searchResult.Success && searchResult.FieldUpdates != null)
+                                        {
+                                            foreach (var updatePair in searchResult.FieldUpdates)
+                                            {
+                                                chunkBuffer.Add(StreamChunk.FormField(updatePair.Key, updatePair.Value));
+                                            }
+                                        }
+                                        if (!string.IsNullOrEmpty(searchResult.Message))
+                                        {
+                                            _textBuffer.Append(searchResult.Message);
+                                        }
                                     }
                                     else
                                     {
-                                        resultJson = $"{{\"status\":\"error\",\"message\":\"{processed.Message ?? "Valor inválido"}\"}}";
-                                        field = null;
-                                        val = null;
+                                        _textBuffer.Append(currentStr);
+                                    }
+                                    
+                                    _inTagBuffer = false;
+                                    _tagBuffer.Clear();
+                                }
+                                else
+                                {
+                                    bool isPrefixOfUpdate = "[[UPDATE_FORM:".StartsWith(currentStr) || currentStr.StartsWith("[[UPDATE_FORM:");
+                                    bool isPrefixOfSearch = "[[SEARCH_CEP:".StartsWith(currentStr) || currentStr.StartsWith("[[SEARCH_CEP:");
+                                    
+                                    if (!isPrefixOfUpdate && !isPrefixOfSearch)
+                                    {
+                                        _textBuffer.Append(currentStr);
+                                        _inTagBuffer = false;
+                                        _tagBuffer.Clear();
+                                    }
+                                    else if (currentStr.Length > 400)
+                                    {
+                                        _textBuffer.Append(currentStr);
+                                        _inTagBuffer = false;
+                                        _tagBuffer.Clear();
                                     }
                                 }
                             }
                         }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, "Error parsing function call arguments.");
-                            resultJson = $"{{\"status\":\"error\",\"message\":\"{ex.Message}\"}}";
-                        }
-                    }
-                    else if (functionName == "search_cep_by_address")
-                    {
-                        try
-                        {
-                            using var doc = JsonDocument.Parse(argumentsJson);
-                            if (doc.RootElement.TryGetProperty("uf", out var ufProp) &&
-                                doc.RootElement.TryGetProperty("cidade", out var cityProp) &&
-                                doc.RootElement.TryGetProperty("logradouro", out var streetProp))
-                            {
-                                string uf = ufProp.GetString() ?? "";
-                                string city = cityProp.GetString() ?? "";
-                                string street = streetProp.GetString() ?? "";
 
-                                var searchResult = await SearchCepByAddressAsync(uf, city, street);
-                                if (searchResult.Success && searchResult.FieldUpdates != null)
+                        if (abortedDueToValidation) break;
+
+                        if (_textBuffer.Length > 0)
+                        {
+                            if (char.IsHighSurrogate(_textBuffer[_textBuffer.Length - 1]))
+                            {
+                                if (_textBuffer.Length > 1)
                                 {
-                                    string updatesJson = JsonSerializer.Serialize(searchResult.FieldUpdates);
-                                    resultJson = $"{{\"status\":\"success\",\"updates\":{updatesJson}}}";
-                                    foreach (var updatePair in searchResult.FieldUpdates)
-                                    {
-                                        functionFieldUpdates.Add(StreamChunk.FormField(updatePair.Key, updatePair.Value));
-                                    }
-                                }
-                                else
-                                {
-                                    resultJson = $"{{\"status\":\"error\",\"message\":\"{searchResult.Message ?? "Endereço não localizado"}\"}}";
+                                    string safeToYield = _textBuffer.ToString(0, _textBuffer.Length - 1);
+                                    chunkBuffer.Add(StreamChunk.Text(safeToYield));
+                                    char lastChar = _textBuffer[_textBuffer.Length - 1];
+                                    _textBuffer.Clear();
+                                    _textBuffer.Append(lastChar);
                                 }
                             }
                             else
                             {
-                                resultJson = "{\"status\":\"error\",\"message\":\"Parâmetros inválidos para busca de CEP.\"}";
+                                chunkBuffer.Add(StreamChunk.Text(_textBuffer.ToString()));
+                                _textBuffer.Clear();
                             }
                         }
-                        catch (Exception ex)
+                    }
+                    else if (update is StreamingResponseOutputItemAddedUpdate itemAddedUpdate)
+                    {
+                        if (itemAddedUpdate.Item is FunctionCallResponseItem functionCallItem)
                         {
-                            _logger.LogError(ex, "Error parsing search_cep_by_address function call arguments.");
-                            resultJson = $"{{\"status\":\"error\",\"message\":\"{ex.Message}\"}}";
+                            trackedFunctions[functionCallItem.Id] = (functionCallItem.CallId, functionCallItem.FunctionName);
+                        }
+
+                        // Detect tool-use steps and signal the frontend for progress indicators
+                        string? toolName = itemAddedUpdate.Item switch
+                        {
+                            FileSearchCallResponseItem => "file_search",
+                            CodeInterpreterCallResponseItem => "code_interpreter",
+                            _ when itemAddedUpdate.Item?.GetType().Name.Contains("ToolCall") == true => "function_call",
+                            _ => null
+                        };
+
+                        if (toolName != null)
+                        {
+                            _logger.LogDebug("Tool use detected: {ToolName}", toolName);
+                            chunkBuffer.Add(StreamChunk.ToolUse(toolName));
                         }
                     }
-                    else if (functionName == "submit_registration_form")
+                    else if (update is StreamingResponseFunctionCallArgumentsDoneUpdate argsDone)
                     {
-                        resultJson = "{\"status\":\"success\"}";
-                        functionFieldUpdates.Add(StreamChunk.FormField("submit", "true"));
-                    }
-
-                    // Reset options for the follow-up request with only the function output set
-                    options = new CreateResponseOptions { StreamingEnabled = true };
-                    options.InputItems.Add(ResponseItem.CreateFunctionCallOutputItem(callId, resultJson));
-
-
-                    foreach (var chunk in functionFieldUpdates)
-                    {
-                        yield return chunk;
-                    }
-
-                    if (field != null && val != null)
-                    {
-                        yield return StreamChunk.FormField(field, val);
-                    }
-
-                    hasPendingAction = true;
-                    break; // Exit foreach to re-invoke CreateResponseStreamingAsync with the function output in options
-                }
-                else if (update is StreamingResponseOutputItemDoneUpdate itemDoneUpdate)
-                {
-                    // Check for MCP tool approval request
-                    if (itemDoneUpdate.Item is McpToolCallApprovalRequestItem mcpApprovalItem)
-                    {
-                        _logger.LogInformation(
-                            "MCP tool approval requested: Id={Id}, Tool={Tool}, Server={Server}",
-                            mcpApprovalItem.Id,
-                            mcpApprovalItem.ToolName,
-                            mcpApprovalItem.ServerLabel);
-                        
-                        string? argumentsJson = mcpApprovalItem.ToolArguments?.ToString();
-                        
-                        yield return StreamChunk.McpApproval(new McpApprovalRequest
+                        string functionName = "update_registration_form";
+                        string callId = argsDone.ItemId;
+                        if (trackedFunctions.TryGetValue(argsDone.ItemId, out var callInfo))
                         {
-                            Id = mcpApprovalItem.Id,
-                            ToolName = mcpApprovalItem.ToolName ?? "Unknown tool",
-                            ServerLabel = mcpApprovalItem.ServerLabel ?? "MCP Server",
-                            Arguments = argumentsJson,
-                            PreviousResponseId = currentResponseId
-                        });
-                        continue;
-                    }
-                    
-                    // Capture file search results for quote extraction
-                    if (itemDoneUpdate.Item is FileSearchCallResponseItem fileSearchItem)
-                    {
-                        foreach (var result in fileSearchItem.Results)
+                            functionName = callInfo.FunctionName;
+                            callId = callInfo.CallId;
+                        }
+                        string argumentsJson = argsDone.FunctionArguments.ToString();
+                        _logger.LogInformation("Model requested function call: {FunctionName} (callId: {CallId}) with arguments: {Arguments}", functionName, callId, argumentsJson);
+
+                        string resultJson = "{\"status\":\"success\"}";
+                        string? field = null;
+                        string? val = null;
+                        var functionFieldUpdates = new List<StreamChunk>();
+
+                        if (functionName == "update_registration_form")
                         {
-                            if (!string.IsNullOrEmpty(result.FileId) && !string.IsNullOrEmpty(result.Text))
+                            try
                             {
-                                fileSearchQuotes[result.FileId] = result.Text;
-                                _logger.LogDebug(
-                                    "Captured file search quote for FileId={FileId}, QuoteLength={Length}", 
-                                    result.FileId, 
-                                    result.Text.Length);
+                                using var doc = JsonDocument.Parse(argumentsJson);
+                                if (doc.RootElement.TryGetProperty("field", out var fieldProp) && doc.RootElement.TryGetProperty("value", out var valueProp))
+                                {
+                                    field = fieldProp.GetString();
+                                    val = valueProp.GetString();
+
+                                    if (field != null && val != null)
+                                    {
+                                        var processed = await ProcessAndValidateFieldAsync(field, val);
+                                        if (processed.IsValid && processed.FieldUpdates != null)
+                                        {
+                                            string updatesJson = JsonSerializer.Serialize(processed.FieldUpdates);
+                                            resultJson = $"{{\"status\":\"success\",\"updates\":{updatesJson}}}";
+                                            foreach (var updatePair in processed.FieldUpdates)
+                                            {
+                                                functionFieldUpdates.Add(StreamChunk.FormField(updatePair.Key, updatePair.Value));
+                                            }
+                                            field = null;
+                                            val = null;
+                                        }
+                                        else
+                                        {
+                                            resultJson = $"{{\"status\":\"error\",\"message\":\"{processed.Message ?? "Valor inválido"}\"}}";
+                                            field = null;
+                                            val = null;
+                                        }
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError(ex, "Error parsing function call arguments.");
+                                resultJson = $"{{\"status\":\"error\",\"message\":\"{ex.Message}\"}}";
                             }
                         }
-                    }
+                        else if (functionName == "search_cep_by_address")
+                        {
+                            try
+                            {
+                                using var doc = JsonDocument.Parse(argumentsJson);
+                                if (doc.RootElement.TryGetProperty("uf", out var ufProp) &&
+                                    doc.RootElement.TryGetProperty("cidade", out var cityProp) &&
+                                    doc.RootElement.TryGetProperty("logradouro", out var streetProp))
+                                {
+                                    string uf = ufProp.GetString() ?? "";
+                                    string city = cityProp.GetString() ?? "";
+                                    string street = streetProp.GetString() ?? "";
 
-                    // Extract annotations/citations from completed output items
-                    var annotations = ExtractAnnotations(itemDoneUpdate.Item, fileSearchQuotes);
-                    if (annotations.Count > 0)
-                    {
-                        _logger.LogInformation("Extracted {Count} annotations from response", annotations.Count);
-                        yield return StreamChunk.WithAnnotations(annotations);
+                                    var searchResult = await SearchCepByAddressAsync(uf, city, street);
+                                    if (searchResult.Success && searchResult.FieldUpdates != null)
+                                    {
+                                        string updatesJson = JsonSerializer.Serialize(searchResult.FieldUpdates);
+                                        resultJson = $"{{\"status\":\"success\",\"updates\":{updatesJson}}}";
+                                        foreach (var updatePair in searchResult.FieldUpdates)
+                                        {
+                                            functionFieldUpdates.Add(StreamChunk.FormField(updatePair.Key, updatePair.Value));
+                                        }
+                                    }
+                                    else
+                                    {
+                                        resultJson = $"{{\"status\":\"error\",\"message\":\"{searchResult.Message ?? "Endereço não localizado"}\"}}";
+                                    }
+                                }
+                                else
+                                {
+                                    resultJson = "{\"status\":\"error\",\"message\":\"Parâmetros inválidos para busca de CEP.\"}";
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError(ex, "Error parsing search_cep_by_address function call arguments.");
+                                resultJson = $"{{\"status\":\"error\",\"message\":\"{ex.Message}\"}}";
+                            }
+                        }
+                        else if (functionName == "submit_registration_form")
+                        {
+                            resultJson = "{\"status\":\"success\"}";
+                            functionFieldUpdates.Add(StreamChunk.FormField("submit", "true"));
+                        }
+
+                        // Reset options for the follow-up request with only the function output set
+                        options = new CreateResponseOptions { StreamingEnabled = true };
+                        options.InputItems.Add(ResponseItem.CreateFunctionCallOutputItem(callId, resultJson));
+
+                        foreach (var chunk in functionFieldUpdates)
+                        {
+                            chunkBuffer.Add(chunk);
+                        }
+
+                        if (field != null && val != null)
+                        {
+                            chunkBuffer.Add(StreamChunk.FormField(field, val));
+                        }
+
+                        hasPendingAction = true;
+                        break; // Exit foreach to re-invoke CreateResponseStreamingAsync with the function output in options
                     }
-                }
-                else if (update is StreamingResponseCompletedUpdate completedUpdate)
-                {
-                    _lastUsage = completedUpdate.Response.Usage;
-                }
-                else if (update is StreamingResponseErrorUpdate errorUpdate)
-                {
-                    _logger.LogError("Stream error: {Error}", errorUpdate.Message);
-                    throw new InvalidOperationException($"Stream error: {errorUpdate.Message}");
-                }
-                else
-                {
-                    _logger.LogDebug("Unhandled stream update type: {Type}", update.GetType().Name);
+                    else if (update is StreamingResponseOutputItemDoneUpdate itemDoneUpdate)
+                    {
+                        // Check for MCP tool approval request
+                        if (itemDoneUpdate.Item is McpToolCallApprovalRequestItem mcpApprovalItem)
+                        {
+                            _logger.LogInformation(
+                                "MCP tool approval requested: Id={Id}, Tool={Tool}, Server={Server}",
+                                mcpApprovalItem.Id,
+                                mcpApprovalItem.ToolName,
+                                mcpApprovalItem.ServerLabel);
+                            
+                            string? argumentsJson = mcpApprovalItem.ToolArguments?.ToString();
+                            
+                            chunkBuffer.Add(StreamChunk.McpApproval(new McpApprovalRequest
+                            {
+                                Id = mcpApprovalItem.Id,
+                                ToolName = mcpApprovalItem.ToolName ?? "Unknown tool",
+                                ServerLabel = mcpApprovalItem.ServerLabel ?? "MCP Server",
+                                Arguments = argumentsJson,
+                                PreviousResponseId = currentResponseId
+                            }));
+                            continue;
+                        }
+                        
+                        // Capture file search results for quote extraction
+                        if (itemDoneUpdate.Item is FileSearchCallResponseItem fileSearchItem)
+                        {
+                            foreach (var result in fileSearchItem.Results)
+                            {
+                                if (!string.IsNullOrEmpty(result.FileId) && !string.IsNullOrEmpty(result.Text))
+                                {
+                                    fileSearchQuotes[result.FileId] = result.Text;
+                                    _logger.LogDebug(
+                                        "Captured file search quote for FileId={FileId}, QuoteLength={Length}", 
+                                        result.FileId, 
+                                        result.Text.Length);
+                                }
+                            }
+                        }
+
+                        // Extract annotations/citations from completed output items
+                        var annotations = ExtractAnnotations(itemDoneUpdate.Item, fileSearchQuotes);
+                        if (annotations.Count > 0)
+                        {
+                            _logger.LogInformation("Extracted {Count} annotations from response", annotations.Count);
+                            chunkBuffer.Add(StreamChunk.WithAnnotations(annotations));
+                        }
+                    }
+                    else if (update is StreamingResponseCompletedUpdate completedUpdate)
+                    {
+                        _lastUsage = completedUpdate.Response.Usage;
+                    }
+                    else if (update is StreamingResponseErrorUpdate errorUpdate)
+                    {
+                        _logger.LogError("Stream error: {Error}", errorUpdate.Message);
+                        throw new InvalidOperationException($"Stream error: {errorUpdate.Message}");
+                    }
+                    else
+                    {
+                        _logger.LogDebug("Unhandled stream update type: {Type}", update.GetType().Name);
+                    }
                 }
             }
+            catch (System.ClientModel.ClientResultException httpEx)
+                when (!_selfHealingRetried && httpEx.Status == 400 &&
+                      httpEx.Message.Contains("No tool output found for function call"))
+            {
+                // --- SELF-HEALING: Mid-stream recovery ---
+                // The conversation is stuck waiting for a FunctionCallOutput that was never delivered
+                // (e.g. client disconnected during a previous tool-call round-trip).
+                // Strategy: delete the most recent responses, then retry ONCE with the original user message.
+                _selfHealingRetried = true;
+                chunkBuffer.Clear(); // discard any partial output
+                _logger.LogWarning("[Self-Healing] 'No tool output' error detected. Recovering conversation {ConversationId}.", conversationId);
+
+                try
+                {
+                    var agentRefHealing = new AgentReference(_agentId, resolvedVersion);
+                    var responsesToDelete = new List<string>();
+
+                    await foreach (ResponseResult resp in responsesClient.GetProjectResponsesAsync(
+                        agent: agentRefHealing,
+                        conversationId: conversationId,
+                        limit: 10,
+                        order: null,
+                        after: null,
+                        before: null,
+                        cancellationToken: cancellationToken))
+                    {
+                        if (resp.Status != ResponseStatus.Cancelled && resp.Status != ResponseStatus.Failed)
+                        {
+                            responsesToDelete.Add(resp.Id);
+                            _logger.LogWarning("[Self-Healing] Will delete response {ResponseId} (status={Status}).", resp.Id, resp.Status);
+                        }
+                        if (responsesToDelete.Count >= 3) break;
+                    }
+
+                    foreach (var respId in responsesToDelete)
+                    {
+                        try
+                        {
+                            await responsesClient.DeleteResponseAsync(respId, cancellationToken);
+                            _logger.LogInformation("[Self-Healing] Deleted response {ResponseId}.", respId);
+                        }
+                        catch (Exception delEx)
+                        {
+                            _logger.LogError(delEx, "[Self-Healing] Failed to delete response {ResponseId}.", respId);
+                        }
+                    }
+                }
+                catch (Exception healEx)
+                {
+                    _logger.LogError(healEx, "[Self-Healing] Recovery failed for conversation {ConversationId}.", conversationId);
+                    throw;
+                }
+
+                // Rebuild the original user-message options and retry
+                _textBuffer.Clear();
+                _tagBuffer.Clear();
+                _inTagBuffer = false;
+                trackedFunctions.Clear();
+                currentResponseId = null;
+
+                options = new CreateResponseOptions { StreamingEnabled = true };
+                ResponseItem retryUserMsg = await BuildUserMessageAsync(processedMessage, imageDataUris, fileDataUris, cancellationToken);
+                options.InputItems.Add(retryUserMsg);
+
+                hasPendingAction = true;
+                _logger.LogInformation("[Self-Healing] Retrying message for conversation {ConversationId}.", conversationId);
+            }
+
+            // Yield all buffered chunks from this iteration OUTSIDE the try/catch
+            foreach (var chunk in chunkBuffer)
+            {
+                yield return chunk;
+            }
+
+            // If a validation error terminated this stream pass, stop entirely
+            if (abortedDueToValidation) yield break;
         }
 
         if (_inTagBuffer && _tagBuffer.Length > 0)
