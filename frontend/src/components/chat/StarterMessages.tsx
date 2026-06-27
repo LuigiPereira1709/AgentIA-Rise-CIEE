@@ -56,30 +56,10 @@ export const StarterMessages = ({
         ) : (
           <p className={styles.caption}>
             Estou aqui para responder suas dúvidas e ajudar no que precisar.
-            Clique em uma sugestão abaixo ou escreva sua mensagem!
+            Escreva sua mensagem abaixo para começarmos!
           </p>
         )}
       </div>
-
-      {/* Prompts de início */}
-      {onPromptClick && (
-        <ul className={styles.promptList} aria-label="Sugestões de perguntas">
-          {prompts.map((prompt, index) => (
-            <li key={`prompt-${index}`}>
-              <button
-                className={styles.promptCard}
-                onClick={() => onPromptClick(prompt)}
-                type="button"
-                title={prompt}
-                id={`starter-prompt-${index}`}
-              >
-                <span className={styles.promptIcon}>💬</span>
-                <span className={styles.promptText}>{prompt}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
     </div>
   );
 };

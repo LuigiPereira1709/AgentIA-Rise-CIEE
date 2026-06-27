@@ -7,9 +7,9 @@ import { GooseHeadIcon } from '../RegistrationForm';
 import styles from './AuxiliaryChatSidebar.module.css';
 
 const AUX_PROMPTS = [
-  'Me dê dicas do que perguntar',
-  'Como uso o modo agente?',
-  'Quais as limitações da IA principal?'
+  'Quais unidades do CIEE Rio existem?',
+  'Quais são as formas de contato?',
+  'Dúvidas sobre a LGPD'
 ];
 
 const formatTime = (date: Date) =>
