@@ -38,7 +38,7 @@ export const StarterMessages = ({
 
         {/* Saudação */}
         <h2 className={styles.welcome} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: '6px' }}>
-          {agentName === 'Lumi' || agentName === 'Assistente CIEE' ? (
+          {agentName === 'Lumi' || agentName === 'Assistente CIEE' || agentName === 'Assistente CIEE Rio' ? (
             <>
               Olá! Sou Lumi, Assistente
               <div style={{ display: 'flex', alignItems: 'center' }}>

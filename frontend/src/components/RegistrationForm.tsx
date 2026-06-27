@@ -428,7 +428,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
     }
 
     if (!formData.varSexo) {
-      errors.varSexo = 'O sexo é obrigatório.';
+      errors.varSexo = 'O gênero é obrigatório.';
       valid = false;
     }
 
@@ -750,10 +750,10 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
                       </Field>
                     </div>
 
-                    {/* Sexo e Estado Civil */}
+                    {/* Gênero e Estado Civil */}
                     <div className={styles.fieldRow}>
                       <Field
-                        label="Sexo"
+                        label="Gênero"
                         required
                         validationMessage={formErrors.varSexo}
                         validationState={formErrors.varSexo ? 'error' : 'none'}
@@ -768,11 +768,10 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
                           disabled={isSubmitting}
                         >
                           <option value="">Selecione...</option>
-                          <option value="Masculino">Masculino</option>
-                          <option value="Feminino">Feminino</option>
-                          <option value="Transgênero">Transgênero</option>
+                          <option value="Homem (cis ou trans)">Homem (cis ou trans)</option>
+                          <option value="Mulher (cis ou trans)">Mulher (cis ou trans)</option>
+                          <option value="Não-binário">Não-binário</option>
                           <option value="Outro">Outro</option>
-                          <option value="Preferiu não dizer">Preferiu não dizer</option>
                         </select>
                       </Field>
 
@@ -983,7 +982,6 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onBackToChat
                           disabled={isSubmitting}
                         >
                           <option value="">Selecione...</option>
-                          <option value="Fundamental">Fundamental</option>
                           <option value="Médio">Médio</option>
                           <option value="Técnico">Técnico</option>
                           <option value="Superior">Superior</option>

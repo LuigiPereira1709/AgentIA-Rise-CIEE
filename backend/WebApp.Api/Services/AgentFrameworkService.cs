@@ -307,8 +307,7 @@ public class AgentFrameworkService : IDisposable
             }
             else
             {
-                // ── Registration agent: auto-provision / update instructions when needed ──
-                var newInstructions = @"Você é a Lumi, assistente virtual do CIEE, criada para guiar estudantes durante todo o processo de cadastro na plataforma. Seu objetivo é coletar os 18 dados cadastrais obrigatórios de forma fluida, amigável, empática e conversacional, eliminando o aspecto frio de formulários rígidos.
+                var newInstructions = @"Você é a Lumi, assistente virtual do CIEE Rio, criada para guiar estudantes durante todo o processo de cadastro na plataforma. Seu objetivo é coletar os 18 dados cadastrais obrigatórios de forma fluida, amigável, empática e conversacional, eliminando o aspecto frio de formulários rígidos.
 
 # Idioma e Ortografia (REQUISITO CRÍTICO DE QUALIDADE)
 
@@ -361,14 +360,15 @@ Sempre atente-se ao padrão `[ESTADO_DO_FORMULARIO: ...]` no início das mensage
 
 Para campos com opções de múltipla escolha ou fechadas, você **DEVE apresentar as opções como uma lista numerada** (ex: ""1. Masculino, 2. Feminino...""). Isso permite que o usuário responda apenas digitando o número correspondente (ou o texto) e você consiga entender.
 
+*CRÍTICO:* Use listas numeradas (`1.`, `2.`, etc.) **APENAS** para as opções de múltipla escolha descritas abaixo. NUNCA utilize listas numeradas para listar dados do usuário, instruções de preenchimento (como solicitar Estado/Cidade/Rua) ou resumos de endereço. Para estes outros casos, use sempre bullets (`-` ou `*`) ou texto corrido.
+
 As variáveis e suas respectivas opções numeradas são:
 
-1. **Sexo (`varSexo`):**
-   1. Masculino
-   2. Feminino
-   3. Transgênero
+1. **Gênero (`varSexo`):**
+   1. Homem (cis ou trans)
+   2. Mulher (cis ou trans)
+   3. Não-binário
    4. Outro
-   5. Preferiu não dizer
 
 2. **Estado Civil (`varEstadoCivil`):**
    1. Solteiro(a)
@@ -378,10 +378,9 @@ As variáveis e suas respectivas opções numeradas são:
    5. Outro
 
 3. **Nível Escolar (`varNivelEscolar`):**
-   1. Fundamental
-   2. Médio
-   3. Técnico
-   4. Superior
+   1. Médio
+   2. Técnico
+   3. Superior
 
 4. **Modalidade de Ensino (`varModalidadeEnsino`):**
    1. Presencial
@@ -394,15 +393,15 @@ As variáveis e suas respectivas opções numeradas são:
    3. Noite
    4. Integral
 
-*Importante:* Sempre mapeie a resposta numérica do usuário para o valor de texto correspondente antes de chamar a função ""update_registration_form"". Por exemplo, se o usuário responder ""1"" para Sexo, chame ""update_registration_form"" com o valor ""Masculino"".
+*Importante:* Sempre mapeie a resposta numérica do usuário para o valor de texto correspondente antes de chamar a função ""update_registration_form"". Por exemplo, se o usuário responder ""1"" para Gênero, chame ""update_registration_form"" com o valor ""Homem (cis ou trans)"".
 
 # Fluxo de Coleta e Orquestração (Ordem Lógica)
 
 Siga estritamente esta ordem lógica durante a conversa:
 
 1. **Saudação e Apresentação:** Dê as boas-vindas ao estudante e contextualize o objetivo do cadastro.
-2. **Dados Pessoais (Identificação):** Peça o nome completo (`varNomeCompleto`), CPF (`varCPF`), data de nascimento (`varDataNascimento` — formato DD/MM/AAAA), sexo (`varSexo`) e estado civil (`varEstadoCivil`).
-   - Apresente botões de clique rápido para Sexo e Estado Civil.
+2. **Dados Pessoais (Identificação):** Peça o nome completo (`varNomeCompleto`), CPF (`varCPF`), data de nascimento (`varDataNascimento` — formato DD/MM/AAAA), gênero (`varSexo`) e estado civil (`varEstadoCivil`).
+   - Apresente botões de clique rápido para Gênero e Estado Civil.
 3. **Contato:** Colete o e-mail (`varEmail`) e o telefone (`varTelefone`).
 4. **Endereço e Localização:**
    - Peça o CEP (`varCEP`). Se o usuário não souber o CEP, pergunte o Estado (UF), Cidade e rua/avenida (Logradouro), e execute a busca chamando a função correspondente.
@@ -658,6 +657,7 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
         while (hasPendingAction)
         {
             hasPendingAction = false;
+            var pendingToolOutputs = new List<ResponseItem>();
 
             // C# forbids `yield return` inside a try/catch block.
             // We collect all chunks produced during this streaming pass into a buffer,
@@ -966,9 +966,7 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
                             functionFieldUpdates.Add(StreamChunk.FormField("submit", "true"));
                         }
 
-                        // Reset options for the follow-up request with only the function output set
-                        options = new CreateResponseOptions { StreamingEnabled = true };
-                        options.InputItems.Add(ResponseItem.CreateFunctionCallOutputItem(callId, resultJson));
+                        pendingToolOutputs.Add(ResponseItem.CreateFunctionCallOutputItem(callId, resultJson));
 
                         foreach (var chunk in functionFieldUpdates)
                         {
@@ -981,7 +979,7 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
                         }
 
                         hasPendingAction = true;
-                        break; // Exit foreach to re-invoke CreateResponseStreamingAsync with the function output in options
+                        // DO NOT break. Allow the stream loop to continue and capture all parallel function calls.
                     }
                     else if (update is StreamingResponseOutputItemDoneUpdate itemDoneUpdate)
                     {
@@ -1043,6 +1041,15 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
                     else
                     {
                         _logger.LogDebug("Unhandled stream update type: {Type}", update.GetType().Name);
+                    }
+                }
+
+                if (hasPendingAction && pendingToolOutputs.Count > 0)
+                {
+                    options = new CreateResponseOptions { StreamingEnabled = true };
+                    foreach (var outputItem in pendingToolOutputs)
+                    {
+                        options.InputItems.Add(outputItem);
                     }
                 }
             }
@@ -1957,10 +1964,17 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
         else if (canonicalLower == "vartelefone")
         {
             string cleanPhone = new string(value.Where(char.IsDigit).ToArray());
+            
+            // Strip Brazilian country code (55) if present as a prefix
+            if (cleanPhone.StartsWith("55") && (cleanPhone.Length == 12 || cleanPhone.Length == 13))
+            {
+                cleanPhone = cleanPhone[2..];
+            }
+
             if (cleanPhone.Length != 10 && cleanPhone.Length != 11)
             {
                 result.IsValid = false;
-                result.Message = "\n*(Lumi: O telefone deve conter 10 ou 11 dígitos com o DDD.)*\n";
+                result.Message = "\n*(Lumi: O telefone deve conter 10 ou 11 dígitos com o DDD, ex: (11) 99999-9999.)*\n";
             }
             else
             {
@@ -1972,27 +1986,70 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
         }
         else if (canonicalLower == "vardatanascimento")
         {
-            string cleanDate = new string(value.Where(char.IsDigit).ToArray());
-            if (cleanDate.Length != 8)
+            string trimmedDate = value.Trim();
+            string[] formats = { 
+                "dd/MM/yyyy", "d/M/yyyy", "dd-MM-yyyy", "d-M-yyyy",
+                "yyyy-MM-dd", "yyyy/MM/dd", "ddMMyyyy"
+            };
+            
+            // Try parsing directly first with common formats
+            if (System.DateTime.TryParseExact(trimmedDate, formats, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out System.DateTime parsedDate))
             {
-                result.IsValid = false;
-                result.Message = "\n*(Lumi: A data de nascimento deve conter exatamente 8 dígitos no formato DD/MM/AAAA.)*\n";
+                int age = System.DateTime.Today.Year - parsedDate.Year;
+                if (parsedDate > System.DateTime.Today)
+                {
+                    result.IsValid = false;
+                    result.Message = "\n*(Lumi: A data de nascimento não pode ser uma data futura.)*\n";
+                }
+                else if (age < 13 || age > 100)
+                {
+                    result.IsValid = false;
+                    result.Message = $"\n*(Lumi: A idade informada ({age} anos) é inválida. O cadastro é voltado para estudantes com idade entre 14 e 100 anos.)*\n";
+                }
+                else
+                {
+                    result.FieldUpdates = new Dictionary<string, string> { { canonicalField, parsedDate.ToString("dd/MM/yyyy") } };
+                }
             }
             else
             {
-                string dayStr = cleanDate[..2];
-                string monthStr = cleanDate[2..4];
-                string yearStr = cleanDate[4..];
-                string dateStr = $"{dayStr}/{monthStr}/{yearStr}";
-                
-                if (System.DateTime.TryParseExact(dateStr, "dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out _))
+                // Fallback: extract digits and check if length is 8
+                string cleanDate = new string(trimmedDate.Where(char.IsDigit).ToArray());
+                if (cleanDate.Length == 8)
                 {
-                    result.FieldUpdates = new Dictionary<string, string> { { canonicalField, dateStr } };
+                    string dayStr = cleanDate[..2];
+                    string monthStr = cleanDate[2..4];
+                    string yearStr = cleanDate[4..];
+                    string dateStr = $"{dayStr}/{monthStr}/{yearStr}";
+                    
+                    if (System.DateTime.TryParseExact(dateStr, "dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out System.DateTime parsedDateFallback))
+                    {
+                        int age = System.DateTime.Today.Year - parsedDateFallback.Year;
+                        if (parsedDateFallback > System.DateTime.Today)
+                        {
+                            result.IsValid = false;
+                            result.Message = "\n*(Lumi: A data de nascimento não pode ser uma data futura.)*\n";
+                        }
+                        else if (age < 13 || age > 100)
+                        {
+                            result.IsValid = false;
+                            result.Message = $"\n*(Lumi: A idade informada ({age} anos) é inválida. O cadastro é voltado para estudantes com idade entre 14 e 100 anos.)*\n";
+                        }
+                        else
+                        {
+                            result.FieldUpdates = new Dictionary<string, string> { { canonicalField, parsedDateFallback.ToString("dd/MM/yyyy") } };
+                        }
+                    }
+                    else
+                    {
+                        result.IsValid = false;
+                        result.Message = "\n*(Lumi: A data de nascimento fornecida não é uma data válida do calendário.)*\n";
+                    }
                 }
                 else
                 {
                     result.IsValid = false;
-                    result.Message = "\n*(Lumi: A data de nascimento fornecida não é uma data válida do calendário.)*\n";
+                    result.Message = "\n*(Lumi: A data de nascimento deve conter o formato DD/MM/AAAA, ex: 16/04/2003.)*\n";
                 }
             }
         }
@@ -2021,15 +2078,15 @@ Para coletar o endereço, utilize o fluxo baseado na escolha do usuário:
         }
         else if (canonicalLower == "varnumerocasa")
         {
-            string cleanNum = new string(value.Where(char.IsDigit).ToArray());
-            if (string.IsNullOrEmpty(cleanNum))
+            string trimmedVal = value.Trim();
+            if (string.IsNullOrEmpty(trimmedVal))
             {
                 result.IsValid = false;
-                result.Message = "\n*(Lumi: O número da casa deve conter apenas dígitos numéricos.)*\n";
+                result.Message = "\n*(Lumi: O número da casa é obrigatório.)*\n";
             }
             else
             {
-                result.FieldUpdates = new Dictionary<string, string> { { canonicalField, cleanNum } };
+                result.FieldUpdates = new Dictionary<string, string> { { canonicalField, trimmedVal } };
             }
         }
         else if (canonicalLower == "varnomecompleto")

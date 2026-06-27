@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GooseBodyIcon } from './RegistrationForm';
 import styles from './GooseJourney.module.css';
 
@@ -40,7 +40,7 @@ const PHASES = [
       { key: 'varNomeCompleto' as FormKey, label: 'Nome Completo', type: 'text' },
       { key: 'varCPF' as FormKey, label: 'CPF', type: 'text' },
       { key: 'varDataNascimento' as FormKey, label: 'Nascimento', type: 'text' },
-      { key: 'varSexo' as FormKey, label: 'Sexo', type: 'text' },
+      { key: 'varSexo' as FormKey, label: 'Gênero', type: 'text' },
       { key: 'varEstadoCivil' as FormKey, label: 'Estado Civil', type: 'text' }
     ]
   },
@@ -90,6 +90,25 @@ export const GooseJourney: React.FC<GooseJourneyProps> = ({
 
   // LOCAL edit state — isolated from formData so parent is never touched mid-edit
   const [localEditValues, setLocalEditValues] = useState<Partial<Record<FormKey, string>>>({});
+
+  // Track which field is currently focused for inline editing
+  const [focusedEditField, setFocusedEditField] = useState<FormKey | null>(null);
+
+  // Synchronize local edit values when formData updates from the parent (e.g. from the agent)
+  useEffect(() => {
+    setLocalEditValues(prev => {
+      const updated = { ...prev };
+      let changed = false;
+      Object.keys(updated).forEach(k => {
+        const key = k as FormKey;
+        if (focusedEditField !== key && updated[key] !== formData[key]) {
+          updated[key] = formData[key];
+          changed = true;
+        }
+      });
+      return changed ? updated : prev;
+    });
+  }, [formData, focusedEditField]);
 
   // Error warnings per field
   const [errorFields, setErrorFields] = useState<Set<FormKey>>(new Set());
@@ -261,7 +280,11 @@ export const GooseJourney: React.FC<GooseJourneyProps> = ({
                           ].join(' ')}
                           value={localValue}
                           onChange={(e) => handleLocalChange(field.key, e.target.value)}
-                          onBlur={() => handleEditBlur(field.key)}
+                          onFocus={() => setFocusedEditField(field.key)}
+                          onBlur={() => {
+                            handleEditBlur(field.key);
+                            setFocusedEditField(null);
+                          }}
                           placeholder="Digite aqui..."
                           spellCheck={false}
                         />

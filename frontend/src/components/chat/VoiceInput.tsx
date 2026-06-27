@@ -27,7 +27,7 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({ onTranscript, disabled =
     if (!SpeechRecognitionCtor) {
       dispatchToast(
         <Toast>
-          <ToastTitle>Voice input not supported in this browser</ToastTitle>
+          <ToastTitle>A entrada de voz não é suportada neste navegador.</ToastTitle>
         </Toast>,
         { intent: 'warning' },
       );
@@ -44,7 +44,7 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({ onTranscript, disabled =
     const recognition = new SpeechRecognitionCtor();
     recognition.continuous = false;
     recognition.interimResults = false;
-    recognition.lang = 'en-US';
+    recognition.lang = 'pt-BR';
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
       const transcript = event.results?.[0]?.[0]?.transcript;
@@ -61,9 +61,9 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({ onTranscript, disabled =
       setIsListening(false);
 
       const msg =
-        event.error === 'not-allowed' ? 'Microphone access denied. Check browser permissions.' :
-        event.error === 'no-speech'   ? 'No speech detected. Please try again.' :
-        event.error === 'network'     ? 'Network error during voice input.' :
+        event.error === 'not-allowed' ? 'Acesso ao microfone negado. Verifique as permissões do seu navegador e certifique-se de acessar via HTTPS.' :
+        event.error === 'no-speech'   ? 'Nenhuma fala detectada. Por favor, tente novamente.' :
+        event.error === 'network'     ? 'Erro de rede durante a entrada de voz.' :
         undefined;
 
       if (msg) {

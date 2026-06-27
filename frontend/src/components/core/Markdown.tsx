@@ -291,12 +291,27 @@ function ContentWithCitations({
         const validItems = arrayChildren.filter(child => React.isValidElement(child));
 
         // Detect if this is an options choice list (e.g. sex, civil status, school level)
-        // by verifying all valid children are short enough.
+        // by verifying all valid children are short enough and do not look like instructions or data fields.
         const isChoiceList = validItems.length > 0 && validItems.every(child => {
           if (React.isValidElement(child)) {
             const props = child.props as any;
             const text = getTextContent(props?.children).trim();
-            return text.length > 0 && text.length < 60;
+            const lowerText = text.toLowerCase();
+            
+            // Exclude lists that look like data summaries (colons) or step instructions
+            const isBlacklisted = 
+              text.includes(':') || 
+              lowerText.startsWith('digite') || 
+              lowerText.startsWith('informe') || 
+              lowerText.startsWith('insira') ||
+              lowerText.startsWith('informar') ||
+              lowerText.includes('estado (uf)') ||
+              lowerText.includes('logradouro') ||
+              lowerText.includes('nome completo') ||
+              lowerText.includes('cep') ||
+              (lowerText.includes('rua') && lowerText.includes('avenida'));
+
+            return text.length > 0 && text.length < 60 && !isBlacklisted;
           }
           return false;
         });

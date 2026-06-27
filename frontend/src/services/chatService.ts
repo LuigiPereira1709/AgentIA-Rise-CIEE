@@ -46,6 +46,8 @@ export class ChatService {
   private currentStreamAbort?: AbortController;
   // Flag indicating an intentional user cancellation of the active stream.
   private streamCancelled = false;
+  // Flag to prevent concurrent sendMessage executions (double-click/fast enter key)
+  private sendingInProgress = false;
 
   public onFormUpdate?: (field: string, value: string) => void;
   public getFormState?: () => Record<string, string>;
@@ -207,121 +209,140 @@ export class ChatService {
     currentConversationId: string | null,
     files?: File[]
   ): Promise<void> {
-    if (this.currentStreamAbort) {
-      this.streamCancelled = true;
-      this.currentStreamAbort.abort();
-      this.dispatch({ type: 'CHAT_CANCEL_STREAM' });
+    if (this.sendingInProgress) {
+      console.warn('[ChatService] sendMessage is already in progress. Ignoring duplicate call.');
+      return;
     }
 
-    let token: string | null = null;
+    this.sendingInProgress = true;
+
     try {
-      token = await this.ensureAuthToken();
-    } catch (error) {
-      console.warn('Authentication token acquisition encountered an error:', error);
-    }
+      if (this.currentStreamAbort) {
+        this.streamCancelled = true;
+        this.currentStreamAbort.abort();
+        this.dispatch({ type: 'CHAT_CANCEL_STREAM' });
+      }
 
-    const { content, imageDataUris, fileDataUris, attachments } = await this.prepareMessagePayload(
-      messageText,
-      files
-    );
-
-    const userMessage: IChatItem = {
-      id: Date.now().toString(),
-      role: 'user',
-      content,
-      attachments,
-      more: {
-        time: new Date().toISOString(),
-      },
-    };
-
-    this.dispatch({ type: 'CHAT_SEND_MESSAGE', message: userMessage });
-
-    const assistantMessageId = (Date.now() + 1).toString();
-    this.dispatch({ type: 'CHAT_ADD_ASSISTANT_MESSAGE', messageId: assistantMessageId });
-    this.dispatch({
-      type: 'CHAT_START_STREAM',
-      conversationId: currentConversationId || undefined,
-      messageId: assistantMessageId,
-    });
-
-    const requestBody = this.constructRequestBody(
-      messageText,
-      currentConversationId,
-      imageDataUris,
-      fileDataUris
-    );
-
-    const maxRetries = 3;
-    let lastError: unknown;
-
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      let token: string | null = null;
       try {
-        if (attempt > 1) {
-          this.dispatch({
-            type: 'CHAT_STREAM_RETRY',
-            messageId: assistantMessageId,
-            attempt,
-            maxRetries,
-          });
-          await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt - 1)));
-        }
-
-        this.currentStreamAbort = new AbortController();
-        this.streamCancelled = false;
-
-        const response = await this.initiateStream(
-          `${this.apiUrl}/chat/stream`,
-          token,
-          requestBody,
-          this.currentStreamAbort.signal
-        );
-
-        await this.processStream(response, assistantMessageId, currentConversationId);
-        this.currentStreamAbort = undefined;
-        this.streamCancelled = false;
-        return;
+        token = await this.ensureAuthToken();
       } catch (error) {
-        lastError = error;
-        this.currentStreamAbort = undefined;
-        this.streamCancelled = false;
+        console.warn('Authentication token acquisition encountered an error:', error);
+      }
 
-        // User cancelled
-        if (error instanceof DOMException && error.name === 'AbortError') {
+      const { content, imageDataUris, fileDataUris, attachments } = await this.prepareMessagePayload(
+        messageText,
+        files
+      );
+
+      const userMessage: IChatItem = {
+        id: Date.now().toString(),
+        role: 'user',
+        content,
+        attachments,
+        more: {
+          time: new Date().toISOString(),
+        },
+      };
+
+      this.dispatch({ type: 'CHAT_SEND_MESSAGE', message: userMessage });
+
+      const assistantMessageId = (Date.now() + 1).toString();
+      this.dispatch({ type: 'CHAT_ADD_ASSISTANT_MESSAGE', messageId: assistantMessageId });
+      this.dispatch({
+        type: 'CHAT_START_STREAM',
+        conversationId: currentConversationId || undefined,
+        messageId: assistantMessageId,
+      });
+
+      const requestBody = this.constructRequestBody(
+        messageText,
+        currentConversationId,
+        imageDataUris,
+        fileDataUris
+      );
+
+      const maxRetries = 3;
+      let lastError: unknown;
+
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        let hasConnected = false;
+        try {
+          if (attempt > 1) {
+            this.dispatch({
+              type: 'CHAT_STREAM_RETRY',
+              messageId: assistantMessageId,
+              attempt,
+              maxRetries,
+            });
+            await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt - 1)));
+          }
+
+          this.currentStreamAbort = new AbortController();
+          this.streamCancelled = false;
+
+          const response = await this.initiateStream(
+            `${this.apiUrl}/chat/stream`,
+            token,
+            requestBody,
+            this.currentStreamAbort.signal
+          );
+
+          hasConnected = true;
+
+          await this.processStream(response, assistantMessageId, currentConversationId);
+          this.currentStreamAbort = undefined;
+          this.streamCancelled = false;
           return;
-        }
+        } catch (error) {
+          lastError = error;
+          this.currentStreamAbort = undefined;
+          this.streamCancelled = false;
 
-        if (isTokenExpiredError(error)) {
-          this.dispatch({ type: 'AUTH_TOKEN_EXPIRED' });
-          throw error;
-        }
+          // User cancelled
+          if (error instanceof DOMException && error.name === 'AbortError') {
+            return;
+          }
 
-        if (isAppError(error) && error.code === 'AUTH') {
-          this.dispatch({ type: 'CHAT_ERROR', error });
-          throw error;
-        }
+          if (isTokenExpiredError(error)) {
+            this.dispatch({ type: 'AUTH_TOKEN_EXPIRED' });
+            throw error;
+          }
 
-        if (attempt === maxRetries) {
-          break;
+          if (isAppError(error) && error.code === 'AUTH') {
+            this.dispatch({ type: 'CHAT_ERROR', error });
+            throw error;
+          }
+
+          if (hasConnected) {
+            console.warn('[ChatService] Connection failed mid-stream, aborting retry to prevent duplicate messages.');
+            break;
+          }
+
+          if (attempt === maxRetries) {
+            break;
+          }
         }
       }
+
+      trackException(lastError instanceof Error ? lastError : new Error(String(lastError)), {
+        context: 'sendMessage',
+        retryCount: String(maxRetries),
+      });
+
+      const appError: AppError = isAppError(lastError)
+        ? lastError
+        : createAppError(lastError, getErrorCodeFromMessage(lastError));
+
+      this.dispatch({
+        type: 'CHAT_RECOVER_MESSAGE',
+        messageText,
+        error: appError,
+        retryCount: maxRetries,
+      });
+    } finally {
+      this.sendingInProgress = false;
     }
-
-    trackException(lastError instanceof Error ? lastError : new Error(String(lastError)), {
-      context: 'sendMessage',
-      retryCount: String(maxRetries),
-    });
-
-    const appError: AppError = isAppError(lastError)
-      ? lastError
-      : createAppError(lastError, getErrorCodeFromMessage(lastError));
-
-    this.dispatch({
-      type: 'CHAT_RECOVER_MESSAGE',
-      messageText,
-      error: appError,
-      retryCount: maxRetries,
-    });
   }
 
   /**

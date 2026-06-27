@@ -12,7 +12,7 @@ export const CieeLogo: React.FC = () => (
     xmlns="http://www.w3.org/2000/svg" 
     width="110" 
     height="50" 
-    viewBox="0 0 110 43" 
+    viewBox="0 0 110 55" 
     fill="none"
     className={styles.mascotGoose}
     style={{ overflow: 'visible' }}
@@ -25,6 +25,16 @@ export const CieeLogo: React.FC = () => (
       <path d="M81.7475 38.4039H69.9158C68.3988 38.4039 67.8245 37.8408 67.8352 36.6694V30.9009H81.7237V26.3754H67.8352L67.8347 21.5811C67.8454 20.4104 68.3976 19.8467 69.9147 19.8467H81.7471L81.7682 15.2505H67.212C65.6595 19.2717 62.3089 23.2367 57.2554 26.4498L57.2708 35.3251C57.2605 40.1383 59.4058 43 64.13 43H81.7695L81.7475 38.4039Z" fill="#024089"></path>
       <path d="M66.3024 6.08646C65.0595 2.75308 62.5683 0.954758 59.0584 0.000457764C60.3841 0.964821 61.5418 2.21134 62.0907 3.98626C63.965 10.0439 60.4951 16.7409 52.8893 21.9867L52.8891 15.2506H42.3144L42.315 27.2876C39.7498 28.2093 36.9725 29.0005 33.9957 29.6294C30.6057 30.3459 27.3788 30.8477 24.2637 31.195L24.2632 21.5812C24.2739 20.4104 24.8263 19.8467 26.3434 19.8467H38.1856V15.2506H20.5571C15.8332 15.2506 13.6881 18.1125 13.6773 22.9255L13.6933 31.8634C9.05566 31.9565 4.55706 31.8232 0 31.6887C8.15369 33.9594 23.7486 33.9668 37.2176 32.0272C58.5395 28.9556 69.9174 15.7835 66.3024 6.08646Z" fill="#024089"></path>
     </g>
+    <text 
+      x="80" 
+      y="55" 
+      fontFamily="'Caveat', cursive" 
+      fontSize="27" 
+      fontWeight="700" 
+      fill="#ED6B06"
+    >
+      Rio
+    </text>
     <defs>
       <clipPath id="clip0_728_1711">
         <rect width="109.938" height="43" fill="white"></rect>
@@ -52,7 +62,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         </div>
 
         <h1 className={styles.welcomeTitle}>
-          Seja bem-vindo(a) ao CIEE!
+          Seja bem-vindo(a) ao CIEE Rio!
         </h1>
 
         <p className={styles.description}>

@@ -76,18 +76,22 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Lumi', agentD
     setJourneyFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  // Keep a stable ref to avoid re-creating ChatService on every form field update
+  const journeyFormDataRef = useRef(journeyFormData);
+  journeyFormDataRef.current = journeyFormData;
+
   // Create service instances
   const apiUrl = import.meta.env.VITE_API_URL || '/api';
-  
+
   const chatService = useMemo(() => {
     const service = new ChatService(apiUrl, getAccessToken, dispatch);
     service.onFormUpdate = (field, value) => {
       handleJourneyFieldChange(field, value);
     };
-    service.getFormState = () => journeyFormData;
+    service.getFormState = () => journeyFormDataRef.current;
     service.onLogin = login;
     return service;
-  }, [apiUrl, getAccessToken, dispatch, journeyFormData, login]);
+  }, [apiUrl, getAccessToken, dispatch, login]);
 
   const prevMessagesLengthRef = useRef(chat.messages.length);
   useEffect(() => {
@@ -303,7 +307,7 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Lumi', agentD
             </PopoverTrigger>
             <PopoverSurface style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '20px', minWidth: '240px' }}>
               <Text weight="semibold" size={400} style={{ marginBottom: '8px' }}>Opções do Cadastro</Text>
-              
+
               <Button
                 appearance="primary"
                 icon={<ChatAdd24Regular />}
@@ -313,7 +317,7 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Lumi', agentD
               >
                 Recomeçar Cadastro
               </Button>
-              
+
               {onBack && (
                 <Button
                   appearance="outline"
@@ -327,7 +331,7 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Lumi', agentD
               )}
             </PopoverSurface>
           </Popover>
-          
+
           <button
             className={styles.backToMenuBtn}
             onClick={() => setIsJourneyOpen(!isJourneyOpen)}
@@ -338,23 +342,23 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Lumi', agentD
           </button>
         </div>
 
-          <div className={styles.navbarCenter}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span className={styles.navbarAgentName} style={{ marginTop: '4px' }}>
-                Lumi, Assistente
-              </span>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <AgentIcon size="small" logoUrl={agentLogo} />
-              </div>
+        <div className={styles.navbarCenter}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span className={styles.navbarAgentName} style={{ marginTop: '4px' }}>
+              Lumi, Assistente
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', marginTop: '6px', marginLeft: '-4px' }}>
+              <AgentIcon size="small" logoUrl={agentLogo} />
             </div>
-            <span className={styles.navbarOnlineDot} />
           </div>
+          <span className={styles.navbarOnlineDot} style={{ marginTop: '4px' }} />
+        </div>
 
-        </header>
+      </header>
 
       <div className={styles.bodyWrapper}>
         <div className={`${styles.mainContent} ${isAuxSidebarOpen ? styles.mainContentShifted : ''}`}>
-          <ChatInterface 
+          <ChatInterface
             messages={chat.messages}
             status={chat.status}
             error={chat.error}
@@ -386,11 +390,11 @@ export const AgentChat: React.FC<AgentChatProps> = ({ agentName = 'Lumi', agentD
             starterPrompts={starterPrompts}
           />
         </div>
-        
-        <AuxiliaryChatSidebar 
-          isOpen={isAuxSidebarOpen} 
+
+        <AuxiliaryChatSidebar
+          isOpen={isAuxSidebarOpen}
           onOpen={() => setIsAuxSidebarOpen(true)}
-          onClose={() => setIsAuxSidebarOpen(false)} 
+          onClose={() => setIsAuxSidebarOpen(false)}
         />
 
         {isJourneyOpen && (
